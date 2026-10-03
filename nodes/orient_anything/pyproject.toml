@@ -1,0 +1,25 @@
+[project]
+name = "pdebug-node-orient-anything"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "transformers==4.46.3",
+  "safetensors",
+  "matplotlib",
+  # upstream utils.py imports rembg (background removal, optional)
+  "rembg==2.0.61",
+  "onnxruntime==1.20.1",
+  "numba>=0.60",       # rembg -> pymatting -> numba; old numba has no py3.11 wheels
+  "llvmlite>=0.43",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.

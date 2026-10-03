@@ -1,0 +1,144 @@
+name = "hunyuan3d"
+version = "0.1.0"
+description = """
+Tencent Hunyuan3D-2.1 image-to-3D: background removal (u2net via rembg),
+single-image shape generation (DiT flow matching + ShapeVAE, untextured
+mesh) and PBR texture painting of a mesh from a reference image
+(multiview diffusion + Real-ESRGAN + baking). Typical chain:
+rembg -> shape -> paint (shape/paint also remove the background
+themselves when the image has no alpha).
+Generated meshes are NOT metric: they are normalised to fit in
+[-1, 1]^3, +Y up, object facing +Z (glTF convention); scale them with an
+external measurement before using them as metric object models.
+Licence: Tencent Hunyuan Non-Commercial License.
+"""
+
+[upstream]
+repo = "https://github.com/Tencent-Hunyuan/Hunyuan3D-2.1.git"
+commit = "82920d643c0dc2f7bfd7255f45f62d386edfe60c"   # same pin as SimFoundry
+patches = [
+  # SimFoundry patch (simplify face_count kwarg, pipeline components/device)
+  # + local weight dir for paint + bpy made optional
+  "patches/Hunyuan3D-2.1.patch",
+]
+
+[weights]
+hunyuan3d = { hf = "tencent/Hunyuan3D-2.1", revision = "0b94677654c57bb9a6b6845cd7b704ccf551d327", files = ["hunyuan3d-dit-v2-1/*", "hunyuan3d-paintpbr-v2-1/*"] }
+dinov2_giant = { hf = "facebook/dinov2-giant", revision = "611a9d42f2335e0f921f1e313ad3c1b7178d206d", files = ["config.json", "preprocessor_config.json", "model.safetensors"] }
+realesrgan = { url = "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth", sha256 = "4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1" }
+u2net = { url = "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx", sha256 = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491" }
+
+[system]
+gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 40
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+MAX_JOBS = "16"
+CC = "gcc"     # host `c++` may be clang, which rejects the narrowing in custom_rasterizer
+CXX = "g++"
+
+[setup]
+commands = [
+  # CUDA rasterizer used by the paint stage (builds custom_rasterizer_kernel*.so in place)
+  "cd hy3dpaint/custom_rasterizer && python setup.py build_ext --inplace > build.log 2>&1 || (tail -n 40 build.log; exit 1)",
+  # pybind11 C++ texture inpainting helper (upstream compile_mesh_painter.sh, venv-safe suffix)
+  "cd hy3dpaint/DifferentiableRenderer && g++ -O3 -Wall -shared -std=c++11 -fPIC $(python -m pybind11 --includes) mesh_inpaint_processor.cpp -o mesh_inpaint_processor$(python -c 'import sysconfig; print(sysconfig.get_config_var(\"EXT_SUFFIX\"))')",
+  "cd hy3dpaint && python -c 'import sys; sys.path[:0] = [\"custom_rasterizer\", \".\"]; import torch, custom_rasterizer_kernel, custom_rasterizer; from DifferentiableRenderer import mesh_inpaint_processor; print(\"extensions ok\")'",
+]
+
+[run]
+timeout_sec = 3600
+
+[tasks.rembg]
+description = """
+Remove the background of one RGB image (u2net through rembg, as in the
+upstream BackgroundRemover). Returns the RGBA cut-out (alpha = matte,
+fully transparent background) and the binary foreground mask (id 1).
+"""
+inputs.image = { type = "image" }
+outputs.image = { type = "image", description = "RGBA png, same size as the input, transparent background" }
+outputs.mask = { type = "mask", description = "1 = foreground (alpha > alpha_threshold), 0 = background" }
+params.alpha_threshold = { type = "int", default = 127, description = "alpha value (0-255) above which a pixel counts as foreground in the mask" }
+
+[tasks.shape]
+description = """
+Generate an untextured triangle mesh of the object in one image. The
+image should show a single object; if it has no transparent background
+it is cut out with rembg first (remove_background=auto). Output mesh is
+normalised to [-1,1]^3 (not metres), +Y up, the object faces +Z (the
+input view looks along -Z). ~1 min on H20 with defaults; peak ~21.6 GB VRAM on an RTX 5090.
+"""
+inputs.image = { type = "image", description = "object photo (RGB) or RGBA cut-out" }
+outputs.mesh = { type = "mesh", description = "glb, untextured, normalised units (fits in [-1,1]^3)" }
+params.remove_background = { type = "str", default = "auto", choices = ["auto", "always", "never"], description = "auto: run rembg only when the image has no transparent pixels" }
+params.steps = { type = "int", default = 50, description = "flow-matching steps (upstream default 50; 5-10 for a quick preview)" }
+params.guidance_scale = { type = "float", default = 5.0, description = "classifier-free guidance scale" }
+params.octree_resolution = { type = "int", default = 384, description = "marching-cubes grid resolution (256 faster/coarser, 512 finer)" }
+params.num_chunks = { type = "int", default = 8000, description = "points per VAE decode chunk (lower = less VRAM)" }
+params.seed = { type = "int", default = 0, description = "random seed" }
+params.cleanup = { type = "bool", default = true, description = "remove floaters and degenerate faces (upstream gradio post-processing)" }
+params.max_faces = { type = "int", default = 0, description = "if > 0, decimate to at most this many faces (upstream FaceReducer)" }
+
+[tasks.paint]
+description = """
+Paint PBR textures (albedo + metallic/roughness) onto a mesh using a
+reference image of the object, e.g. the `shape` output with the same
+image. The mesh is remeshed/decimated to <= 40k faces and UV-unwrapped
+(xatlas) first, so the output topology differs from the input; vertex
+coordinates keep the input frame/scale. ~2-3 min on H20 / RTX 5090; fits one 32 GB RTX 5090 (peak ~21.6 GB measured).
+"""
+inputs.mesh = { type = "mesh", description = "untextured mesh (glb/obj/ply), ideally from `shape` (normalised, +Y up)" }
+inputs.image = { type = "image", description = "reference image of the same object (RGBA cut-out, or RGB: background removed automatically)" }
+outputs.mesh = { type = "mesh", description = "textured glb with glTF PBR material (baseColor + metallicRoughness)" }
+params.remove_background = { type = "str", default = "auto", choices = ["auto", "always", "never"], description = "auto: run rembg on the reference only when it has no transparent pixels" }
+params.max_num_view = { type = "int", default = 6, description = "number of generated views (6-9)" }
+params.resolution = { type = "int", default = 512, choices = [512, 768], description = "multiview diffusion resolution" }
+params.texture_size = { type = "int", default = 4096, description = "baked texture size before the final 2x downsample (upstream 4096 -> 2048 maps)" }
+params.remesh = { type = "bool", default = true, description = "decimate/clean the input mesh before unwrapping (upstream default)" }
+
+[[tests]]
+name = "rembg"
+task = "rembg"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+eq = 1
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_mask.png"
+min = 0.95
+
+[[tests]]
+name = "shape"
+task = "shape"
+timeout_sec = 1200
+inputs = { image = "tests/fixture/demo.png" }
+[[tests.checks]]
+output = "mesh"
+field = "format"
+eq = "glb"
+[[tests.checks]]
+output = "mesh"
+field = "bytes"
+min = 1000000
+
+[[tests]]
+name = "paint"
+task = "paint"
+timeout_sec = 1800
+inputs = { mesh = "tests/fixture/demo_shape.glb", image = "tests/fixture/demo.png" }
+[[tests.checks]]
+output = "mesh"
+field = "format"
+eq = "glb"
+[[tests.checks]]
+output = "mesh"
+field = "bytes"
+min = 2000000

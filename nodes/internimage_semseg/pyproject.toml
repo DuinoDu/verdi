@@ -1,0 +1,46 @@
+[project]
+name = "pdebug-node-internimage-semseg"
+version = "0.1.0"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "mmcv==1.7.2",            # lite build (no CUDA ops); see NOTES.md
+  "mmsegmentation==0.30.0",
+  "mmdet==2.28.2",          # mmseg_custom imports mmdet.utils
+  "timm==0.9.16",
+  "yapf==0.40.1",           # mmcv 1.x Config breaks with yapf>=0.40.2
+  "numpy<2",
+  "opencv-python-headless==4.10.0.84",
+  "scipy",
+  "DCNv4",
+]
+
+[tool.uv]
+package = false
+# mmcv 1.7.2 / DCNv4 setup.py import pkg_resources (gone in setuptools>=81)
+build-constraint-dependencies = ["setuptools<70"]
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+DCNv4 = { git = "https://github.com/OpenGVLab/DCNv4.git", rev = "4b848f7dd7da74ff03f7d278f902c6fd05b391b5", subdirectory = "DCNv4_op" }
+
+[tool.uv.extra-build-dependencies]
+# DCNv4 CUDA extension is compiled against the runtime torch
+dcnv4 = [{ requirement = "torch", match-runtime = true }, "ninja"]
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 capable); no extra index needed.
+
+# static metadata so uv can lock without building and match-runtime works
+[[tool.uv.dependency-metadata]]
+name = "dcnv4"
+version = "1.0.0.post2"
+requires-dist = ["torch", "torchvision"]
+
+# mmcv 1.7.2 is sdist-only; static metadata (upstream requires minus
+# opencv-python, replaced by the headless wheel) avoids a metadata build
+[[tool.uv.dependency-metadata]]
+name = "mmcv"
+version = "1.7.2"
+requires-dist = ["addict", "numpy", "packaging", "Pillow", "pyyaml", "yapf", "opencv-python-headless>=3"]

@@ -1,0 +1,117 @@
+name = "moondream"
+version = "0.1.0"
+description = """
+Moondream2 (vikhyatk/moondream2, revision 2025-06-21) small vision-language
+model: visual question answering, captioning, open-vocabulary detection
+(text -> boxes) and pointing (text -> points) on single RGB images.
+Fast (~2B params, ~5 GB VRAM). Text answers are greedy (temperature 0).
+"""
+
+[weights]
+moondream2 = { hf = "vikhyatk/moondream2", revision = "9a7d4024050840e001defacec2b00727e89149e6", files = ["*.py", "*.json", "*.txt", "model.safetensors"] }
+# tokenizer the remote code fetches by name ("moondream/starmie-v1"); entry.py redirects it here
+starmie_tokenizer = { hf = "moondream/starmie-v1", revision = "35192e10a54e36eabe0a7cc57a2c1aab371cafc5", files = ["tokenizer.json"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 10
+
+[run]
+timeout_sec = 900
+
+[tasks.query]
+description = "Answer a free-form question about an image (VQA). Short answers; ask for detail explicitly if needed."
+inputs.image = { type = "image" }
+outputs.answer = { type = "text", description = "answer text (utf-8)" }
+params.question = { type = "str", description = "question about the image" }
+params.reasoning = { type = "bool", default = false, description = "let the model reason (grounded chain of thought) before answering; the reasoning text is put in result metadata" }
+params.max_tokens = { type = "int", default = 512 }
+
+[tasks.caption]
+description = "Describe an image in natural language."
+inputs.image = { type = "image" }
+outputs.caption = { type = "text", description = "caption text (utf-8)" }
+params.length = { type = "str", default = "normal", choices = ["short", "normal", "long"] }
+params.max_tokens = { type = "int", default = 512 }
+
+[tasks.detect]
+description = """
+Open-vocabulary detection: boxes for every instance of `object` (a short
+noun phrase such as "wheel" or "person in red"). Boxes are pixel xyxy with
+label = object. Moondream gives no confidence, so boxes carry no `score`
+field. An empty box list is a valid answer (object not found).
+"""
+inputs.image = { type = "image" }
+outputs.boxes = { type = "bbox_set", description = "pixel xyxy boxes, label = object, no score" }
+params.object = { type = "str", description = "what to detect (noun phrase)" }
+params.max_objects = { type = "int", default = 50 }
+
+[tasks.point]
+description = """
+Point at every instance of `object`: one pixel point per instance, returned
+as a prompt_set (xy px, positive = true, obj_id = 1..N in model order,
+frame = 0, text = object), so it can be fed straight into sam2 as point
+prompts. An empty point list is valid (object not found); in that case the
+prompt_set still carries `text`.
+"""
+inputs.image = { type = "image" }
+outputs.points = { type = "prompt_set", description = "one positive point per instance, obj_id 1..N" }
+params.object = { type = "str", description = "what to point at (noun phrase)" }
+params.max_objects = { type = "int", default = 50 }
+
+[[tests]]
+name = "caption"
+task = "caption"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { length = "short" }
+[[tests.checks]]
+output = "caption"
+field = "text"
+contains = "truck"
+
+[[tests]]
+name = "query"
+task = "query"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { question = "What color is the wall behind the vehicle? Answer with one word." }
+[[tests.checks]]
+output = "answer"
+field = "text"
+contains = "red"
+[[tests.checks]]
+output = "answer"
+field = "chars"
+max = 20
+
+[[tests]]
+name = "detect"
+task = "detect"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { object = "truck" }
+[[tests.checks]]
+output = "boxes"
+field = "count"
+eq = 1
+[[tests.checks]]
+output = "boxes"
+field = "labels"
+eq = ["truck"]
+
+[[tests]]
+name = "point"
+task = "point"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { object = "wheel" }
+[[tests.checks]]
+output = "points"
+field = "points"
+eq = 2
+[[tests.checks]]
+output = "points"
+field = "text"
+eq = "wheel"

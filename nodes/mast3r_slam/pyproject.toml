@@ -1,0 +1,40 @@
+[project]
+name = "pdebug-node-mast3r-slam"
+version = "0.1.0"
+requires-python = "==3.11.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "numpy==1.26.4",          # upstream pin
+  "einops",
+  "natsort",
+  "plyfile",
+  "pyyaml",
+  "opencv-python-headless==4.10.0.84",
+  "pillow",
+  "scipy",
+  "scikit-learn",
+  "roma",
+  "trimesh",
+  "matplotlib",
+  "tqdm",
+  "huggingface-hub[torch]>=0.22",  # mast3r from_pretrained (local file only)
+  "faiss-cpu",              # asmk (retrieval / loop closure)
+  "pyaml",                  # asmk
+  "packaging",
+  # in-place CUDA/C extension builds in [setup].commands
+  "cmeel-eigen>=3.4,<3.5",  # Eigen headers (upstream submodule is on gitlab, unreachable)
+  "setuptools<80",
+  "wheel",
+  "ninja",
+  "cython",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 / RTX 5090); no extra index needed.

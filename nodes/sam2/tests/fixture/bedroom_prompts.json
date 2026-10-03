@@ -1,0 +1,9 @@
+{
+  "points": [
+    {"xy": [210, 350], "positive": true, "obj_id": 1, "frame": 0},
+    {"xy": [250, 220], "positive": true, "obj_id": 1, "frame": 0}
+  ],
+  "boxes": [
+    {"xyxy": [300, 0, 500, 400], "obj_id": 2, "frame": 0}
+  ]
+}

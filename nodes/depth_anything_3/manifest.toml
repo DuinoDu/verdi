@@ -1,0 +1,167 @@
+name = "depth_anything_3"
+version = "0.1.0"
+description = """
+Depth Anything 3 (ByteDance Seed, 2025), the model SimFoundry uses for
+depth and camera poses. DA3NESTED-GIANT-LARGE-1.1 (any-view giant model
++ metric model) gives METRIC depth in metres for one image, and for a
+frame sequence also per-frame cameras (pose + intrinsics), with long
+sequences split into overlapping chunks and merged with Sim(3) like
+SimFoundry. DA3MONO-LARGE gives RELATIVE depth for one image (returned as
+disparity, not metres). Separate from the `depth_anything` node (V2 /
+Video-Depth-Anything). No camera input is needed or used.
+"""
+
+[weights]
+nested = { hf = "depth-anything/DA3NESTED-GIANT-LARGE-1.1", revision = "b2359bdf726fb44ef62acca04d629dcf158053e7", files = ["config.json", "model.safetensors"] }
+mono = { hf = "depth-anything/DA3MONO-LARGE", revision = "f465978e618db8cc79c83b8bbf24964857db1875", files = ["config.json", "model.safetensors"] }
+
+[system]
+gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 20
+
+[run]
+timeout_sec = 3600
+
+[tasks.estimate_depth]
+description = """
+Metric depth (metres) for one image with DA3NESTED-GIANT-LARGE-1.1 (the
+SimFoundry `infer_depth` recipe: long side resized to process_res, output
+resized back to the input size). The model also predicts the camera
+intrinsics, returned as `camera`. Sky pixels are 0 (invalid) unless
+sky_invalid=false (then they hold the upstream filler: the 99th
+percentile of non-sky depth, max 200 m).
+"""
+inputs.image = { type = "image" }
+outputs.depth = { type = "depth", description = "metric depth in metres, input HxW, 0 = sky/invalid" }
+outputs.camera = { type = "camera", description = "intrinsics predicted by DA3, scaled to the input resolution" }
+params.process_res = { type = "int", default = 504, description = "network long side, multiple of 14 (504 = upstream and SimFoundry default)" }
+params.sky_invalid = { type = "bool", default = true, description = "write 0 on sky pixels instead of the upstream filler depth" }
+
+[tasks.estimate_relative_depth]
+description = """
+RELATIVE depth for one image with DA3MONO-LARGE (Apache-2.0 checkpoint,
+monocular, no metric scale). DA3MONO predicts depth up to an unknown
+scale; it is returned as disparity = 1/depth (larger = closer, unknown
+scale, 0 = sky/invalid). NOT metres: use estimate_depth for metres.
+"""
+inputs.image = { type = "image" }
+outputs.disparity = { type = "disparity", description = "1 / relative depth, input HxW, unknown scale, 0 = sky/invalid" }
+params.process_res = { type = "int", default = 504, description = "network long side, multiple of 14" }
+
+[tasks.reconstruct]
+description = """
+Metric multi-view reconstruction of a static scene from a frame sequence
+(ordered video frames or a photo set; video input is split into frames
+automatically; all frames must share one resolution) with
+DA3NESTED-GIANT-LARGE-1.1, as in SimFoundry stage s2_da. One forward pass
+per chunk predicts per-frame metric depth, camera pose and intrinsics.
+Sequences longer than chunk_size are split into chunks of chunk_size
+frames overlapping by `overlap` frames; each later chunk is aligned to the
+first with a Sim(3) fitted on the overlap camera centres (Umeyama) and its
+depth is multiplied by the fitted scale (SimFoundry depth_backends). World
+frame = DA3 world of the first chunk (OpenCV camera axes); units metres.
+"""
+inputs.frames = { type = "image_seq" }
+outputs.depth = { type = "depth_seq", description = "per-frame metric z-depth (%06d.npy, input resolution, 0 = sky/invalid)" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam (camera-to-world) per frame, metres" }
+outputs.cameras = { type = "camera_seq", description = "per-frame intrinsics predicted by DA3 at the input resolution" }
+params.process_res = { type = "int", default = 448, description = "network long side, multiple of 14 (448 = SimFoundry s2_da.resolution)" }
+params.chunk_size = { type = "int", default = 220, description = "max frames per forward pass (SimFoundry 220); longer sequences are chunked" }
+params.overlap = { type = "int", default = 40, description = "frames shared by consecutive chunks for the Sim(3) merge (>= 3; SimFoundry 40)" }
+params.ref_view_strategy = { type = "str", default = "saddle_balanced", choices = ["saddle_balanced", "saddle_sim_range", "first", "middle"], description = "upstream reference-view selection inside a chunk" }
+params.sky_invalid = { type = "bool", default = true, description = "write 0 on sky pixels instead of the upstream filler depth" }
+
+
+[[tests]]
+name = "image_metric"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/bedroom0.jpg" }
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.3
+max = 2.9
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 750
+max = 1050
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/bedroom0_depth.npy"
+max = 0.03
+
+[[tests]]
+name = "image_relative"
+task = "estimate_relative_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/bedroom0.jpg" }
+[[tests.checks]]
+output = "disparity"
+field = "width"
+eq = 960
+[[tests.checks]]
+output = "disparity"
+metric = "disparity_rel"
+expected = "tests/expected/bedroom0_disparity.npy"
+max = 0.03
+
+[[tests]]
+name = "reconstruct"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/unitree" }
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 15
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 4.3
+max = 5.4
+[[tests.checks]]
+output = "cameras"
+field = "count"
+eq = 15
+[[tests.checks]]
+output = "trajectory"
+metric = "trajectory_ate"
+expected = "tests/expected/unitree_trajectory.json"
+max = 0.01
+
+[[tests]]
+name = "reconstruct_chunked"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/unitree" }
+params = { chunk_size = 10, overlap = 5 }
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 15
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 3.5
+max = 5.5
+[[tests.checks]]
+output = "trajectory"
+metric = "trajectory_ate"
+expected = "tests/expected/unitree_trajectory.json"
+max = 0.03
+
+[[known_issues]]
+summary = "DA3NESTED-GIANT-LARGE-1.1 weights are CC-BY-NC-4.0 (non-commercial); DA3MONO-LARGE weights and the DA3 code are Apache-2.0"
+fix = "non-commercial use only for estimate_depth / reconstruct (SimFoundry THIRD_PARTY_LICENSES row 6 covers the code only)"
+
+[[known_issues]]
+summary = "VRAM grows with frames per chunk (~22 GiB for 220 frames at 448 on SimFoundry's 24 GB GPUs)"
+fix = "lower chunk_size (keep overlap >= 3, ideally >= 20) or process_res on smaller GPUs"
+
+[[known_issues]]
+summary = "Chunk merge needs camera motion inside the overlap; a static camera cannot be Sim(3)-aligned"
+fix = "the node raises; raise chunk_size so the clip runs in one pass"

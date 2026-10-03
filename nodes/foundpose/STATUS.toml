@@ -1,0 +1,13 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T00:53:12+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "b7322db439f96df9b820af812f390a8343d15b33"
+upstream_commit = "3103473bfa3985fdf563bb31cefc0cae8f979ae0"
+env_lock = "sha256:9fe57217bc376fc5a9184f86f4af65a8c52ff7bf2d761c611f86879785e97f4a"
+untested_tasks = [
+]
+cases = [
+  "PASS render_templates (50.64s): PASS masks.nonempty_frames=10 {'eq': 10}; PASS masks.mask_iou=1.0 {'min': 0.98}",
+  "PASS estimate (380.7s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0189 {'max': 0.06}; PASS poses.pose_rotation_err_deg=8.4603 {'max': 15.0}",
+]

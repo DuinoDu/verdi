@@ -1,0 +1,32 @@
+[project]
+name = "pdebug-node-foundation-stereo"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "numpy<2",
+  "timm==1.0.15",
+  "omegaconf==2.3.0",
+  "einops==0.8.1",
+  "scipy",
+  "opencv-python-headless==4.11.0.86",
+  "imageio",
+  "trimesh",
+  "joblib",
+  "pandas",
+  "open3d==0.19.0",
+  "requests",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
+# FoundationStereo is imported from the [upstream] checkout (no setup.py).
+# flash-attn (installed by SimFoundry) is not imported by FoundationStereo; omitted.
+# open3d is imported by upstream Utils.py at module level.

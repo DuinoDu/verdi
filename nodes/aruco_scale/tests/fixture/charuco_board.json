@@ -1,0 +1,9 @@
+{
+ "type": "charuco",
+ "dictionary": "DICT_5X5_100",
+ "rows": 5,
+ "cols": 7,
+ "square_length_m": 0.04,
+ "marker_length_m": 0.03,
+ "first_id": 0
+}

@@ -1,0 +1,66 @@
+[project]
+name = "pdebug-node-hunyuan3d"
+version = "0.1.0"
+requires-python = "==3.10.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  # versions follow upstream requirements.txt (82920d6) unless noted
+  "transformers==4.46.0",
+  "diffusers==0.30.0",
+  "accelerate==1.1.1",
+  "huggingface-hub==0.30.2",
+  "safetensors==0.4.4",
+  "numpy==1.26.4",            # upstream 1.24.4; 1.26 has py3.10 wheels and keeps numpy-1 ABI
+  "scipy==1.14.1",
+  "einops==0.8.0",
+  "opencv-python-headless==4.10.0.84",
+  "imageio==2.36.0",
+  "scikit-image==0.24.0",
+  "rembg==2.0.65",
+  "onnxruntime==1.19.2",      # rembg backend (CPU is enough for u2net)
+  "realesrgan==0.3.0",
+  "basicsr==1.4.2",
+  "trimesh==4.4.7",
+  "open3d==0.18.0",           # trimesh 4.4 simplify_quadric_decimation backend (paint remesh)
+  "pymeshlab==2022.2.post3",
+  "pygltflib==1.16.3",
+  "xatlas==0.0.9",
+  "omegaconf==2.3.0",
+  "pyyaml==6.0.2",
+  "tqdm==4.66.5",
+  "timm",
+  "torchdiffeq",
+  "pytorch-lightning==1.9.5",
+  "pybind11==2.13.4",
+  "ninja==1.11.1.1",
+  "setuptools<80",
+  "wheel",
+]
+
+[tool.uv]
+package = false
+
+# basicsr 1.4.2 is sdist-only and imports torch in setup.py. Static metadata
+# lets uv build it against the runtime torch; it also drops opencv-python
+# (we use the headless build) and tb-nightly (training only).
+[[tool.uv.dependency-metadata]]
+name = "basicsr"
+version = "1.4.2"
+requires-dist = ["addict", "future", "lmdb", "numpy", "Pillow", "pyyaml", "requests", "scikit-image", "scipy", "torch", "torchvision", "tqdm", "yapf"]
+
+# realesrgan: only RealESRGANer is used; gfpgan/facexlib are face-restoration
+# extras of the CLI script, opencv-python clashes with the headless build.
+[[tool.uv.dependency-metadata]]
+name = "realesrgan"
+version = "0.3.0"
+requires-dist = ["basicsr", "numpy", "Pillow", "torch", "torchvision", "tqdm"]
+
+[tool.uv.extra-build-dependencies]
+basicsr = [{ requirement = "torch", match-runtime = true }, "numpy==1.26.4", "setuptools<80", "wheel", "cython"]
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 / RTX 5090); no extra index needed.

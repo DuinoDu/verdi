@@ -1,0 +1,207 @@
+{
+  "1": {
+    "score": 0.9961,
+    "stability_score": 0.9658,
+    "area": 730060
+  },
+  "2": {
+    "score": 0.9688,
+    "stability_score": 0.9538,
+    "area": 644156
+  },
+  "3": {
+    "score": 0.9766,
+    "stability_score": 0.961,
+    "area": 639015
+  },
+  "4": {
+    "score": 0.8086,
+    "stability_score": 0.9528,
+    "area": 546856
+  },
+  "5": {
+    "score": 0.832,
+    "stability_score": 0.9526,
+    "area": 310806
+  },
+  "6": {
+    "score": 0.9844,
+    "stability_score": 0.9732,
+    "area": 51073
+  },
+  "7": {
+    "score": 0.9805,
+    "stability_score": 0.9793,
+    "area": 51046
+  },
+  "8": {
+    "score": 0.9805,
+    "stability_score": 0.9793,
+    "area": 50987
+  },
+  "9": {
+    "score": 0.9844,
+    "stability_score": 0.9643,
+    "area": 42093
+  },
+  "10": {
+    "score": 0.9805,
+    "stability_score": 0.96,
+    "area": 40543
+  },
+  "11": {
+    "score": 0.9805,
+    "stability_score": 0.9617,
+    "area": 40401
+  },
+  "12": {
+    "score": 0.9102,
+    "stability_score": 0.9609,
+    "area": 29869
+  },
+  "13": {
+    "score": 0.9141,
+    "stability_score": 0.967,
+    "area": 26974
+  },
+  "14": {
+    "score": 0.9766,
+    "stability_score": 0.9696,
+    "area": 23438
+  },
+  "15": {
+    "score": 0.9492,
+    "stability_score": 0.9614,
+    "area": 22579
+  },
+  "16": {
+    "score": 0.9844,
+    "stability_score": 0.9814,
+    "area": 19975
+  },
+  "17": {
+    "score": 0.957,
+    "stability_score": 0.9599,
+    "area": 19718
+  },
+  "18": {
+    "score": 0.9609,
+    "stability_score": 0.9778,
+    "area": 14264
+  },
+  "19": {
+    "score": 0.9531,
+    "stability_score": 0.9749,
+    "area": 13333
+  },
+  "20": {
+    "score": 0.9805,
+    "stability_score": 0.9868,
+    "area": 8703
+  },
+  "21": {
+    "score": 0.9492,
+    "stability_score": 0.9563,
+    "area": 6810
+  },
+  "22": {
+    "score": 0.9023,
+    "stability_score": 0.958,
+    "area": 6372
+  },
+  "23": {
+    "score": 0.9492,
+    "stability_score": 0.9858,
+    "area": 5101
+  },
+  "24": {
+    "score": 0.9648,
+    "stability_score": 0.9717,
+    "area": 4946
+  },
+  "25": {
+    "score": 0.9648,
+    "stability_score": 0.9722,
+    "area": 4829
+  },
+  "26": {
+    "score": 0.957,
+    "stability_score": 0.9726,
+    "area": 4268
+  },
+  "27": {
+    "score": 0.9297,
+    "stability_score": 0.9697,
+    "area": 3538
+  },
+  "28": {
+    "score": 0.9688,
+    "stability_score": 0.9752,
+    "area": 3435
+  },
+  "29": {
+    "score": 0.9688,
+    "stability_score": 0.9674,
+    "area": 3424
+  },
+  "30": {
+    "score": 0.9453,
+    "stability_score": 0.9741,
+    "area": 2932
+  },
+  "31": {
+    "score": 0.918,
+    "stability_score": 0.9635,
+    "area": 2611
+  },
+  "32": {
+    "score": 0.9297,
+    "stability_score": 0.9602,
+    "area": 2580
+  },
+  "33": {
+    "score": 0.8828,
+    "stability_score": 0.9565,
+    "area": 2351
+  },
+  "34": {
+    "score": 0.8477,
+    "stability_score": 0.9617,
+    "area": 1999
+  },
+  "35": {
+    "score": 0.9258,
+    "stability_score": 0.9593,
+    "area": 1041
+  },
+  "36": {
+    "score": 0.9375,
+    "stability_score": 0.9642,
+    "area": 954
+  },
+  "37": {
+    "score": 0.9297,
+    "stability_score": 0.9599,
+    "area": 950
+  },
+  "38": {
+    "score": 0.9297,
+    "stability_score": 0.9738,
+    "area": 903
+  },
+  "39": {
+    "score": 0.9336,
+    "stability_score": 0.9719,
+    "area": 878
+  },
+  "40": {
+    "score": 0.9297,
+    "stability_score": 0.9698,
+    "area": 878
+  },
+  "41": {
+    "score": 0.8906,
+    "stability_score": 0.9546,
+    "area": 864
+  }
+}

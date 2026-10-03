@@ -1,0 +1,124 @@
+name = "trellis2"
+version = "0.1.0"
+description = """
+Microsoft TRELLIS.2 (4B) single-image to 3D: one image of one object ->
+textured triangle mesh (glb with PBR baseColor/metallic/roughness/alpha
+textures). Sparse-structure flow -> shape SLat flow (512 -> 1024 cascade)
+-> texture SLat flow -> O-Voxel decode, then remesh / decimate / UV-unwrap
+/ texture-bake (o_voxel.postprocess.to_glb), exactly as SimFoundry's
+`trellis2` mesh backend does.
+The object must already be cut out: give an RGBA image (alpha = object)
+or an RGB image plus a mask. The node never runs a background remover
+(upstream uses the gated, non-commercial briaai/RMBG-2.0).
+Generated meshes are NOT metric: normalised to fit in the [-0.5, 0.5]^3
+cube, +Y up (glTF convention); scale them with an external measurement
+before using them as metric object models.
+Licence: code MIT; TRELLIS.2-4B weights MIT; DINOv3 weights (image
+conditioning) under the DINOv3 License (gated on HuggingFace).
+"""
+
+[upstream]
+repo = "https://github.com/microsoft/TRELLIS.2.git"
+commit = "75fbf0183001ed9876c8dbb35de6b68552ee08bd"   # same pin as SimFoundry install_trellis.sh
+submodules = true                                     # o-voxel/third_party/eigen (gitlab)
+
+[weights]
+trellis2_4b = { hf = "microsoft/TRELLIS.2-4B", revision = "af44b45f2e35a493886929c6d786e563ec68364d" }
+# pipeline.json takes the sparse-structure decoder from TRELLIS (v1)
+trellis_image_large = { hf = "microsoft/TRELLIS-image-large", revision = "25e0d31ffbebe4b5a97464dd851910efc3002d96", files = ["ckpts/ss_dec_conv3d_16l8_fp16.json", "ckpts/ss_dec_conv3d_16l8_fp16.safetensors"] }
+# Image conditioning model facebook/dinov3-vitl16-pretrain-lvd1689m. Gated on HF
+# (manual approval); fetched from the ModelScope mirror of the same repo with the
+# user's approval. model.safetensors sha256 == official HF LFS sha256 (bit-identical).
+# Meta's DINOv3 License applies.
+dinov3 = { url = "https://www.modelscope.cn/models/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/master/model.safetensors", filename = "model.safetensors", sha256 = "dcb2e45127cccbf1601e5f42fef165eea275c8e5213197e8dcf3f48822718179" }
+dinov3_config = { url = "https://www.modelscope.cn/models/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/master/config.json", filename = "config.json", sha256 = "135ecd23e34a70b6fbed8b083fdecb319b7e3a54e3d849258bbe4ddcf1783bb5" }
+dinov3_license = { url = "https://www.modelscope.cn/models/facebook/dinov3-vitl16-pretrain-lvd1689m/resolve/master/LICENSE.md", filename = "LICENSE.md", sha256 = "25d122eb8f5b880fd23c736fb6ea8018ee45c12237e00b8a86d14c653904999e" }
+
+[system]
+gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 40
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+MAX_JOBS = "16"
+CC = "gcc"      # host `c++` is clang 11
+CXX = "g++"
+LIBRARY_PATH = "{cuda_home}/lib64/stubs"   # nvdiffrec links -lcuda
+
+[run.env]
+ATTN_BACKEND = "xformers"          # dense + sparse attention (no flash-attn wheel for torch 2.7)
+SPARSE_CONV_BACKEND = "flex_gemm"
+OPENCV_IO_ENABLE_OPENEXR = "1"
+PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True"
+
+[setup]
+commands = [
+  "python -c 'import torch, nvdiffrast.torch, cumesh, flex_gemm, o_voxel, nvdiffrec_render.renderutils, xformers.ops; print(\"extensions ok\")'",
+]
+
+[run]
+timeout_sec = 3600
+
+[tasks.generate]
+description = """
+Generate a textured mesh of the object shown in one image. Input: an RGBA
+cut-out (alpha = object), or an RGB image plus `mask` (all non-zero ids,
+or only `mask_id`, become the object). The object is cropped to its
+alpha bounding box, so its position/size in the image does not matter.
+Output glb: textured (PBR), normalised to the [-0.5, 0.5]^3 cube, +Y up,
+the object's front (the side seen in the image) faces +Z
+(glTF convention). ~1-2 min on H20 with defaults (1024_cascade).
+"""
+inputs.image = { type = "image", description = "RGBA cut-out of one object, or RGB photo (then `mask` is required)" }
+inputs.mask = { type = "mask", optional = true, description = "object mask for an RGB image (non-zero = object, or id == mask_id)" }
+outputs.mesh = { type = "mesh", description = "textured glb, normalised units (fits in [-0.5,0.5]^3), +Y up" }
+params.mask_id = { type = "int", default = 0, description = "if > 0, only this instance id of `mask` is the object; 0 = all non-zero pixels" }
+params.pipeline_type = { type = "str", default = "1024_cascade", choices = ["512", "1024", "1024_cascade", "1536_cascade"], description = "generation resolution (512 fastest/coarsest; 1536_cascade finest/slowest)" }
+params.seed = { type = "int", default = 42, description = "random seed (SimFoundry default 42)" }
+params.ss_steps = { type = "int", default = 12, description = "sparse-structure flow steps" }
+params.shape_steps = { type = "int", default = 12, description = "shape SLat flow steps" }
+params.tex_steps = { type = "int", default = 12, description = "texture SLat flow steps" }
+params.ss_guidance = { type = "float", default = 7.5, description = "sparse-structure classifier-free guidance strength" }
+params.shape_guidance = { type = "float", default = 7.5, description = "shape classifier-free guidance strength" }
+params.tex_guidance = { type = "float", default = 1.0, description = "texture classifier-free guidance strength" }
+params.max_num_tokens = { type = "int", default = 49152, description = "cascade token budget (higher = more detail, more VRAM)" }
+params.num_faces = { type = "int", default = 300000, description = "decimation target of the exported mesh (SimFoundry default 300k)" }
+params.texture_size = { type = "int", default = 2048, choices = [1024, 2048, 4096], description = "baked texture resolution (SimFoundry uses 4096)" }
+params.remesh = { type = "bool", default = true, description = "remesh before decimation/unwrap (upstream to_glb option)" }
+params.remesh_project = { type = "float", default = 0.9, description = "0..1, how far remeshed vertices are snapped back to the original surface (SimFoundry 0.9)" }
+params.low_vram = { type = "bool", default = false, description = "keep idle sub-models on CPU (slower, ~half the VRAM)" }
+
+[[tests]]
+name = "generate"
+task = "generate"
+timeout_sec = 1800
+inputs = { image = "tests/fixture/example.png" }
+params = { pipeline_type = "512", num_faces = 100000, texture_size = 1024 }
+[[tests.checks]]
+output = "mesh"
+field = "textured"
+eq = true
+[[tests.checks]]
+output = "mesh"
+field = "faces"
+min = 5000
+[[tests.checks]]
+output = "mesh"
+field = "max_extent"
+min = 0.5
+max = 1.01
+
+[[known_issues]]
+summary = "DINOv3 (facebook/dinov3-vitl16-pretrain-lvd1689m, gated on HF) is downloaded from the ModelScope mirror"
+fix = "Files are sha256-pinned to the official HF LFS hash (bit-identical). Meta's DINOv3 License still applies to anyone using this node; accept it on HF (and switch [weights.dinov3] to hf=...) if you need the official channel"
+
+[[known_issues]]
+summary = "No background removal (upstream briaai/RMBG-2.0 is gated and CC-BY-NC-4.0)"
+fix = "Pass an RGBA cut-out or an RGB image + mask (e.g. from sam2 / langsam / hunyuan3d rembg)"
+
+[[known_issues]]
+summary = "Licences: TRELLIS.2 code + TRELLIS.2-4B weights MIT; DINOv3 weights DINOv3 License (custom, gated); nvdiffrast/nvdiffrec NVIDIA Source Code License (non-commercial)"
+fix = "Check THIRD_PARTY_LICENSES.md (SimFoundry section 6) before commercial use"

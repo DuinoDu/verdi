@@ -1,0 +1,111 @@
+name = "depth_pro"
+version = "0.1.0"
+description = """
+Apple Depth Pro: zero-shot metric monocular depth (metres) plus an
+estimate of the camera focal length, from a single RGB image. Uses the
+official transformers port (apple/DepthPro-hf). Works on any resolution
+(the network runs at 1536x1536, output is resized back to the input).
+"""
+
+[weights]
+depthpro = { hf = "apple/DepthPro-hf", revision = "de816c8ce7168afcb231f96d501d72b869d0beda", files = ["*.json", "*.safetensors"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 10
+
+[run]
+timeout_sec = 1800
+
+[tasks.estimate_depth]
+description = """
+Metric depth for one image. Depth Pro predicts a canonical inverse depth
+and the horizontal field of view; depth (metres) = focal_px / (W *
+inverse_depth). If a `camera` is given, its fx is used instead of the
+estimated focal length (more accurate absolute scale). The output camera
+is the pinhole model used for the depth: fx = fy = focal, principal point
+at the image centre (Depth Pro does not estimate cx/cy or distortion)
+unless the input camera was given, in which case it is echoed.
+"""
+inputs.image = { type = "image" }
+inputs.camera = { type = "camera", optional = true, description = "known intrinsics; only K[0][0] (fx, px) is used, must match the image size" }
+outputs.depth = { type = "depth", description = "metric depth in metres (z-depth along the optical axis), same HxW as the image" }
+outputs.camera = { type = "camera", description = "estimated (or given) pinhole intrinsics for this image" }
+params.precision = { type = "str", default = "fp16", choices = ["fp16", "fp32"], description = "inference dtype on GPU (fp16 is the upstream default; CPU always fp32)" }
+
+[tasks.estimate_depth_seq]
+description = """
+Metric depth for every frame of a sequence (video input is split into
+frames automatically). Frames are processed independently (no temporal
+smoothing). With focal = "median" (default) the focal length is
+estimated on every frame and the median is used for all frames, which
+keeps the metric scale consistent along a fixed-zoom video; "per_frame"
+uses each frame's own estimate. A given `camera` overrides both.
+"""
+inputs.frames = { type = "image_seq" }
+inputs.camera = { type = "camera", optional = true, description = "known intrinsics shared by all frames; only fx is used" }
+outputs.depth = { type = "depth_seq", description = "one %06d.npy metric depth map (metres) per input frame, input resolution" }
+outputs.camera = { type = "camera", description = "intrinsics used for the sequence (median estimate, given camera, or the median of the per-frame estimates when focal=per_frame)" }
+params.focal = { type = "str", default = "median", choices = ["median", "per_frame"], description = "how the focal length is shared across frames when no camera is given" }
+params.precision = { type = "str", default = "fp16", choices = ["fp16", "fp32"], description = "inference dtype on GPU (CPU always fp32)" }
+
+[[tests]]
+name = "image"
+task = "estimate_depth"
+timeout_sec = 600
+inputs = { image = "tests/fixture/bedroom/000000.jpg" }
+[[tests.checks]]
+output = "depth"
+field = "valid_ratio"
+min = 0.99
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.4
+max = 3.1
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 700
+max = 900
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/bedroom0_depth.npy"
+max = 0.02
+
+[[tests]]
+name = "image_known_camera"
+task = "estimate_depth"
+timeout_sec = 600
+inputs = { image = "tests/fixture/bedroom/000000.jpg", camera = "tests/fixture/bedroom_camera.json" }
+[[tests.checks]]
+output = "camera"
+field = "fx"
+eq = 1000.0
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 3.1
+max = 3.8
+
+[[tests]]
+name = "seq"
+task = "estimate_depth_seq"
+timeout_sec = 600
+inputs = { frames = "tests/fixture/bedroom" }
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.4
+max = 3.1
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 700
+max = 900

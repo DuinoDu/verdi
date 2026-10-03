@@ -1,0 +1,148 @@
+name = "oneposeviagen"
+version = "0.1.0"
+description = """
+OnePoseViaGen 3D-generation stage: one image + object mask -> textured
+mesh of the object (glb), with the generators shipped by OnePoseViaGen:
+Hi3DGen_Color (TRELLIS-based, for fully visible objects) and Amodal3R
+(TRELLIS-based amodal completion, for partly occluded objects).
+Pose / scale estimation of the OnePoseViaGen pipeline are NOT part of
+this node (use the foundationpose node with the generated mesh, and a
+metric depth/size measurement to scale it).
+Generated meshes are NOT metric: normalised to fit in the [-0.5, 0.5]^3
+cube, +Y up, object front facing +Z (glTF convention).
+Licence: OnePoseViaGen code Apache-2.0 (vendors TRELLIS MIT, Amodal3R);
+weights ZhengGeng/OnePoseViaGen; DINOv2 Apache-2.0; nvdiffrast NVIDIA
+Source Code License (non-commercial); diff-gaussian-rasterization
+(Inria/MPII, non-commercial research licence).
+"""
+
+[upstream]
+repo = "https://github.com/GZWSAMA/OnePoseviaGen.git"
+commit = "ecf41c5ba1c275556782220a16ab043f0d7e9a0f"
+patches = [
+  # drop the training-only `from deepspeed.ops.adam import FusedAdam`
+  "patches/no_deepspeed.patch",
+]
+
+[weights]
+onepose = { hf = "ZhengGeng/OnePoseViaGen", revision = "bba5c451b94d8d3531fba1f8d0d6952cf9b608d7", files = ["Hi3DGen_Color/pipeline.json", "Hi3DGen_Color/ckpts/ss_dec_conv3d_16l8_fp16.*", "Hi3DGen_Color/ckpts/ss_flow_normal_dit_L_16l8_fp16.*", "Hi3DGen_Color/ckpts/slat_dec_gs_swin8_B_64l8gs32_fp16.*", "Hi3DGen_Color/ckpts/slat_dec_mesh_swin8_B_64l8m256c_fp16.*", "Hi3DGen_Color/ckpts/slat_flow_img_dit_L_64l8p2_fp16.*", "Amodal3R/pipeline.json", "Amodal3R/Amodal3R_ckpts/*"] }
+# DINOv2 ViT-L/14 + registers, loaded with torch.hub from a pinned local copy of the dinov2 repo
+dinov2_ckpt = { url = "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_reg4_pretrain.pth", sha256 = "36e4deffbaef061a2576705b0c36f93621e2ae20bf6274694821b0b492551b51" }
+dinov2_repo = { url = "https://github.com/facebookresearch/dinov2/archive/7764ea0f912e53c92e82eb78a2a1631e92725fc8.zip", archive = "zip", files_sha256 = { "dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8/hubconf.py" = "c1f5090e78ff940b72c076d2bf9c0310d1707c946b3d10e2d6f2b0bdf56a6f64" } }
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 20
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+MAX_JOBS = "16"
+CC = "gcc"      # host `c++` is clang 11
+CXX = "g++"
+
+[run.env]
+ATTN_BACKEND = "xformers"
+SPCONV_ALGO = "native"
+
+[setup]
+commands = [
+  "python -c 'import torch, spconv.pytorch, xformers.ops, nvdiffrast.torch, diff_gaussian_rasterization; print(\"extensions ok\")'",
+]
+
+[run]
+timeout_sec = 3600
+
+[tasks.generate]
+description = """
+Generate a textured mesh of a fully visible object (Hi3DGen_Color, as in
+OnePoseViaGen for non-occluded objects). Inputs: RGB image + object mask
+(non-zero, or id == mask_id), or an RGBA cut-out without mask. The object
+is cropped to 1.2x its mask box and resized to 518 px, so its position
+in the image does not matter. Texture is baked from the generated
+Gaussians (100 views). ~1 min on H20.
+"""
+inputs.image = { type = "image", description = "RGB photo (with `mask`) or RGBA cut-out" }
+inputs.mask = { type = "mask", optional = true, description = "object mask (non-zero = object, or id == mask_id)" }
+outputs.mesh = { type = "mesh", description = "textured glb, normalised units (fits in [-0.5,0.5]^3), +Y up" }
+params.mask_id = { type = "int", default = 0, description = "if > 0, only this instance id of `mask` is the object" }
+params.seed = { type = "int", default = 42, description = "random seed" }
+params.ss_steps = { type = "int", default = 12, description = "sparse-structure sampling steps (OnePoseViaGen default 12)" }
+params.ss_guidance = { type = "float", default = 7.5, description = "sparse-structure CFG strength" }
+params.slat_steps = { type = "int", default = 25, description = "structured-latent sampling steps (OnePoseViaGen default 25)" }
+params.slat_guidance = { type = "float", default = 15.0, description = "structured-latent CFG strength (OnePoseViaGen default 15)" }
+params.simplify = { type = "float", default = 0.95, description = "fraction of triangles removed before UV unwrap (upstream to_trimesh default)" }
+params.texture_size = { type = "int", default = 1024, choices = [512, 1024, 2048], description = "baked texture resolution" }
+
+[tasks.generate_amodal]
+description = """
+Generate a complete textured mesh of a PARTLY OCCLUDED object (Amodal3R,
+as in OnePoseViaGen with is_occluded=true). Inputs: RGB image, visible
+object mask, and the occluders as either an `occluder` mask (non-zero =
+pixels covered by something in front of the object) or a `depth` map
+(occluders = pixels in the object's box closer than the object's 90th
+depth percentile, OnePoseViaGen generate_final_mask). The crop is a
+square of 1.2x the box of object+occluders, resized to 518 px.
+"""
+inputs.image = { type = "image", description = "RGB photo" }
+inputs.mask = { type = "mask", description = "visible part of the object (non-zero, or id == mask_id)" }
+inputs.occluder = { type = "mask", optional = true, description = "pixels where an occluder hides the object (non-zero)" }
+inputs.depth = { type = "depth", optional = true, description = "metric depth aligned with the image, used to find occluders when `occluder` is not given" }
+outputs.mesh = { type = "mesh", description = "textured glb, normalised units (fits in [-0.5,0.5]^3), +Y up" }
+outputs.final_mask = { type = "image", description = "condition mask given to Amodal3R (crop, 518 px): 255 background, 188 object, 0 occluder" }
+params.mask_id = { type = "int", default = 0, description = "if > 0, only this instance id of `mask` is the object" }
+params.seed = { type = "int", default = 42, description = "random seed" }
+params.ss_steps = { type = "int", default = 12, description = "sparse-structure sampling steps" }
+params.ss_guidance = { type = "float", default = 7.5, description = "sparse-structure CFG strength" }
+params.slat_steps = { type = "int", default = 25, description = "structured-latent sampling steps" }
+params.slat_guidance = { type = "float", default = 15.0, description = "structured-latent CFG strength" }
+params.simplify = { type = "float", default = 0.95, description = "fraction of triangles removed before UV unwrap" }
+params.texture_size = { type = "int", default = 1024, choices = [512, 1024, 2048], description = "baked texture resolution" }
+
+[[tests]]
+name = "generate"
+task = "generate"
+timeout_sec = 1500
+inputs = { image = "tests/fixture/truck.jpg", mask = "tests/fixture/truck_mask.png" }
+[[tests.checks]]
+output = "mesh"
+field = "textured"
+eq = true
+[[tests.checks]]
+output = "mesh"
+field = "faces"
+min = 5000
+[[tests.checks]]
+output = "mesh"
+field = "max_extent"
+min = 0.5
+max = 1.01
+
+[[tests]]
+name = "generate_amodal"
+task = "generate_amodal"
+timeout_sec = 1500
+inputs = { image = "tests/fixture/truck_occluded.jpg", mask = "tests/fixture/truck_occluded_mask.png", occluder = "tests/fixture/occluder_mask.png" }
+[[tests.checks]]
+output = "mesh"
+field = "textured"
+eq = true
+[[tests.checks]]
+output = "mesh"
+field = "faces"
+min = 5000
+[[tests.checks]]
+output = "mesh"
+field = "max_extent"
+min = 0.5
+max = 1.01
+
+[[known_issues]]
+summary = "Background removal (BiRefNet) of upstream preprocess is never used"
+fix = "Masks are required (or an RGBA cut-out); get them from sam2 / langsam / hunyuan3d rembg"
+
+[[known_issues]]
+summary = "Licences: nvdiffrast and diff-gaussian-rasterization are non-commercial; check ZhengGeng/OnePoseViaGen and Amodal3R weight terms"
+fix = "Review SimFoundry THIRD_PARTY_LICENSES.md section 6 and upstream licences before commercial use"

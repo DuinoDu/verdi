@@ -1,0 +1,138 @@
+name = "foundpose"
+version = "0.1.0"
+description = """
+FoundPose (Meta, ECCV 2024): training-free model-based 6D pose of an unseen
+object from a single RGB image, a mask (or box) of the object, the camera
+intrinsics and the object mesh. The mesh is "onboarded" by rendering
+templates and building a DINOv2 feature representation (PCA + visual
+words); the query crop is matched to the best templates and the pose is
+solved with PnP-RANSAC. Coarse stage only (upstream does not release the
+featuremetric refinement). RGB only: no depth needed. Poses are T_cam_obj
+in metres relative to the mesh frame.
+"""
+
+[upstream]
+repo = "https://github.com/facebookresearch/foundpose.git"
+commit = "3103473bfa3985fdf563bb31cefc0cae8f979ae0"
+submodules = true   # external/dinov2 (e1277af2), external/bop_toolkit
+patches = ["patches/renderer_zfar.patch"]  # pyrender zfar 3000 m -> depth all = znear
+
+[weights]
+# DINOv2 ViT-S/14 with registers (the extractor of the released configs)
+vits14_reg = { url = "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_reg4_pretrain.pth", sha256 = "f433177089a681826f849f194ece3bb48f4d63fb38d32fc837e3dc7a4e5641fb" }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+# pyrender offscreen rendering through EGL (NVIDIA EGL driver)
+libs = ["libEGL.so.1", "libGL.so.1", "libOpenGL.so.0"]
+disk_gb = 10
+
+[setup]
+# core checkout() returns early when a fresh clone is already at `commit`
+# and then never initialises submodules; do it explicitly.
+commands = ["git -c safe.directory='*' -c protocol.file.allow=always submodule update --init --recursive && test -f external/dinov2/dinov2/hub/backbones.py"]
+
+[run]
+timeout_sec = 3600
+# PYGLET_HEADLESS: pyrender imports pyglet, whose X11 backend needs libXrender
+env = { PYOPENGL_PLATFORM = "egl", PYGLET_HEADLESS = "true" }
+
+[tasks.render_templates]
+description = """
+Onboard a mesh: render FoundPose templates (fibonacci view sphere x
+in-plane rotations, pyrender, 4x SSAA, object-centred 420x420 crops) and,
+by default, build the DINOv2 object representation used by `estimate`.
+Output dir layout:
+  metadata.json  list of {id, rgb, mask, depth (relative paths),
+                 T_cam_obj (4x4, metres, mesh -> template camera),
+                 K (3x3 of the 420x420 crop camera), width, height}
+  config.json    render options, mesh diameter, repre options
+  rgb/%06d.png   template RGB (black background)
+  mask/%06d.png  template object mask (1 = object)
+  depth/%06d.npy template depth, float32 metres
+  repre.pth      FoundPose object representation (upstream torch format;
+                 only with build_repre=true)
+Default settings (57 views x 14 in-plane = 798 templates) take ~1-3 min.
+"""
+inputs.mesh = { type = "mesh", description = "object mesh in metres (glb preferred, textured)" }
+inputs.camera = { type = "camera", optional = true, description = "camera the templates imitate (default: LM-O 640x480 camera); only affects perspective" }
+outputs.templates = { type = "dir", description = "templates dir (layout above); pass it to estimate" }
+outputs.masks = { type = "mask_seq", description = "the template masks (templates/mask)" }
+params.num_viewpoints = { type = "int", default = 57, description = "views on the sphere (odd; upstream 57)" }
+params.num_inplane_rotations = { type = "int", default = 14, description = "in-plane rotations per view (upstream 14)" }
+params.distance_m = { type = "float", default = 0.0, description = "camera distance of the view sphere in metres; 0 = 4 x mesh diameter" }
+params.ssaa_factor = { type = "float", default = 4.0, description = "supersampling factor for rendering" }
+params.render_workers = { type = "int", default = 0, description = "parallel render processes (0 = auto, up to 16)" }
+params.build_repre = { type = "bool", default = true, description = "also build repre.pth (DINOv2 features, PCA, visual words)" }
+params.extractor = { type = "str", default = "vits14-reg", choices = ["vits14-reg"], description = "DINOv2 extractor (ViT-S/14-reg, layer 9)" }
+params.pca_components = { type = "int", default = 256, description = "PCA dims of the features" }
+params.cluster_num = { type = "int", default = 2048, description = "number of visual words (k-means)" }
+
+[tasks.estimate]
+description = """
+Estimate the 6D pose of one object instance in an RGB image. Give the
+object region as a mask (preferred) or a bbox_set (highest-score box; the
+whole box is then used as object region, which is less accurate). Give the
+object either as `templates` from render_templates (fast; repre.pth is
+reused when its options match, else rebuilt) or as `mesh` (templates are
+rendered on the fly with the default settings, ~1-3 min extra).
+Returns the best coarse pose over the top retrieved templates
+(score = number of PnP inliers).
+"""
+inputs.image = { type = "image", description = "RGB query image" }
+inputs.camera = { type = "camera", description = "intrinsics of the image (distortion ignored)" }
+inputs.mask = { type = "mask", optional = true, description = "object mask (non-zero, or param mask_id)" }
+inputs.bbox = { type = "bbox_set", optional = true, description = "object box (used when no mask; with a mask it sets the crop box)" }
+inputs.templates = { type = "dir", optional = true, description = "output of render_templates" }
+inputs.mesh = { type = "mesh", optional = true, description = "mesh in metres, used when no templates are given" }
+outputs.poses = { type = "pose_set", description = "one pose T_cam_obj (metres); extra fields template_id, num_corresp" }
+params.mask_id = { type = "int", default = 0, description = "instance id in the mask; 0 = all non-zero pixels" }
+params.label = { type = "str", default = "object", description = "label written into the pose" }
+params.top_n_templates = { type = "int", default = 5, description = "templates retrieved by tf-idf (one PnP each)" }
+params.top_k_buddies = { type = "int", default = 300, description = "cyclic-buddy matches kept per template" }
+params.pnp_ransac_iter = { type = "int", default = 400, description = "RANSAC iterations" }
+params.pnp_inlier_thresh = { type = "float", default = 10.0, description = "RANSAC reprojection threshold (px, crop image)" }
+params.extractor = { type = "str", default = "vits14-reg", choices = ["vits14-reg"], description = "must match the templates repre" }
+params.pca_components = { type = "int", default = 256, description = "PCA dims (repre option)" }
+params.cluster_num = { type = "int", default = 2048, description = "visual words (repre option)" }
+
+[[tests]]
+name = "render_templates"
+task = "render_templates"
+timeout_sec = 900
+inputs = { mesh = "tests/fixture/mustard_mesh.glb" }
+params = { num_viewpoints = 5, num_inplane_rotations = 2, build_repre = false }
+[[tests.checks]]
+output = "masks"
+field = "nonempty_frames"
+eq = 10
+[[tests.checks]]
+output = "masks"
+metric = "mask_iou"
+expected = "tests/expected/mustard_template_masks"
+min = 0.98
+
+[[tests]]
+name = "estimate"
+task = "estimate"
+timeout_sec = 1800
+inputs = { image = "tests/fixture/mustard_rgb.jpg", mask = "tests/fixture/mustard_mask.png", camera = "tests/fixture/mustard_camera.json", mesh = "tests/fixture/mustard_mesh.glb" }
+[[tests.checks]]
+output = "poses"
+field = "count"
+eq = 1
+# Checked against the independent RGB-D FoundationPose pose of the same frame
+# (fp_reference_pose.json). FoundPose is RGB-only (depth along the ray is
+# ambiguous) and not bit-reproducible on GPU (k-means / RANSAC / rendering):
+# two the RTX 5090 host runs gave 3.3 cm / 6.3 deg and 1.9 cm / 8.5 deg vs that pose.
+[[tests.checks]]
+output = "poses"
+metric = "pose_translation_err"
+expected = "tests/expected/fp_reference_pose.json"
+max = 0.06
+[[tests.checks]]
+output = "poses"
+metric = "pose_rotation_err_deg"
+expected = "tests/expected/fp_reference_pose.json"
+max = 15.0

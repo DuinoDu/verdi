@@ -1,0 +1,127 @@
+name = "void"
+version = "0.1.0"
+description = """
+VOID (Netflix) video object removal / inpainting on CogVideoX-Fun-V1.5-5b-InP,
+as used by SimFoundry's auto-background flow: remove the masked objects from
+a frame sequence and hallucinate the background behind them (two passes:
+Pass 1 inpainting, Pass 2 warped-noise refinement for temporal consistency).
+"""
+
+[upstream]
+repo = "https://github.com/netflix/void-model"
+commit = "e3914f8f551dd4b880661991fd6b28cd1699a97a"
+patches = ["patches/void-model.patch"]
+
+[weights.base]
+hf = "alibaba-pai/CogVideoX-Fun-V1.5-5b-InP"
+revision = "85e5c23b6e864261d86dd9f26cd1cd96621d811e"
+
+[weights.void]
+hf = "netflix/void-model"
+revision = "1a0ed95d55ff6a85b7501ce82cde21d3be695943"
+files = ["void_pass1.safetensors", "void_pass2.safetensors"]
+
+[weights.raft]
+# torchvision raft_large (C_T_SKHT_V2) used by Go-with-the-Flow warped noise
+# in Pass 2; torchvision would otherwise download it at run time.
+url = "https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth"
+sha256 = "ff5fadd56d26b40647388883af1547351ea17868b765c05b27231e72dd16a322"
+
+[weights.font]
+# Google font "Zilla Slab" (OFL): CommonSource noise_warp labels its debug
+# video with rp.labeled_images(font="G:Zilla Slab"), which downloads it from
+# fonts.googleapis.com at run time; setup links this file into rp's font cache.
+url = "https://fonts.gstatic.com/s/zillaslab/v12/dFa6ZfeM_74wlPZtksIFajo6-A.ttf"
+sha256 = "caf32b2d9b85f9f4f6121618eead39da6fba5570826fe3ea0b4779895c49d941"
+
+[system]
+gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+binaries = ["git"]  # ffmpeg: the imageio-ffmpeg static binary, linked into the venv by setup
+disk_gb = 60
+
+[run]
+timeout_sec = 14400
+
+[setup]
+commands = [
+  # ffmpeg CLI for entry.py / mediapy / rp: the static binary shipped by the
+  # pinned imageio-ffmpeg wheel, linked into the venv bin (hosts may lack ffmpeg).
+  "ln -sf $(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())') {venv}/bin/ffmpeg && {venv}/bin/ffmpeg -version | head -1",
+  # make_warped_noise.py does rp.git_import('CommonSource'), which git-clones
+  # RyannDaGreat/CommonSource (unpinned) into rp/git at run time. Pre-clone
+  # it at a pinned commit so runs are offline and reproducible.
+  # rp font cache for "G:Zilla Slab" (rp/downloads/google_fonts/Zilla Slab/)
+  "F=\"$(python -c 'import rp,os;print(os.path.dirname(rp.__file__))')/downloads/google_fonts/Zilla Slab\"; rm -rf \"$F\" && mkdir -p \"$F\" && ln -s {weights}/font/dFa6ZfeM_74wlPZtksIFajo6-A.ttf \"$F/\" && ls \"$F\"",
+  "D=$(python -c 'import rp,os;print(os.path.join(os.path.dirname(rp.__file__),\"git\"))')/CommonSource; if [ \"$(git -C $D rev-parse HEAD 2>/dev/null)\" != 005a67a3efdfcb30491515955101d0a8cfdd62d6 ]; then rm -rf $D && mkdir -p $(dirname $D) && git clone --filter=blob:none https://github.com/RyannDaGreat/CommonSource $D && git -C $D checkout -q 005a67a3efdfcb30491515955101d0a8cfdd62d6; fi; git -C $D rev-parse HEAD",
+]
+
+[tasks.inpaint]
+description = """
+Remove objects from a frame sequence: pixels where `masks` is nonzero are
+erased and re-synthesised as background consistent over time (VOID quadmask
+value 0). Optional `affected` marks regions influenced by the removed objects
+(shadows, things they push; quadmask 127, overlap 63) that VOID may also
+change; everything else is kept (255). Frames are resized to height x width
+(default 672x384, the SimFoundry auto-bg resolution) for the model and the
+result is resized back to the input resolution (the whole frame is
+re-generated through the VAE, not only the masked area). Any length works:
+Pass 1 runs in <=173-frame chunks (>=30 overlap) and Pass 2 in 85-frame
+windows, cross-faded exactly like SimFoundry 2_run_void_pass1.py /
+3_run_void_pass2.py. `prompt` describes the background after removal
+(SimFoundry: "An empty <floor>. No objects on top of the <floor>.").
+Runtime on H20: ~5-10 min per 85-frame window per pass (two model loads).
+"""
+inputs.frames = { type = "image_seq", description = "RGB frames (video input is split automatically)" }
+inputs.masks = { type = "mask_seq", description = "nonzero = object to remove, one mask per frame" }
+inputs.affected = { type = "mask_seq", optional = true, description = "nonzero = region affected by the removed objects (quadmask 127)" }
+outputs.frames = { type = "image_seq", description = "inpainted frames at the input resolution" }
+params.prompt = { type = "str", default = "A clean, static background scene. No objects.", description = "text description of the background after removal" }
+params.passes = { type = "int", default = 2, choices = [1, 2], description = "2 = Pass 1 + warped-noise Pass 2 (SimFoundry); 1 = Pass 1 only (faster, less temporally consistent)" }
+params.dilate_px = { type = "int", default = 12, description = "dilate the remove mask by this many pixels first (SimFoundry 12; VOID itself does not dilate quadmasks)" }
+params.guidance_scale = { type = "float", default = 8.0, description = "classifier-free guidance (SimFoundry 8.0)" }
+params.num_inference_steps = { type = "int", default = 50, description = "Pass 2 denoising steps (Pass 1 upstream hard-codes 30)" }
+params.seed = { type = "int", default = 42 }
+params.height = { type = "int", default = 384, description = "model resolution height (multiple of 16)" }
+params.width = { type = "int", default = 672, description = "model resolution width (multiple of 16)" }
+params.fps = { type = "int", default = 12, description = "fps of the intermediate videos (SimFoundry 12)" }
+params.gpu_memory_mode = { type = "str", default = "model_cpu_offload", choices = ["model_full_load", "model_cpu_offload", "sequential_cpu_offload", "model_cpu_offload_and_qfloat8"], description = "Pass 1 memory mode (SimFoundry: sequential_cpu_offload for 24 GB GPUs; same numerics as model_cpu_offload, slower). Pass 2 always uses model_cpu_offload upstream" }
+
+[[known_issues]]
+summary = "Licences: VOID code Apache-2.0; CogVideoX-Fun / VOID weights under the CogVideoX License (not Apache), netflix/void-model is public on HF (not gated as of 2026-10; SimFoundry THIRD_PARTY_LICENSES.md #9 and section 6)"
+fix = "accept the model terms on Hugging Face and check the CogVideoX License before commercial use"
+
+[[known_issues]]
+summary = "Pass 1 upstream ignores num_inference_steps (predict_v2v.py hard-codes 30 steps)"
+fix = "kept as upstream/SimFoundry; the param only affects Pass 2"
+
+[[known_issues]]
+summary = "Chunk 0 has no predecessor, so the first ~5 frames may keep CogVideoX warm-up artefacts (SimFoundry warns about the same)"
+fix = "prepend a few extra frames if the sequence start matters"
+
+[[tests]]
+name = "bigben"
+task = "inpaint"
+timeout_sec = 5400
+inputs = { frames = "tests/fixture/bigben", masks = "tests/fixture/bigben_masks", affected = "tests/fixture/bigben_affected" }
+params = { prompt = "a video of buildings refelcting on a calm river" }
+[[tests.checks]]
+output = "frames"
+field = "count"
+eq = 25
+[[tests.checks]]
+output = "frames"
+field = "width"
+eq = 544
+[[tests.checks]]
+output = "frames"
+field = "height"
+eq = 360
+# reference: the visually verified the RTX 5090 host run (tower + reflection removed),
+# stored as JPEG q95 (~1.4 MB); two the RTX 5090 host re-runs scored 28.4 and 26.9 dB (diffusion is not
+# bit-exact across runs/GPUs), threshold 25 dB leaves slack
+[[tests.checks]]
+output = "frames"
+metric = "image_psnr"
+expected = "tests/expected/bigben_inpainted"
+min = 25.0

@@ -1,0 +1,12 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:12:05+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+upstream_commit = "a37ef721012dea0f29c0fcfff2d525023b4e854a"
+env_lock = "sha256:1f58bc0b5e4f2495a521c20d284129fc7e3b120b734f797706239e76a48583b8"
+untested_tasks = [
+]
+cases = [
+  "PASS splat (4.27s): PASS info:num_gaussians=8000 {'eq': 8000}; PASS info:sh_degree=3 {'eq': 3}; PASS info:up_axis='Z' {'eq': 'Z'}; PASS info:prims.2.type='Volume' {'eq': 'Volume'}; PASS info:bytes=949481 {'min': 500000}",
+]

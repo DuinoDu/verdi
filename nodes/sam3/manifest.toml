@@ -1,0 +1,131 @@
+name = "sam3"
+version = "0.1.0"
+description = """
+Meta SAM 3 (Segment Anything with Concepts): open-vocabulary, text-prompted
+instance segmentation of images ("find every <noun phrase>") and concept
+tracking through frame sequences, plus SAM-style point/box prompting of
+single objects. One model checkpoint (sam3.pt, ~3.4 GB) serves all tasks.
+"""
+
+[weights]
+# Official HF repo facebook/sam3 is gated and the H20 HF account is not in
+# its authorised list (403). Mirror: ModelScope facebook/sam3 (revision
+# f8ee5d16d5c30d0e87b1d22cbd358ce97761df56), pinned by the sha256 that the
+# official HF repo reports for sam3.pt (LFS oid), so the file is byte-identical.
+sam3 = { url = "https://modelscope.cn/models/facebook/sam3/resolve/master/sam3.pt", sha256 = "9999e2341ceef5e136daa386eecb55cb414446a00ac2b55eb2dfd2f7c3cf8c9e", filename = "sam3.pt" }
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 20
+
+[run]
+timeout_sec = 1800
+
+[tasks.segment_text]
+description = """
+Text-prompted instance segmentation of one image (SAM 3 `Sam3Processor.
+set_text_prompt`, the call SimFoundry uses). `text` lists short noun
+phrases separated by '.' or ',' (e.g. "truck. tire"); each phrase is one
+SAM 3 query on the shared image features and returns ALL instances of that
+concept above `confidence_threshold`. Instance id i in the mask is
+boxes[i-1] (sorted by decreasing score); where masks overlap the smaller
+mask wins. Sidecar mask.json = {id: {label, score}}. No detection gives an
+all-zero mask and an empty box list (valid result).
+"""
+inputs.image = { type = "image" }
+outputs.mask = { type = "mask", description = "instance id i = boxes[i-1], label = phrase" }
+outputs.boxes = { type = "bbox_set", description = "pixel xyxy box per instance, label = phrase, score = detection*presence prob, id = mask id" }
+params.text = { type = "str", description = "noun phrases separated by '.' or ','; e.g. 'truck. tire'" }
+params.confidence_threshold = { type = "float", default = 0.5, description = "keep instances with score above this (upstream default 0.5; SimFoundry uses 0.4-0.5)" }
+
+[tasks.segment_prompts]
+description = """
+SAM-style interactive segmentation of one image from point/box prompts
+(SAM 3 instance-interactivity head, `predict_inst`). Each obj_id in the
+prompt set (points and/or one box, frame fields ignored) becomes one
+instance id in the mask; one mask per object, no concept search.
+"""
+inputs.image = { type = "image" }
+inputs.prompts = { type = "prompt_set", description = "points (xy px, positive) and/or boxes (xyxy px) with obj_id" }
+outputs.mask = { type = "mask", description = "instance id = obj_id; sidecar {id: {score}}" }
+params.multimask = { type = "bool", default = false, description = "pick best of 3 masks per object (useful for a single ambiguous point)" }
+
+[tasks.track_text]
+description = """
+Concept tracking in a frame sequence (SAM 3 video predictor, as in
+SimFoundry `predict_video_segmentation`): detect every instance of each
+phrase on `prompt_frame` and later frames and track them through the
+sequence (propagation forward and backward). Ids are tracked identities,
+consistent across frames; phrases are run one after another and get
+disjoint id ranges. labels.json = {id: {label, score (mean prob), frames}}.
+"""
+inputs.frames = { type = "image_seq" }
+outputs.masks = { type = "mask_seq", description = "one mask per frame, ids = tracked instances" }
+params.text = { type = "str", description = "noun phrases separated by '.' or ','; e.g. 'child'" }
+params.confidence_threshold = { type = "float", default = 0.5, description = "output probability threshold for detections/tracks (upstream default 0.5)" }
+params.prompt_frame = { type = "int", default = 0, description = "frame index the text prompt is added on" }
+
+[[tests]]
+name = "text"
+task = "segment_text"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { text = "truck. tire" }
+[[tests.checks]]
+output = "boxes"
+field = "labels"
+eq = ["tire", "truck"]
+[[tests.checks]]
+output = "boxes"
+metric = "bbox_iou"
+expected = "tests/expected/truck_text_boxes.json"
+min = 0.85
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_text_mask.png"
+min = 0.9
+
+[[tests]]
+name = "prompts"
+task = "segment_prompts"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg", prompts = "tests/fixture/truck_prompts.json" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+eq = 2
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_prompts_mask.png"
+min = 0.9
+
+[[tests]]
+name = "track"
+task = "track_text"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom" }
+params = { text = "child" }
+[[tests.checks]]
+output = "masks"
+field = "nonempty_frames"
+eq = 6
+[[tests.checks]]
+output = "masks"
+field = "instances"
+eq = 2
+[[tests.checks]]
+output = "masks"
+metric = "mask_iou"
+expected = "tests/expected/bedroom_child"
+min = 0.85
+
+[[known_issues]]
+summary = "Weights come from a mirror: official HF facebook/sam3 is gated (H20 account not authorised)"
+fix = "sam3.pt is downloaded from ModelScope facebook/sam3 and verified against the official sha256 9999e234... (byte-identical); with HF access granted, hf = 'facebook/sam3' revision 3c879f39 can be used instead"
+
+[[known_issues]]
+summary = "Licence: SAM 3 code and weights are under the SAM License (Meta), not MIT/Apache"
+fix = "Check the SAM License terms (redistribution / acceptable use) before shipping weights or outputs; the official HF repo is gated behind accepting it"

@@ -1,0 +1,105 @@
+name = "foundation_stereo"
+version = "0.1.0"
+description = """
+FoundationStereo (NVIDIA, CVPR 2025): zero-shot stereo matching. From a
+RECTIFIED stereo pair (left + right image, same size, horizontal epipolar
+lines) it predicts the left-image disparity in pixels; the node converts
+it to METRIC depth (metres) with depth = fx * baseline / disparity using
+the left camera intrinsics and the stereo baseline. SimFoundry uses it as
+the `fs` depth backend for ZED stereo captures. ViT-L checkpoint 23-51-11.
+"""
+
+[upstream]
+repo = "https://github.com/NVlabs/FoundationStereo.git"
+commit = "6e8806816b533e4d13ddbb95ffa907b797060a62"
+patches = ["patches/offline_init.patch"]
+
+[weights]
+# The official weights are a Google Drive folder (unversioned, see SimFoundry
+# download_checkpoints.sh). This HF mirror holds the same file: sha256 of
+# model_best_bp2.pth = 60e79bde9c6a00acea551625ff814fe06e5a6806e2c0c9829baee248de87c5f1
+# (identical in 5 independent HF mirrors).
+vitl = { hf = "pablovela5620/foundation-stereo", revision = "560e90779b20f39db3b676066def08001040ebfc", files = ["cfg.yaml", "model_best_bp2.pth"] }
+
+[system]
+gpu = { min_vram_gb = 12, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 8
+
+[run]
+timeout_sec = 1800
+
+[tasks.estimate_depth]
+description = """
+Metric depth of the LEFT image from a rectified stereo pair. `camera` is
+the rectified left intrinsics at the image resolution (zero distortion);
+`baseline` is the distance between the two camera centres in metres.
+Upstream output is disparity in pixels (left x minus matching right x);
+depth = fx * baseline / disparity. Pixels are set to 0 (invalid) where the
+match falls outside the right image (remove_invisible, as SimFoundry),
+where disparity <= 0, or where depth > max_depth. With scale < 1 the
+network runs on downscaled images (SimFoundry uses scale 0.5) and the
+disparity is resized back to the input resolution (values rescaled).
+"""
+inputs.left = { type = "image", description = "rectified left image (RGB)" }
+inputs.right = { type = "image", description = "rectified right image, same size" }
+inputs.camera = { type = "camera", description = "rectified LEFT intrinsics at the image resolution, dist = 0" }
+outputs.depth = { type = "depth", description = "metric depth of the left image in metres, 0 = invalid" }
+outputs.disparity_px = { type = "file", description = ".npy float32 HxW raw disparity in PIXELS at the input resolution (left x - right x; larger = closer), before any masking" }
+params.baseline = { type = "float", description = "stereo baseline in metres (required, e.g. 0.063 for the upstream demo, ~0.12 for a ZED 2)" }
+params.scale = { type = "float", default = 1.0, description = "inference downscale factor in (0, 1] (SimFoundry 0.5); output stays at input resolution" }
+params.valid_iters = { type = "int", default = 32, description = "GRU refinement iterations (upstream/SimFoundry 32)" }
+params.hiera = { type = "bool", default = false, description = "hierarchical coarse-to-fine inference, only for > 1K images" }
+params.remove_invisible = { type = "bool", default = true, description = "invalidate pixels whose match is outside the right image" }
+params.max_depth = { type = "float", default = 100.0, description = "depth above this (metres) is set to 0 (SimFoundry clips at 100 m)" }
+
+[[known_issues]]
+summary = "FoundationStereo code and weights: NVIDIA Source Code License, NON-COMMERCIAL (SimFoundry THIRD_PARTY_LICENSES row 80); official weights are an unversioned Google Drive folder"
+fix = "research use only; weights pinned via an HF mirror whose sha256 matches 5 independent mirrors"
+
+[[known_issues]]
+summary = "Inputs must be rectified; unrectified or swapped pairs give garbage disparity"
+fix = "rectify with the stereo calibration first; left must be the reference camera"
+
+[[tests]]
+name = "demo_pair"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { left = "tests/fixture/left.png", right = "tests/fixture/right.png", camera = "tests/fixture/camera.json" }
+params = { baseline = 0.063 }
+[[tests.checks]]
+output = "depth"
+field = "valid_ratio"
+min = 0.88
+max = 0.93
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 0.48
+max = 0.53
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/demo_depth.npy"
+max = 0.01
+[[tests.checks]]
+output = "disparity_px"
+metric = "depth_abs_rel"
+expected = "tests/expected/demo_disparity_px.npy"
+max = 0.01
+
+[[tests]]
+name = "demo_pair_half_scale"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { left = "tests/fixture/left.png", right = "tests/fixture/right.png", camera = "tests/fixture/camera.json" }
+params = { baseline = 0.063, scale = 0.5 }
+[[tests.checks]]
+output = "depth"
+field = "width"
+eq = 960
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/demo_depth.npy"
+max = 0.02

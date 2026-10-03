@@ -1,0 +1,25 @@
+[project]
+name = "pdebug-node-langsam"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "transformers==4.57.1",
+  "lang-sam",
+  "sam-2",
+  "pillow",
+  "numpy<2.3",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+lang-sam = { git = "https://github.com/luca-medeiros/lang-segment-anything.git", rev = "918043ed4666eea04da88aa179eb8d27ef4b1a1d" }
+# same URL + commit that lang-sam requirements.txt pins (uv needs identical URLs)
+sam-2 = { git = "https://github.com/facebookresearch/segment-anything-2", rev = "c2ec8e14a185632b0a5d8b161928ceb50197eddc" }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 capable); no extra index needed.

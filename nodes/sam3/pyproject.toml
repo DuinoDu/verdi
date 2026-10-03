@@ -1,0 +1,29 @@
+[project]
+name = "pdebug-node-sam3"
+version = "0.1.0"
+requires-python = "==3.11.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "sam3",
+  # runtime imports of sam3 not declared in its core deps
+  "setuptools<81",          # model_builder imports pkg_resources
+  "einops",
+  "scipy",
+  "psutil",
+  "pycocotools",            # same extras SimFoundry installs (decord + pycocotools)
+  "decord",                 # mp4 loading in the video predictor
+  "opencv-python-headless",
+  "pillow",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+# same commit SimFoundry pins (install_simfoundry.sh SAM3_COMMIT)
+sam3 = { git = "https://github.com/facebookresearch/sam3.git", rev = "46957e47805eaa273f4aa7bbbd25a88bca9108ce" }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 capable); no extra index needed.

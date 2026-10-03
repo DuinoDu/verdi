@@ -1,0 +1,12 @@
+# Test fixtures and reference outputs of nodes are stored with git LFS.
+nodes/*/tests/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.png filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.npy filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.npz filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.glb filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.ply filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.obj filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.exr filter=lfs diff=lfs merge=lfs -text
+nodes/*/tests/**/*.usdz filter=lfs diff=lfs merge=lfs -text

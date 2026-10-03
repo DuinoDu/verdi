@@ -1,0 +1,106 @@
+name = "prior_depth_anything"
+version = "0.1.0"
+description = """
+Prior-Depth-Anything (ZJU/HKU, 2025): metric depth completion. Combines an
+incomplete but metric depth prior (sparse points, a depth map with holes,
+or a low-resolution depth map; e.g. lidar, stereo, ToF or a masked
+earlier estimate) with the relative structure of a monocular model
+(Depth-Anything-V2-L inside, or a user-given geometric depth) and returns
+a dense metric depth map. SimFoundry uses it to refill depth after object
+removal (prior = scene depth with the removed region zeroed, geometric =
+DA3 depth).
+"""
+
+[upstream]
+repo = "https://github.com/SpatialVision/Prior-Depth-Anything.git"
+commit = "8c029cbca669443fe0bbf8dcefb5f91ad531084d"
+patches = ["patches/PriorDepthAnything.patch"]
+
+[weights]
+priorda = { hf = "Rain729/Prior-Depth-Anything", revision = "25b3bfcf85209fb015e3b15259f4df8b6f13bb16", files = ["depth_anything_v2_vitl.pth", "prior_depth_anything_vitb.pth", "prior_depth_anything_vitb_1_1.pth"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.8" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 6
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+FORCE_CUDA = "1"
+MAX_JOBS = "16"
+
+[run]
+timeout_sec = 1800
+
+[tasks.complete_depth]
+description = """
+Dense metric depth (metres) for an RGB image from a metric depth prior.
+`prior` is metres with 0 = unknown: either at the image resolution
+(sparse points / holes) or smaller (low-resolution depth, upsampled by the
+model; same aspect ratio). Optional `geometric` (image size, any scale,
+e.g. a depth_anything_3 / depth_pro output) replaces the internal
+Depth-Anything-V2-L relative depth in the coarse alignment stage (as in
+SimFoundry). Coarse stage: global + KNN scale/shift alignment of the
+relative depth to the prior points; fine stage: conditioned ViT-B refines
+it. Network runs near the input resolution (SimFoundry patch). With
+keep_prior=true (default, as SimFoundry) known prior pixels are copied
+into the output unchanged.
+"""
+inputs.image = { type = "image" }
+inputs.prior = { type = "depth", description = "metric prior in metres, 0 = unknown; image size (sparse / holes) or a smaller low-res map" }
+inputs.geometric = { type = "depth", optional = true, description = "optional dense depth of the same image (any scale) used instead of the built-in relative model" }
+outputs.depth = { type = "depth", description = "completed metric depth in metres, image HxW" }
+params.version = { type = "str", default = "1.0", choices = ["1.0", "1.1"], description = "1.0 = error-map condition (SimFoundry); 1.1 = sparse-mask condition (upstream default, better on dense priors)" }
+params.K = { type = "int", default = 5, description = "neighbours for KNN alignment (SimFoundry pda_K = 5); prior needs >= K valid pixels" }
+params.keep_prior = { type = "bool", default = true, description = "copy known prior pixels into the output (SimFoundry merge); ignored for low-res priors and patterns" }
+params.pattern = { type = "str", default = "", description = "optional upstream test sampling of the prior: '<N>' = keep N random prior points, 'downscale_<k>' = simulate a k-times lower-res prior; empty = use the prior as given" }
+params.double_global = { type = "bool", default = false, description = "upstream option: condition on two globally aligned maps instead of global + KNN" }
+params.seed = { type = "int", default = 0, description = "torch/numpy seed (lstsq jitter and pattern sampling are random)" }
+
+[[known_issues]]
+summary = "Code (Apache-2.0) and weights (Apache-2.0, Rain729/Prior-Depth-Anything); internal Depth-Anything-V2-L weights follow their own CC-BY-NC-4.0 licence"
+fix = "pass your own `geometric` depth for commercial pipelines and check the Depth-Anything-V2-Large licence"
+
+[[known_issues]]
+summary = "SimFoundry patch removes the fixed 518 px network size: runtime and VRAM grow with the image height"
+fix = "downscale very large images (e.g. > 2000 px) before calling"
+
+# sparse completion: 405 prior points (upstream sample-3); reference = upstream GT depth
+[[tests]]
+name = "sparse_405_points"
+task = "complete_depth"
+timeout_sec = 600
+inputs = { image = "tests/fixture/s3_rgb.png", prior = "tests/fixture/s3_prior.npy" }
+[[tests.checks]]
+output = "depth"
+field = "valid_ratio"
+min = 0.99
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 1.75
+max = 1.9
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/s3_gt.npy"
+max = 0.03
+
+# SimFoundry setting: prior = GT depth with a box hole, geometric depth given;
+# reference = GT inside the hole only (upstream sample-1)
+[[tests]]
+name = "inpaint_hole_with_geometric"
+task = "complete_depth"
+timeout_sec = 600
+inputs = { image = "tests/fixture/s1_rgb.jpg", prior = "tests/fixture/s1_prior.npy", geometric = "tests/fixture/s1_geo.npy" }
+[[tests.checks]]
+output = "depth"
+field = "valid_ratio"
+min = 0.99
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/s1_gt_hole.npy"
+max = 0.02

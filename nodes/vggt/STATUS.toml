@@ -1,0 +1,12 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-02T22:10:46+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "15df5ed7a28d1c2c07f837d9896446817dcfa727"
+upstream_commit = ""
+env_lock = "sha256:dd5c88ac530d939dfb2605ce322442f5a1f25154acaa9d9af671fa8fec28e478"
+untested_tasks = [
+]
+cases = [
+  "PASS bedroom (54.67s): PASS trajectory.count=6 {'eq': 6}; PASS depth.count=6 {'eq': 6}; PASS pointcloud.points=456876 {'min': 100000}; PASS pointcloud.points=456876 {'max': 600000}; PASS camera.fx=945.0126 {'min': 910.0, 'max': 970.0}; PASS depth.median=0.9165 {'min': 0.86, 'max': 0.97}; PASS depth.valid_ratio=1.0 {'min': 0.99}",
+]

@@ -1,0 +1,15 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:22:04+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+upstream_commit = "4b848f7dd7da74ff03f7d278f902c6fd05b391b5"
+env_lock = "sha256:4efd345ac0477abb40560abce8ac0046ee911f4b953705d85bce403eb27689ed"
+untested_tasks = [
+]
+cases = [
+  "PASS semseg_all (10.76s): PASS mask.instances=5 {'min': 4, 'max': 7}; PASS mask.area_ratio=1.0 {'eq': 1.0}",
+  "PASS semseg_car (7.55s): PASS mask.ids=[21] {'eq': [21]}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+  "PASS frames_person (7.32s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.mask_iou=1.0 {'min': 0.85}",
+  "PASS remove_dynamic (6.73s): PASS mask.ids=[13] {'eq': [13]}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+]

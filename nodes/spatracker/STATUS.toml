@@ -1,0 +1,13 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:10:00+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+upstream_commit = "7e12274c52077860cebfe007a6290777db43b63c"
+env_lock = "sha256:64b05a45f94f341daeeaadab41f650726d8c297a5e94d6e741cb16756b2ec0a0"
+untested_tasks = [
+]
+cases = [
+  "PASS rgb (34.89s): PASS tracks.frames=6 {'eq': 6}; PASS tracks.points=100 {'eq': 100}; PASS tracks.visible_ratio=0.9767 {'min': 0.7}; PASS trajectory.count=6 {'eq': 6}; PASS depth.count=6 {'eq': 6}; PASS depth.median=0.9091 {'min': 0.7, 'max': 1.2}",
+  "PASS rgbd_queries (12.2s): PASS tracks.frames=6 {'eq': 6}; PASS tracks.points=5 {'eq': 5}; PASS tracks.visible_ratio=1.0 {'min': 0.8}; PASS trajectory.count=6 {'eq': 6}; PASS depth.median=0.9106 {'min': 0.7, 'max': 1.2}",
+]

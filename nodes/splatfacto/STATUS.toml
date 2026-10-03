@@ -1,0 +1,12 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:24:03+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+upstream_commit = ""
+env_lock = "sha256:72e93cc71e3589acf3b0055c258444ff0023b797c8d0215965d6e7464d58d0dd"
+untested_tasks = [
+]
+cases = [
+  "PASS bedroom (203.57s): PASS metrics:psnr_min=20.5353 {'min': 19.5}; PASS metrics:psnr_mean=21.6852 {'min': 20.5}; PASS gaussians.gaussians=676374 {'min': 300000}",
+]

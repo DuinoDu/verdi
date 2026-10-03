@@ -1,0 +1,29 @@
+diff --git a/core/extractor.py b/core/extractor.py
+index 226b462..4a6deb5 100644
+--- a/core/extractor.py
++++ b/core/extractor.py
+@@ -325,7 +325,7 @@ class Feature(nn.Module):
+     def __init__(self, args):
+         super(Feature, self).__init__()
+         self.args = args
+-        model = timm.create_model('edgenext_small', pretrained=True, features_only=False)
++        model = timm.create_model('edgenext_small', pretrained=False, features_only=False)  # pdebug: weights come from the FoundationStereo checkpoint
+         self.stem = model.stem
+         self.stages = model.stages
+         chans = [48, 96, 160, 304]
+diff --git a/depth_anything/dpt.py b/depth_anything/dpt.py
+index 442a04a..2afdb0f 100644
+--- a/depth_anything/dpt.py
++++ b/depth_anything/dpt.py
+@@ -154,7 +154,10 @@ class DPT_DINOv2(nn.Module):
+         # if localhub:
+         #     self.pretrained = torch.hub.load('torchhub/facebookresearch_dinov2_main', 'dinov2_{:}14'.format(encoder), source='local', pretrained=False)
+         # else:
+-        self.pretrained = torch.hub.load('facebookresearch/dinov2', 'dinov2_{:}14'.format(encoder), pretrained=pretrained_dino)
++        # pdebug: build DINOv2 from the vendored ./dinov2 hub (no GitHub access at runtime)
++        import os as _os
++        _hub = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), 'dinov2')
++        self.pretrained = torch.hub.load(_hub, 'dinov2_{:}14'.format(encoder), source='local', pretrained=pretrained_dino)
+ 
+ 
+         dim = self.pretrained.blocks[0].attn.qkv.in_features

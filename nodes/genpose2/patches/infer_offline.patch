@@ -1,0 +1,43 @@
+diff --git a/networks/posenet.py b/networks/posenet.py
+index 52da316..62e8aab 100644
+--- a/networks/posenet.py
++++ b/networks/posenet.py
+@@ -41,7 +41,13 @@ class GFObjectPose(nn.Module):
+         
+         ''' dino v2 '''
+         if cfg.dino != 'none':
+-            self.dino : nn.Module = torch.hub.load('facebookresearch/dinov2', GFObjectPose.dino_name).to(cfg.device)
++            # pdebug: load DINOv2 from a pinned local checkout instead of the
++            # unpinned torch.hub github download (weights come from the
++            # GenPose++ checkpoints, which contain the dino.* tensors)
++            if os.environ.get('GENPOSE2_DINOV2_REPO'):
++                self.dino : nn.Module = torch.hub.load(os.environ['GENPOSE2_DINOV2_REPO'], GFObjectPose.dino_name, source='local', pretrained=False).to(cfg.device)
++            else:
++                self.dino : nn.Module = torch.hub.load('facebookresearch/dinov2', GFObjectPose.dino_name).to(cfg.device)
+             self.dino.requires_grad_(False)
+             self.dino_dim = GFObjectPose.dino_dim
+             self.embedding_dim = GFObjectPose.embedding_dim
+diff --git a/runners/infer.py b/runners/infer.py
+index 963c6a0..bb39bb1 100644
+--- a/runners/infer.py
++++ b/runners/infer.py
+@@ -8,8 +8,7 @@ import random
+ import gc
+ import cv2
+ import open3d as o3d
+-import pyrealsense2 as rs
+-import pyrealsense2 as rs
++# pdebug: pyrealsense2 (camera streaming only) not needed for inference
+ import numpy as np
+ import glob
+ 
+@@ -26,8 +25,7 @@ from cutoop.eval_utils import DetectMatch, Metrics
+ from configs.config import get_config
+ from datasets.datasets_infer import InferDataset
+ 
+-from flask import Flask, request
+-flask_app = Flask(__name__)
++# pdebug: flask app (camera server) removed
+ 
+ 
+ class GenPose2:

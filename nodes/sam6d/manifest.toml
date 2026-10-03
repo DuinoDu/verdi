@@ -1,0 +1,142 @@
+name = "sam6d"
+version = "0.1.0"
+description = """
+SAM-6D (CVPR 2024) zero-shot 6D object pose estimation of a known object
+(CAD mesh, no training on it) from one RGB-D image. Runs the official
+3-stage pipeline without Docker: BlenderProc renders 42 templates of the
+mesh -> Instance Segmentation Model (SAM ViT-H proposals scored with
+DINOv2 against the templates) -> Pose Estimation Model (point matching).
+For category-level pose without a mesh use genpose2; for tracking with a
+mesh use foundationpose.
+"""
+
+[upstream]
+repo = "https://github.com/JiehongLin/SAM-6D.git"
+commit = "1c2543b3b6faa1f1d81b3c7291f8b371d71e50c2"
+patches = ["patches/pem_inference.patch"]
+
+[weights]
+sam = { hf = "ybelkada/segment-anything", revision = "7790786db131bcdc639f24a915d9f2c331d843ee", files = ["checkpoints/sam_vit_h_4b8939.pth"] }
+dinov2 = { hf = "hdtech/dinov2_vitl14_pretrain", revision = "3c8038d33236a362f09dbfd4194ceba3a02bcc8f", files = ["dinov2_vitl14_pretrain.pth"] }
+# FreeImage (imageio) is needed by blenderproc to read the NOCS .exr renders
+freeimage = { url = "https://github.com/imageio/imageio-binaries/raw/master/freeimage/libfreeimage-3.16.0-linux64.so", sha256 = "8ba7be1e5d2bc8ffc94d111cb05f7de3dbbfd4af4d502a54eb22c4708021897c" }
+pem = { hf = "jiiihuang/SAM-6D", revision = "8b14fe81e7c21636b242ca9c5adb5f71b2f02717", files = ["sam-6d-pem-base.pth"] }
+# Blender 3.3.1 (the version blenderproc 2.6.1 hard-codes), official tarball.
+# Kept as a file here and extracted by [setup] into the venv (local disk):
+# blenderproc pip-installs into the Blender tree, which needs renames.
+blender = { url = "https://download.blender.org/release/Blender3.3/blender-3.3.1-linux-x64.tar.xz", sha256 = "3089a485dd621785d7a702089aba72d07b8f733a362e901ec1449b9a379546f2" }
+# X11 client libs Blender 3.3 links against, from Ubuntu 22.04 (jammy) debs:
+# hosts without root/apt (the RTX 5090 host) lack them. Extracted by [setup] into
+# {venv}/blender/syslib (LD_LIBRARY_PATH); hosts that have them are unaffected.
+deb_xi = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libx/libxi/libxi6_1.8-1build1_amd64.deb", sha256 = "47662736cca4be456fd42a5f0a9d3bed8a5cfad4ee08b809a95dde6004daf275" }
+deb_xxf86vm = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libx/libxxf86vm/libxxf86vm1_1.1.4-1build3_amd64.deb", sha256 = "2a4bd31dded8481c81bfaa65bd97d61bff1e90cb025c01bcabfc2597c7c7569a" }
+deb_xfixes = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libx/libxfixes/libxfixes3_6.0.0-1_amd64.deb", sha256 = "f627555440060edf19801d77d369c99547cf47123fe4e30c5bdb8b664f0b4467" }
+deb_xrender = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libx/libxrender/libxrender1_0.9.10-1build4_amd64.deb", sha256 = "a68f6db4320b5963dd499b83b6cc8c7b5cd39b05e84862d5945da9244e4c96d6" }
+deb_xkbcommon = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libx/libxkbcommon/libxkbcommon0_1.4.0-1_amd64.deb", sha256 = "a0470edb237d52b71ad41f755c043164abed01423585ed5ea19525b3baaf84f7" }
+deb_sm = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libs/libsm/libsm6_1.2.3-1build2_amd64.deb", sha256 = "e652e286a79d9e8e15189d79b290bdce20aca83651f3dfed1b9b7dc0bbf0702f" }
+deb_ice = { url = "https://mirrors.aliyun.com/ubuntu/pool/main/libi/libice/libice6_1.0.10-1build2_amd64.deb", sha256 = "eea6d52d12ad610d70b0f70c825ed3c560dafb09f4c272e3c6b0b493d984d13f" }
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13" }
+binaries = ["tar", "xz", "dpkg-deb"]
+# Blender 3.3.1 (used by blenderproc for template rendering) needs X/GL libs
+# (libXi, libXxf86vm, libXfixes, libXrender, libxkbcommon, libSM/ICE come from weights.deb_*)
+libs = ["libX11.so.6", "libXext.so.6", "libGL.so.1", "libuuid.so.1"]
+disk_gb = 20
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+SAM6D_BLENDER = "{venv}/blender/blender-3.3.1-linux-x64"
+LD_LIBRARY_PATH = "{venv}/blender/syslib"
+
+[setup]
+commands = [
+  # pointnet2 CUDA extension, built in place (pointnet2/_ext*.so next to setup.py)
+  "cd SAM-6D/Pose_Estimation_Model/model/pointnet2 && mkdir -p pointnet2 && (ls pointnet2/_ext*.so >/dev/null 2>&1 || python setup.py build_ext --inplace)",
+  # upstream scripts read checkpoints from fixed relative paths
+  "mkdir -p SAM-6D/Instance_Segmentation_Model/checkpoints && ln -sfn {weights}/sam/checkpoints SAM-6D/Instance_Segmentation_Model/checkpoints/segment-anything && ln -sfn {weights}/dinov2 SAM-6D/Instance_Segmentation_Model/checkpoints/dinov2 && ln -sfn {weights}/pem SAM-6D/Pose_Estimation_Model/checkpoints",
+  # Blender 3.3.1 for blenderproc 2.6.1: extract the pinned tarball (weights.blender) into the venv
+  "test -x $SAM6D_BLENDER/blender || (mkdir -p {venv}/blender && tar -xJf {weights}/blender/blender-3.3.1-linux-x64.tar.xz -C {venv}/blender)",
+  # X11 client libs for Blender (weights.deb_*) -> {venv}/blender/syslib
+  "mkdir -p {venv}/blender/syslib && t=$(mktemp -d) && for d in {weights}/deb_*/*.deb; do dpkg-deb -x $d $t; done && cp -a $t/usr/lib/x86_64-linux-gnu/*.so* {venv}/blender/syslib/ && rm -rf $t && ls {venv}/blender/syslib",
+  # trimesh (used by the render script) into Blender python; pin numpy to the version bundled with Blender 3.3 (numpy 2 breaks bpy)
+  "blenderproc pip install trimesh==4.0.8 numpy==1.22.0 --custom-blender-path $SAM6D_BLENDER",
+  "blenderproc run {node_dir}/blender_warmup.py --custom-blender-path $SAM6D_BLENDER",
+]
+
+[run]
+timeout_sec = 1800
+
+[run.env]
+SAM6D_BLENDER = "{venv}/blender/blender-3.3.1-linux-x64"
+LD_LIBRARY_PATH = "{venv}/blender/syslib"
+# torch>=2.6 defaults to weights_only=True; the PEM checkpoint (gorilla) needs full unpickling
+TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = "1"
+IMAGEIO_FREEIMAGE_LIB = "{weights}/freeimage/libfreeimage-3.16.0-linux64.so"
+
+[tasks.estimate]
+description = """
+6D pose of a known object (mesh) in one RGB-D image. Steps: render 42
+templates of the mesh (BlenderProc, ~1 min), segment candidate instances
+(SAM automatic masks scored against the templates with DINOv2 semantic +
+appearance + depth-based geometric scores; skipped when `mask` is given),
+then estimate the pose of each candidate with the PEM and keep the best
+`top_k` by pose score. Output poses are T_cam_obj in metres in the frame of
+the input mesh (mesh coordinates must be metres; the node converts to the
+millimetres SAM-6D uses internally). `vis` is the upstream visualization
+(input | projected 3D box of the best pose).
+"""
+inputs.image = { type = "image", description = "RGB image" }
+inputs.depth = { type = "depth", description = "metric depth aligned with the image (same size), metres, 0 = invalid" }
+inputs.camera = { type = "camera", description = "pinhole intrinsics of the image (distortion is ignored)" }
+inputs.mesh = { type = "mesh", description = "object CAD model in metres; ply (vertex colors kept) or obj/glb (converted to textured obj for rendering; glb is read with raw coordinates, no Y-up conversion)" }
+inputs.mask = { type = "mask", optional = true, description = "optional instance mask (e.g. from sam2): each id is one candidate of the object (score 1.0) and the ISM stage is skipped" }
+outputs.poses = { type = "pose_set", description = "up to top_k poses sorted by score; each has T_cam_obj (m), label (= mesh file stem), score (PEM pose score x detection score), mask_id, bbox_xyxy (px)" }
+outputs.mask = { type = "mask", description = "instance mask of the returned detections; id i = poses[i-1] (mask_id)" }
+outputs.vis = { type = "image", description = "upstream visualization: input image | 3D bbox of the best pose drawn in red" }
+params.top_k = { type = "int", default = 1, description = "number of poses to return (best first); raise for scenes with several copies of the object" }
+params.det_score_thresh = { type = "float", default = 0.2, description = "drop ISM candidates whose detection score is below this before pose estimation (official default 0.2)" }
+params.stability_score_thresh = { type = "float", default = 0.97, description = "SAM automatic-mask stability threshold for proposals (official demo default 0.97; lower, e.g. 0.5, gives more proposals for hard objects)" }
+params.keep_work = { type = "bool", default = false, description = "keep the upstream working dir (_work/: templates, mm inputs, raw detection_ism/pem json) in the output dir for debugging" }
+
+[[tests]]
+name = "example"
+task = "estimate"
+timeout_sec = 1500
+inputs = { image = "tests/fixture/rgb.png", depth = "tests/fixture/depth.npy", camera = "tests/fixture/camera.json", mesh = "tests/fixture/obj_000005.ply" }
+[[tests.checks]]
+output = "poses"
+field = "count"
+eq = 1
+[[tests.checks]]
+output = "mask"
+field = "instances"
+eq = 1
+[[tests.checks]]
+output = "poses"
+metric = "pose_translation_err"
+expected = "tests/expected/poses.json"
+max = 0.01
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/mask.png"
+min = 0.9
+
+[[tests]]
+name = "with_mask"
+task = "estimate"
+timeout_sec = 1500
+inputs = { image = "tests/fixture/rgb.png", depth = "tests/fixture/depth.npy", camera = "tests/fixture/camera.json", mesh = "tests/fixture/obj_000005.ply", mask = "tests/fixture/mask.png" }
+[[tests.checks]]
+output = "poses"
+field = "count"
+eq = 1
+[[tests.checks]]
+output = "poses"
+metric = "pose_translation_err"
+expected = "tests/expected/poses.json"
+max = 0.01

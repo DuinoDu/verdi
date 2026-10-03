@@ -1,0 +1,138 @@
+name = "depth_anything"
+version = "0.1.0"
+description = """
+Depth Anything V2 (images, transformers port) and Video-Depth-Anything
+(temporally consistent frame sequences, ByteDance upstream). Two kinds of
+output: METRIC depth in metres (Metric-Indoor/Outdoor V2 checkpoints,
+Metric-Video-Depth-Anything) as `depth` / `depth_seq`, and RELATIVE
+disparity (affine-invariant inverse depth, unknown scale and shift;
+larger = closer) as plain .npy files, never typed as depth.
+"""
+
+[upstream]
+repo = "https://github.com/DepthAnything/Video-Depth-Anything.git"
+commit = "4f5ae23172ba60fd7bc11ef671cca678842c7072"
+patches = ["patches/0001-vda-sdpa-attention.patch"]
+
+[weights]
+metric_indoor = { hf = "depth-anything/Depth-Anything-V2-Metric-Indoor-Large-hf", revision = "d2fc6a93601aabb1139a3bf0ebfcb4e89c67817f", files = ["*.json", "*.safetensors"] }
+metric_outdoor = { hf = "depth-anything/Depth-Anything-V2-Metric-Outdoor-Large-hf", revision = "4eab4cf1983c2801c515804005214de56a4b67cc", files = ["*.json", "*.safetensors"] }
+relative = { hf = "depth-anything/Depth-Anything-V2-Large-hf", revision = "7581137eff8d4e94f6e796d3baea0e9fa79b22d2", files = ["*.json", "*.safetensors"] }
+video_metric = { hf = "depth-anything/Metric-Video-Depth-Anything-Large", revision = "607fcdbd454b95c3bd39abbd3054142869a527d3", files = ["*.pth"] }
+video_relative = { hf = "depth-anything/Video-Depth-Anything-Large", revision = "7aafbcb5c6af0bac741aad2b6471894fb4761afa", files = ["*.pth"] }
+
+[system]
+gpu = { min_vram_gb = 12, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 15
+
+[run]
+timeout_sec = 3600
+
+[tasks.estimate_depth]
+description = """
+Metric depth (metres) for one image with Depth-Anything-V2-Metric-Large.
+Pick the checkpoint by scene: indoor (trained on Hypersim, max 20 m) or
+outdoor (Virtual KITTI 2, max 80 m). Scale is learned from the training
+domain and assumes an ordinary field of view; no intrinsics are used or
+estimated.
+"""
+inputs.image = { type = "image" }
+outputs.depth = { type = "depth", description = "metric depth in metres, same HxW as the image" }
+params.scene = { type = "str", default = "indoor", choices = ["indoor", "outdoor"], description = "metric checkpoint: indoor (<=20 m) or outdoor (<=80 m)" }
+
+[tasks.estimate_relative_depth]
+description = """
+RELATIVE depth for one image with Depth-Anything-V2-Large (the general,
+most detailed model). Output is NOT metres: it is an affine-invariant
+disparity (inverse depth up to unknown scale and shift; larger = closer,
+0 = farthest/sky). To get metres, fit scale+shift to known depth or use
+estimate_depth / the depth_pro node.
+"""
+inputs.image = { type = "image" }
+outputs.disparity = { type = "file", description = ".npy float32 HxW relative disparity (larger = closer), same size as the image" }
+
+[tasks.estimate_depth_seq]
+description = """
+Temporally consistent METRIC depth (metres) for a frame sequence with
+Metric-Video-Depth-Anything-Large (trained on Virtual KITTI + IRS, indoor
+and outdoor). Video input is split into frames automatically. Frames
+larger than max_res are downscaled for inference; output is resized back
+to the input resolution.
+"""
+inputs.frames = { type = "image_seq" }
+outputs.depth = { type = "depth_seq", description = "one %06d.npy metric depth map (metres) per input frame" }
+params.max_res = { type = "int", default = 1280, description = "inference cap on the longer image side (upstream default)" }
+params.fp32 = { type = "bool", default = false, description = "disable fp16 autocast (upstream default is autocast)" }
+
+[tasks.estimate_relative_depth_seq]
+description = """
+Temporally consistent RELATIVE depth for a frame sequence with
+Video-Depth-Anything-Large. Output is NOT metres: a dir of %06d.npy
+float32 HxW affine-invariant disparity maps (larger = closer) that share
+ONE scale and shift across the whole clip (upstream aligns windows).
+"""
+inputs.frames = { type = "image_seq" }
+outputs.disparity = { type = "dir", description = "dir of %06d.npy float32 HxW relative disparity, one per input frame, common scale/shift over the clip" }
+params.max_res = { type = "int", default = 1280, description = "inference cap on the longer image side (upstream default)" }
+params.fp32 = { type = "bool", default = false, description = "disable fp16 autocast (upstream default is autocast)" }
+
+[[known_issues]]
+summary = "Depth-Anything-V2-Large and Video-Depth-Anything-Large (relative) weights are CC-BY-NC-4.0"
+fix = "non-commercial use only; check the model cards of the metric checkpoints before commercial use"
+
+[[tests]]
+name = "image_metric"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/bedroom/000000.jpg" }
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.2
+max = 2.9
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/bedroom0_metric_indoor.npy"
+max = 0.02
+
+[[tests]]
+name = "image_relative"
+task = "estimate_relative_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/bedroom/000000.jpg" }
+[[tests.checks]]
+output = "disparity"
+field = "bytes"
+eq = 2073728
+[[tests.checks]]
+output = "disparity"
+metric = "depth_abs_rel"
+expected = "tests/expected/bedroom0_relative_disparity.npy"
+max = 0.02
+
+[[tests]]
+name = "seq_metric"
+task = "estimate_depth_seq"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom" }
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.9
+max = 3.8
+
+[[tests]]
+name = "seq_relative"
+task = "estimate_relative_depth_seq"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom" }
+[[tests.checks]]
+output = "disparity"
+field = "entries"
+eq = 6

@@ -1,0 +1,20 @@
+name = "echo_node"
+version = "0.0.1"
+description = "Test-only node: inverts an image on CPU."
+
+[run]
+timeout_sec = 120
+
+[tasks.invert]
+description = "Invert colours."
+inputs = { image = "image" }
+outputs = { image = "image" }
+params = { fail = { type = "bool", default = false } }
+
+[test]
+task = "invert"
+inputs = { image = "tests/in.png" }
+[[test.checks]]
+output = "image"
+field = "width"
+eq = 6

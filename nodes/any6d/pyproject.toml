@@ -1,0 +1,65 @@
+[project]
+name = "pdebug-node-any6d"
+version = "0.1.0"
+requires-python = "==3.11.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "numpy==1.26.4",
+  "scipy",
+  "scikit-learn",
+  "scikit-image",
+  "opencv-python-headless==4.10.0.84",
+  "trimesh==4.5.3",
+  "open3d==0.19.0",
+  "kornia==0.7.4",
+  "warp-lang==1.0.2",   # Utils.erode_depth / bilateral_filter_depth are warp kernels
+  "omegaconf",
+  "ruamel.yaml",
+  "pyyaml",
+  "transformations==2024.6.1",
+  "pandas",
+  "matplotlib",
+  "imageio",
+  "joblib",
+  "psutil",
+  "h5py",
+  "tqdm",
+  "pillow",
+  "pybind11==2.13.6",
+  "cmake>=3.27,<4",       # mycpp build (no system cmake needed)
+  "cmeel-eigen>=3.4,<3.5", # Eigen3 headers + Eigen3Config.cmake for mycpp
+  "ninja",
+  "setuptools<80",
+  "wheel",
+  "nvdiffrast",
+  "pytorch3d",
+]
+
+[tool.uv]
+package = false
+
+# nvdiffrast / pytorch3d compile CUDA extensions; build them against the
+# same torch as the runtime (isolated build env, torch version matched).
+[tool.uv.extra-build-dependencies]
+nvdiffrast = [{ requirement = "torch", match-runtime = true }, "setuptools<80", "wheel", "ninja"]
+pytorch3d = [{ requirement = "torch", match-runtime = true }, "setuptools<80", "wheel", "ninja"]
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+nvdiffrast = { git = "https://github.com/NVlabs/nvdiffrast.git", rev = "253ac4fcea7de5f396371124af597e6cc957bfae" }
+pytorch3d = { git = "https://github.com/facebookresearch/pytorch3d.git", rev = "33824be3cbc87a7dd1db0f6a9a9de9ac81b2d0ba" }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
+
+# Static metadata so uv can lock without building (needed for match-runtime)
+[[tool.uv.dependency-metadata]]
+name = "pytorch3d"
+version = "0.7.9"
+requires-dist = ["iopath"]
+
+[[tool.uv.dependency-metadata]]
+name = "nvdiffrast"
+version = "0.4.0"
+requires-dist = ["numpy"]

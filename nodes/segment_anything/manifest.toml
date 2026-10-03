@@ -1,0 +1,80 @@
+name = "segment_anything"
+version = "0.1.0"
+description = """
+Segment Anything v1 (Meta SAM, ViT-B/L/H via HF transformers). Point/box
+prompted segmentation (one instance per prompt obj_id) and automatic
+"segment everything" mask generation. For video / newer quality use the
+sam2 node; for text prompts use langsam or groundingdino.
+"""
+
+[weights]
+base = { hf = "facebook/sam-vit-base", revision = "70c1a07f894ebb5b307fd9eaaee97b9dfc16068f", files = ["*.json", "model.safetensors"] }
+large = { hf = "facebook/sam-vit-large", revision = "6851e0441005b0fb96f2cc4dfac472f3d1b14af1", files = ["*.json", "model.safetensors"] }
+huge = { hf = "facebook/sam-vit-huge", revision = "87aecf0df4ce6b30cd7de76e87673c49644bdf67", files = ["*.json", "model.safetensors"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 15
+
+[run]
+timeout_sec = 1800
+
+[tasks.segment_image]
+description = """
+Segment objects in one image from point/box prompts. Prompts are grouped
+by obj_id (all points + the box of one obj_id form one prompt); each
+obj_id becomes one instance id in the output mask. Text and frame fields
+are ignored. Sidecar mask.json holds {obj_id: {score}} (SAM predicted IoU).
+"""
+inputs.image = { type = "image" }
+inputs.prompts = { type = "prompt_set", description = "points (xy px, positive) and/or boxes (xyxy px) with obj_id >= 1" }
+outputs.mask = { type = "mask", description = "instance id = obj_id; later obj_ids overwrite earlier ones where masks overlap" }
+params.checkpoint = { type = "str", default = "huge", choices = ["base", "large", "huge"], description = "SAM ViT backbone size (huge = original SAM quality, base = fastest)" }
+params.multimask = { type = "bool", default = false, description = "predict 3 candidate masks per object and keep the best-scoring one (useful for a single ambiguous point); off = single mask output" }
+
+[tasks.auto_masks]
+description = """
+Automatic mask generation ("segment everything"): a grid of point prompts
+over the image, filtered by predicted IoU and stability, then NMS. Every
+kept mask becomes one instance id, ordered by area (1 = largest); smaller
+masks are painted over larger ones so nested parts stay visible. Sidecar
+masks.json holds {id: {score, area}}.
+"""
+inputs.image = { type = "image" }
+outputs.mask = { type = "mask", description = "instance ids 1..N sorted by decreasing area; 0 = not covered by any mask" }
+params.checkpoint = { type = "str", default = "huge", choices = ["base", "large", "huge"], description = "SAM ViT backbone size" }
+params.points_per_side = { type = "int", default = 32, description = "point grid density (points_per_side^2 prompts); 16 is ~4x faster and coarser" }
+params.pred_iou_thresh = { type = "float", default = 0.88, description = "drop masks whose predicted IoU is below this" }
+params.stability_score_thresh = { type = "float", default = 0.95, description = "drop masks whose stability score is below this" }
+params.min_area = { type = "int", default = 0, description = "drop masks smaller than this many pixels" }
+
+[[tests]]
+name = "prompted"
+task = "segment_image"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg", prompts = "tests/fixture/truck_prompts.json" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+eq = 2
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_mask.png"
+min = 0.9
+
+[[tests]]
+name = "auto"
+task = "auto_masks"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+min = 20
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_auto.png"
+min = 0.9

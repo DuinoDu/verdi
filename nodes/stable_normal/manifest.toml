@@ -1,0 +1,82 @@
+name = "stable_normal"
+version = "0.1.0"
+description = """
+StableNormal (Stable-X, SIGGRAPH Asia 2024): diffusion-based monocular
+surface normal estimation from one RGB image. Output normals are unit
+vectors in the OpenCV camera frame (x right, y down, z forward), so a
+surface facing the camera has z < 0 and a floor has y < 0.
+"""
+
+[upstream]
+repo = "https://github.com/hugoycj/StableNormal.git"
+commit = "1b7203c988384cb62286a25865d7354be8fdbbf7"
+patches = ["patches/0001-local-dinov2.patch"]
+
+[weights]
+"yoso-normal-v1-5" = { hf = "Stable-X/yoso-normal-v1-5", revision = "6f85465b17f4fb82a11f8dad487ddea19da87874", files = ["*.json", "*.py", "*.fp16.safetensors"] }
+"stable-normal-v0-1" = { hf = "Stable-X/stable-normal-v0-1", revision = "4362d11c636ef42ed117dd76984c7f2d83e6abd9", files = ["*.json", "*.txt", "*.py", "*.fp16.safetensors"] }
+dinov2 = { url = "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_pretrain.pth", sha256 = "d5383ea8f4877b2472eb973e0fd72d557c7da5d3611bd527ceeb1d7162cbf428" }
+
+[setup]
+# DINOv2 code for the StableNormal prior (upstream uses torch.hub with
+# network access); pinned checkout inside the node venv (local disk; the
+# weights root may forbid rename/delete, which git needs).
+commands = [
+  "test -d {venv}/dinov2_repo/.git || git clone -q https://github.com/facebookresearch/dinov2.git {venv}/dinov2_repo",
+  "cd {venv}/dinov2_repo && git checkout -q --force 7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+]
+
+[system]
+gpu = { min_vram_gb = 12, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 15
+
+[run]
+timeout_sec = 1800
+env = { STABLENORMAL_DINOV2_REPO = "{venv}/dinov2_repo", STABLENORMAL_DINOV2_WEIGHTS = "{weights}/dinov2/dinov2_vitl14_pretrain.pth" }
+
+[tasks.estimate_normal]
+description = """
+Surface normals for one image (scene or object). model = stable_normal
+(default): YOSO one-step estimate refined by the StableNormal diffusion
+model with a DINOv2 prior (sharper, ~10 steps). model = turbo: YOSO only
+(StableNormal-turbo, single step, faster). The image is processed with
+its longer side resized to `resolution` (multiple of 64) and the result
+is resized back to the input size and re-normalised. RGBA input: the
+alpha channel is used as foreground mask (composited on white, as
+upstream does) and background pixels get the zero vector (no normal).
+"""
+inputs.image = { type = "image" }
+outputs.normal = { type = "normal", description = "HxWx3 float32 unit normals, OpenCV camera frame (x right, y down, z forward); same HxW as the image; (0,0,0) only for RGBA background" }
+params.model = { type = "str", default = "stable_normal", choices = ["stable_normal", "turbo"], description = "full StableNormal or the one-step turbo variant" }
+params.resolution = { type = "int", default = 1024, description = "processing resolution of the longer side (upstream default 1024)" }
+params.seed = { type = "int", default = 0, description = "diffusion noise seed (stable_normal only)" }
+
+[[tests]]
+name = "image"
+task = "estimate_normal"
+timeout_sec = 1200
+inputs = { image = "tests/fixture/bedroom.jpg" }
+[[tests.checks]]
+output = "normal"
+field = "width"
+eq = 960
+[[tests.checks]]
+output = "normal"
+field = "height"
+eq = 540
+
+[[tests]]
+name = "image_turbo"
+task = "estimate_normal"
+timeout_sec = 900
+inputs = { image = "tests/fixture/bedroom.jpg" }
+params = { model = "turbo" }
+[[tests.checks]]
+output = "normal"
+field = "width"
+eq = 960
+
+[[known_issues]]
+summary = "Tests only check shape: core has no normal comparator / normal summary stats"
+fix = "Correctness was verified manually: median cosine 0.97 vs normals derived from depth_pro metric depth on the fixture (see NOTES.md)"

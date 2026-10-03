@@ -1,0 +1,120 @@
+name = "spatracker"
+version = "0.1.0"
+description = """
+SpatialTrackerV2 (offline) 3D point tracking from a monocular video: 2D
+tracks plus per-point 3D tracks, camera trajectory, per-frame depth and
+intrinsics. Without depth input, VGGT4Track (SpatialTrackerV2_Front)
+predicts depth / intrinsics / poses first; with `depth` + `camera` (and
+optionally `trajectory`) these are used instead (RGBD mode).
+Frames must be landscape (width >= height); they are processed at 518 px
+width (multiple of 14 height) and all outputs are mapped back to the input
+pixel size. World frame = camera of frame 0 (OpenCV axes). Units: metres
+when depth is given; otherwise the model's predicted scale (approximately
+metric, not guaranteed).
+"""
+
+[upstream]
+repo = "https://github.com/henry123-boy/SpaTrackerV2.git"
+commit = "7e12274c52077860cebfe007a6290777db43b63c"
+
+[weights]
+offline = { hf = "Yuxihenry/SpatialTrackerV2-Offline", revision = "76e275b00f9c57dab71d46544df5255d4538106d" }
+front = { hf = "Yuxihenry/SpatialTrackerV2_Front", revision = "2e7164a93770cb934861d7de579bb81f58ad0b03" }
+
+[system]
+gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 15
+
+[run]
+timeout_sec = 3600
+
+[tasks.track]
+description = """
+Track points through `frames` in 2D and 3D. Query points: `queries`
+(prompt_set points with xy px + frame) if given, else a grid_size x
+grid_size grid on frame 0 (restricted to nonzero pixels of `mask` if
+given). Outputs:
+- tracks (npz): xy float32 [T,N,2] px, visible bool [T,N] (vis prob >
+  0.5), plus vis_prob [T,N], conf [T,N], xyz_cam float32 [T,N,3] (point in
+  camera frame t, OpenCV), xyz_world [T,N,3] (in world = camera 0),
+  query_frame int32 [N], K float32 [T,3,3] per-frame intrinsics (input px).
+- trajectory: T_world_cam per frame (camera-to-world, frame 0 = identity).
+- depth (depth_seq): refined per-frame depth (z), input resolution, 0 where
+  the model confidence < 0.5.
+- camera: intrinsics of frame 0 at input resolution.
+"""
+inputs.frames = { type = "image_seq", description = "landscape frames (video files are split automatically)" }
+inputs.queries = { type = "prompt_set", optional = true, description = "points with xy (px) and frame; replaces the grid" }
+inputs.mask = { type = "mask", optional = true, description = "frame-0 region; only grid points on nonzero pixels are tracked" }
+inputs.depth = { type = "depth_seq", optional = true, description = "metric depth per frame (needs `camera`); skips VGGT depth" }
+inputs.camera = { type = "camera", optional = true, description = "pinhole K of the frames (used with `depth`)" }
+inputs.trajectory = { type = "trajectory", optional = true, description = "known T_world_cam per frame (used with `depth`); else VGGT4Track poses are the initialisation" }
+outputs.tracks = { type = "tracks", description = "2D + 3D tracks (see task description for npz keys)" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam per frame" }
+outputs.depth = { type = "depth_seq", description = "per-frame depth, input resolution" }
+outputs.camera = { type = "camera", description = "frame-0 intrinsics, input resolution" }
+params.grid_size = { type = "int", default = 20, description = "grid points per side when no queries are given" }
+params.vo_points = { type = "int", default = 756, description = "internal points used for camera tracking / BA" }
+params.max_frames = { type = "int", default = 0, description = "use only the first max_frames frames (0 = all; memory grows with T)" }
+params.iters_track = { type = "int", default = 4 }
+
+[[tests]]
+name = "rgb"
+task = "track"
+timeout_sec = 1200
+inputs = { frames = "tests/fixture/bedroom" }
+params = { grid_size = 10 }
+[[tests.checks]]
+output = "tracks"
+field = "frames"
+eq = 6
+[[tests.checks]]
+output = "tracks"
+field = "points"
+eq = 100
+[[tests.checks]]
+output = "tracks"
+field = "visible_ratio"
+min = 0.7
+[[tests.checks]]
+output = "trajectory"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 0.7
+max = 1.2
+
+[[tests]]
+name = "rgbd_queries"
+task = "track"
+timeout_sec = 1200
+# depth/camera/trajectory = outputs of the "rgb" case (depth downsampled to 240x135)
+inputs = { frames = "tests/fixture/bedroom", queries = "tests/fixture/bedroom_queries.json", depth = "tests/fixture/rgbd/depth", camera = "tests/fixture/rgbd/camera.json", trajectory = "tests/fixture/rgbd/trajectory.json" }
+[[tests.checks]]
+output = "tracks"
+field = "frames"
+eq = 6
+[[tests.checks]]
+output = "tracks"
+field = "points"
+eq = 5
+[[tests.checks]]
+output = "tracks"
+field = "visible_ratio"
+min = 0.8
+[[tests.checks]]
+output = "trajectory"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 0.7
+max = 1.2

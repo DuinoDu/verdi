@@ -1,0 +1,83 @@
+name = "sam2"
+version = "0.1.0"
+description = """
+SAM 2.1 (Meta) promptable segmentation for images and frame sequences.
+Prompts are points / boxes per object id; output instance ids equal the
+prompt obj_id.
+"""
+
+[weights]
+tiny = { hf = "facebook/sam2.1-hiera-tiny", files = ["*.pt"] }
+small = { hf = "facebook/sam2.1-hiera-small", files = ["*.pt"] }
+base_plus = { hf = "facebook/sam2.1-hiera-base-plus", files = ["*.pt"] }
+large = { hf = "facebook/sam2.1-hiera-large", files = ["*.pt"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 20
+
+[build.env]
+SAM2_BUILD_CUDA = "0"   # skip optional connected-components kernel
+
+[run]
+timeout_sec = 1800
+
+[tasks.segment_image]
+description = """
+Segment objects in one image from point/box prompts. Each obj_id in the
+prompt set becomes one instance id in the mask (frame fields ignored).
+"""
+inputs.image = { type = "image" }
+inputs.prompts = { type = "prompt_set", description = "points/boxes with obj_id" }
+outputs.mask = { type = "mask", description = "instance id = obj_id" }
+params.checkpoint = { type = "str", default = "large", choices = ["tiny", "small", "base_plus", "large"] }
+params.multimask = { type = "bool", default = false, description = "pick best of 3 masks per object (good for single ambiguous points)" }
+
+[tasks.segment_video]
+description = """
+Propagate prompts given on some frames through the whole frame sequence
+(video input is split into frames automatically).
+"""
+inputs.frames = { type = "image_seq" }
+inputs.prompts = { type = "prompt_set", description = "points/boxes with obj_id and frame index" }
+outputs.masks = { type = "mask_seq", description = "one mask per frame, instance id = obj_id" }
+params.checkpoint = { type = "str", default = "large", choices = ["tiny", "small", "base_plus", "large"] }
+
+[[tests]]
+name = "video"
+task = "segment_video"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom", prompts = "tests/fixture/bedroom_prompts.json" }
+[[tests.checks]]
+output = "masks"
+field = "nonempty_frames"
+eq = 6
+[[tests.checks]]
+output = "masks"
+field = "instances"
+eq = 2
+[[tests.checks]]
+output = "masks"
+metric = "mask_iou"
+expected = "tests/expected/bedroom_masks"
+min = 0.9
+
+[[tests]]
+name = "image"
+task = "segment_image"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg", prompts = "tests/fixture/truck_prompts.json" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+eq = 2
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_mask.png"
+min = 0.9
+
+[[known_issues]]
+summary = "Optional CUDA post-processing kernel is not built (SAM2_BUILD_CUDA=0)"
+fix = "Masks are not hole-filled; results match the official default within noise"

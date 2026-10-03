@@ -1,0 +1,88 @@
+name = "vggt"
+version = "0.1.0"
+description = """
+VGGT-1B (Meta, CVPR 2025): feed-forward multi-view reconstruction. From
+a set of frames (ordered video frames or an unordered photo set) one
+forward pass predicts every camera (pose + intrinsics), a depth map per
+frame and a coloured point cloud. No bundle adjustment.
+SCALE IS NOT METRIC: VGGT normalises the scene, so trajectory
+translations, depth values and points share one arbitrary unit. Use a
+metric depth node (e.g. depth_pro) or a known distance to rescale.
+World frame = camera of the first frame (OpenCV axes: x right, y down,
+z forward).
+"""
+
+[weights]
+vggt_1b = { hf = "facebook/VGGT-1B", revision = "860abec7937da0a4c03c41d3c269c366e82abdf9", files = ["config.json", "model.safetensors"] }
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 10
+
+[run]
+timeout_sec = 1800
+
+[tasks.reconstruct]
+description = """
+Reconstruct cameras, depth and points from 1..max_frames frames of the
+same static scene (video input is split into frames automatically; all
+frames must share one resolution). Frames are resized so the long side
+is 518 px (multiple of 14, aspect kept, no crop); intrinsics and depth
+are mapped back to the input resolution. Outputs are in one arbitrary,
+consistent scale (not metres); frame 0 is the world origin.
+"""
+inputs.frames = { type = "image_seq" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam per frame (camera-to-world, OpenCV axes), world = frame 0, up to scale" }
+outputs.camera = { type = "camera", description = "mean intrinsics over the frames at input resolution (VGGT predicts per-frame focal, principal point at the centre)" }
+outputs.intrinsics = { type = "json", description = "per-frame intrinsics: {\"width\", \"height\", \"K\": [3x3 per frame], \"frames\": [names]} at input resolution" }
+outputs.depth = { type = "depth_seq", description = "per-frame z-depth (%06d.npy, input resolution, same arbitrary unit as the trajectory; 0 = invalid)" }
+outputs.pointcloud = { type = "pointcloud", description = "binary ply xyz+rgb in the world (frame 0) frame, from depth unprojection, confidence filtered" }
+params.max_frames = { type = "int", default = 64, description = "refuse longer sequences (subsample first); VRAM grows with the frame count" }
+params.conf_percentile = { type = "float", default = 50.0, description = "drop this percentage of least-confident pixels from the point cloud (upstream viser default 50)" }
+params.max_points = { type = "int", default = 1000000, description = "random subsample of the point cloud above this size" }
+params.depth_conf_min = { type = "float", default = 0.0, description = "zero depth pixels with VGGT confidence below this (conf >= 1; 0 keeps everything)" }
+
+[[tests]]
+name = "bedroom"
+task = "reconstruct"
+timeout_sec = 600
+inputs = { frames = "tests/fixture/bedroom" }
+[[tests.checks]]
+output = "trajectory"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 6
+[[tests.checks]]
+output = "pointcloud"
+field = "points"
+min = 100000
+[[tests.checks]]
+output = "pointcloud"
+field = "points"
+max = 600000
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 910.0
+max = 970.0
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 0.86
+max = 0.97
+[[tests.checks]]
+output = "depth"
+field = "valid_ratio"
+min = 0.99
+
+[[known_issues]]
+summary = "Scale is arbitrary (VGGT normalises the scene); trajectory, depth and points are not in metres"
+fix = "rescale with a metric depth node (depth_pro / depth_anything metric) or a known distance"
+
+[[known_issues]]
+summary = "Moving objects get low confidence and are mostly dropped from the point cloud (depth maps still contain them)"
+fix = "lower conf_percentile to keep them; VGGT assumes a static scene"

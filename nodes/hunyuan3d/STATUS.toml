@@ -1,0 +1,14 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T00:36:21+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "b7322db439f96df9b820af812f390a8343d15b33"
+upstream_commit = "82920d643c0dc2f7bfd7255f45f62d386edfe60c"
+env_lock = "sha256:6114c865e0a03eed9c967c7ce64ee72d0b5c8191747e562763ec4599677fd4ce"
+untested_tasks = [
+]
+cases = [
+  "PASS rembg (77.96s): PASS mask.instances=1 {'eq': 1}; PASS mask.mask_iou=1.0 {'min': 0.95}",
+  "PASS shape (216.82s): PASS mesh.format='glb' {'eq': 'glb'}; PASS mesh.bytes=13207100 {'min': 1000000}",
+  "PASS paint (127.86s): PASS mesh.format='glb' {'eq': 'glb'}; PASS mesh.bytes=5190956 {'min': 2000000}",
+]

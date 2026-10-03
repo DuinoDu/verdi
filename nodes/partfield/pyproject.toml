@@ -1,0 +1,49 @@
+[project]
+name = "pdebug-node-partfield"
+version = "0.1.0"
+requires-python = "==3.10.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torch-scatter==2.1.2",
+  # PartField imports (environment.yml / SimFoundry installation_partfield.sh)
+  "lightning==2.2.5",
+  "yacs==0.1.8",
+  "h5py==3.12.1",
+  "loguru==0.7.2",
+  "boto3",
+  "mesh2sdf==1.1.0",
+  "tetgen==0.6.4",   # 0.6.5 needs numpy>=2 (PyPI metadata); numpy is pinned 1.26.4
+  "pymeshlab==2023.12.post2",
+  "plyfile==1.1",
+  "einops==0.8.0",
+  "open3d==0.18.0",
+  "vtk==9.3.1",
+  "psutil",
+  "numpy==1.26.4",
+  "scipy==1.14.1",
+  "scikit-learn==1.5.2",
+  "scikit-image==0.24.0",
+  "networkx==3.3",
+  "trimesh==4.4.7",
+  "matplotlib==3.9.2",
+  "setuptools<80",   # distutils.util (strtobool) on py3.10 venvs
+]
+
+[tool.uv]
+package = false
+
+# torch-scatter is sdist-only and imports torch in setup.py: static metadata
+# lets uv lock without building, then it is compiled against the runtime torch.
+[[tool.uv.dependency-metadata]]
+name = "torch-scatter"
+version = "2.1.2"
+requires-dist = []
+
+[tool.uv.extra-build-dependencies]
+torch-scatter = [{ requirement = "torch", match-runtime = true }, "setuptools<80", "wheel", "ninja"]
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 capable); no extra index needed.

@@ -1,0 +1,160 @@
+name = "mast3r_slam"
+version = "0.1.0"
+description = """
+MASt3R-SLAM (Murai, Dexheimer, Davison, CVPR 2025): real-time dense
+monocular SLAM built on the MASt3R two-view 3D prior. Processes a long
+image sequence / video frame by frame (constant memory per frame, unlike
+feed-forward multi-view models such as `vggt`), tracks every frame
+against the current keyframe, optimises all keyframe poses in a global
+factor graph and closes loops with MASt3R retrieval (ASMK).
+Works uncalibrated (default) or with a known pinhole `camera`.
+SCALE IS NOT METRIC: poses, points and depth share one arbitrary unit
+(anchor the scale downstream, e.g. prior_depth_anything / markers /
+a known distance). World frame = camera of the first frame (OpenCV axes:
+x right, y down, z forward).
+"""
+
+[upstream]
+repo = "https://github.com/rmurai0610/MASt3R-SLAM.git"
+commit = "e6f4e3d474fad0e11f561482012be864ba8c3f17"
+# submodules (eigen on gitlab, pyimgui for the GUI) are not needed:
+# Eigen headers come from cmeel-eigen, the GUI is dropped.
+patches = ["patches/build_archs.patch"]  # CUDA archs from TORCH_CUDA_ARCH_LIST (upstream hard-codes sm_60..86); .type()->.scalar_type() (curope, matching) and torch::linalg::linalg_norm->at::linalg_norm (gn) for torch 2.8
+
+[weights]
+mast3r = { url = "https://download.europe.naverlabs.com/ComputerVision/MASt3R/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric.pth", sha256 = "e28f91b488554653e2b46ddae9c78c1143e0bcb2e27d3e26cdb0b717f1568eb2" }
+retrieval = { url = "https://download.europe.naverlabs.com/ComputerVision/MASt3R/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric_retrieval_trainingfree.pth", sha256 = "000a324f06f9369ab3e32d03dd4b8a838d48e98e3f3bf9d7dd034dce1bfd4c50" }
+codebook = { url = "https://download.europe.naverlabs.com/ComputerVision/MASt3R/MASt3R_ViTLarge_BaseDecoder_512_catmlpdpt_metric_retrieval_codebook.pkl", sha256 = "700af9e31ad0ca6159955dc80b4fd6e14234780b52f5c91884f6553991933c1a" }
+
+[system]
+gpu = { min_vram_gb = 12, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.8", toolkit = ">=12.8" }
+compilers = { gcc = ">=9,<14" }
+disk_gb = 10
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+FORCE_CUDA = "1"
+MAX_JOBS = "16"
+CC = "gcc"
+CXX = "g++"
+
+[setup]
+commands = [
+  # Eigen headers (upstream + lietorch use gitlab submodules; the RTX 5090 host cannot reach gitlab)
+  "E=$(python -c \"import sysconfig; print(sysconfig.get_paths()['purelib'])\")/cmeel.prefix/include/eigen3 && test -f $E/Eigen/Core && rm -rf thirdparty/eigen && ln -sfn $E thirdparty/eigen",
+  # lietorch (Lie groups, CUDA) built in place, same commit as upstream's unpinned git dep at the time of pinning
+  "test -d thirdparty/lietorch/.git || git clone -q https://github.com/princeton-vl/lietorch.git thirdparty/lietorch; git -C thirdparty/lietorch checkout -q e7df86554156b36846008d8ddbcc4d8521a16554 && rm -rf thirdparty/lietorch/eigen && ln -sfn $(readlink -f thirdparty/eigen) thirdparty/lietorch/eigen",
+  "cd thirdparty/lietorch && (ls lietorch_backends*.so lietorch_extras*.so >/dev/null 2>&1 || python setup.py build_ext --inplace > build.log 2>&1 || (tail -n 40 build.log; exit 1))",
+  # cuRoPE kernels (dust3r/croco), in place
+  "cd thirdparty/mast3r/dust3r/croco/models/curope && (ls curope*.so >/dev/null 2>&1 || python setup.py build_ext --inplace > build.log 2>&1 || (tail -n 40 build.log; exit 1))",
+  # asmk hamming (cython C), in place
+  "cd thirdparty/mast3r/asmk && (ls asmk/hamming*.so >/dev/null 2>&1 || python setup.py build_ext --inplace > build.log 2>&1 || (tail -n 40 build.log; exit 1))",
+  # MASt3R-SLAM CUDA backends (GN solvers, matching), in place
+  "ls mast3r_slam_backends*.so >/dev/null 2>&1 || python setup.py build_ext --inplace > build.log 2>&1 || (tail -n 40 build.log; exit 1)",
+  "PYTHONPATH=.:thirdparty/mast3r:thirdparty/mast3r/asmk:thirdparty/lietorch python -c 'import lietorch, mast3r_slam_backends, asmk.hamming; import mast3r_slam.global_opt, mast3r_slam.retrieval_database; print(\"mast3r_slam imports ok\")'",
+]
+
+[run]
+timeout_sec = 7200
+
+[tasks.slam]
+description = """
+Dense monocular SLAM over an ordered frame sequence (image_seq; a video
+is split into frames automatically). Every frame is resized so the long
+side is 512 px and centre-cropped to multiples of 16 (upstream
+preprocessing). Frames are tracked against the latest keyframe; new
+keyframes enter a global factor graph (all keyframes, GN on rays or, with
+a camera, on pixels+log-depth) with loop-closure edges from MASt3R
+retrieval. When tracking is lost the system relocalises against the
+keyframe database; frames lost until then get no pose.
+Outputs are in one arbitrary, consistent scale (NOT metres); frame 0 =
+world origin. Without `camera` the intrinsics are never estimated
+explicitly (MASt3R pointmaps define the geometry); with `camera` the
+frames are undistorted (OpenCV, zero-skew pinhole, principal point
+centred) before tracking and calibrated optimisation is used.
+Memory: keyframe buffers are pre-allocated on the GPU (`max_keyframes`,
+~9 MB each at 512x384) plus ~5 MB per factor-graph edge; frames
+themselves are streamed from disk one at a time.
+"""
+inputs.frames = { type = "image_seq", description = "ordered frames of one static scene, same resolution (video accepted)" }
+inputs.camera = { type = "camera", optional = true, description = "known intrinsics (+ OpenCV distortion) at the frame resolution; enables calibrated mode" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam (camera-to-world, OpenCV axes, up to scale) for EVERY successfully tracked input frame: keyframes take their final optimised pose, other frames their tracked pose relative to their reference keyframe re-composed with that keyframe's final pose (so loop-closure corrections propagate). Fields: frames (file names), frame_index (input indices), timestamps (= frame_index); frames lost during relocalisation are omitted (listed in metadata.lost_frames)" }
+outputs.keyframes = { type = "trajectory", description = "final optimised T_world_cam per keyframe, with frame_index / frames of the input frame each keyframe came from" }
+outputs.pointcloud = { type = "pointcloud", description = "binary ply xyz+rgb, fused keyframe pointmaps in the world (frame 0) frame, arbitrary scale, average confidence > conf_threshold, randomly subsampled to max_points" }
+outputs.depth = { type = "depth_seq", optional = true, description = "only if save_depth: per-KEYFRAME z-depth (%06d.npy = keyframe order, see keyframes.frame_index) at the input resolution, same arbitrary unit as the trajectory; 0 = invalid / outside the network crop / conf <= conf_threshold. With a camera the depth belongs to the undistorted image (metadata.camera_undistorted)" }
+params.subsample = { type = "int", default = 1, description = "use every k-th input frame (frame_index still refers to the input sequence)" }
+params.max_keyframes = { type = "int", default = 512, description = "keyframe buffer size pre-allocated on the GPU (upstream 512); the run fails with a hint if exceeded (raise it or subsample)" }
+params.conf_threshold = { type = "float", default = 1.5, description = "point cloud / depth keep pixels whose average MASt3R confidence exceeds this (upstream viewer default 1.5)" }
+params.max_points = { type = "int", default = 2000000, description = "random subsample of the fused point cloud above this size" }
+params.save_depth = { type = "bool", default = false, description = "also write per-keyframe depth maps (output `depth`)" }
+
+[[tests]]
+# TUM RGB-D fr1_desk (CC BY 4.0), every 3rd frame (205 frames, ~10 Hz), 512x384.
+# Reference = TUM motion-capture ground truth (metres); trajectory_ate is
+# RMSE after Sim3 alignment. Visually checked (trajectory vs GT, point cloud).
+name = "fr1_desk_uncalibrated"
+task = "slam"
+timeout_sec = 1200
+inputs = { frames = "tests/fixture/fr1_desk" }
+params = { save_depth = true }
+[[tests.checks]]
+output = "trajectory"
+field = "count"
+min = 195          # observed 204 (1 frame lost before a relocalisation)
+[[tests.checks]]
+output = "trajectory"
+metric = "trajectory_ate"
+# matched by frame_index (frame 119 is lost before a relocalisation)
+expected = "tests/expected/gt_trajectory.json"
+max = 0.12         # observed 0.068 m
+[[tests.checks]]
+output = "keyframes"
+field = "count"
+min = 8
+max = 30           # observed 16
+[[tests.checks]]
+output = "depth"
+field = "count"
+min = 8            # one per keyframe
+[[tests.checks]]
+output = "pointcloud"
+field = "points"
+min = 1500000      # observed 2000000 (max_points cap)
+
+[[tests]]
+name = "fr1_desk_calibrated"
+task = "slam"
+timeout_sec = 1200
+inputs = { frames = "tests/fixture/fr1_desk", camera = "tests/fixture/fr1_desk_camera.json" }
+[[tests.checks]]
+output = "trajectory"
+field = "count"
+eq = 205
+[[tests.checks]]
+output = "trajectory"
+metric = "trajectory_ate"
+expected = "tests/expected/gt_trajectory.json"
+max = 0.04         # observed 0.021 m (keyframes 0.015 m; paper fr1_desk calibrated 0.016 m)
+[[tests.checks]]
+output = "keyframes"
+field = "count"
+min = 8
+max = 30           # observed 14
+[[tests.checks]]
+output = "pointcloud"
+field = "points"
+min = 1000000
+
+[[known_issues]]
+summary = "Scale is arbitrary (monocular SLAM); trajectory, points and depth are not in metres"
+fix = "anchor the scale downstream (prior_depth_anything / metric depth node, markers, a known distance)"
+
+[[known_issues]]
+summary = "Licence: MASt3R-SLAM code CC BY-NC-SA 4.0; MASt3R / DUSt3R code and checkpoints CC BY-NC-SA 4.0 (non-commercial; checkpoints also bound by the training-dataset licences in mast3r CHECKPOINTS_NOTICE); lietorch BSD-3"
+fix = "non-commercial use only"
+
+[[known_issues]]
+summary = "Single-process, synchronous version of upstream main.py (upstream runs tracker and backend in two processes, results can differ slightly run to run there); no GUI"
+fix = "none needed; this is the upstream --no-viz / single_thread behaviour"

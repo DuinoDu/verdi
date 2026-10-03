@@ -1,0 +1,26 @@
+[project]
+name = "pdebug-node-depth-anything"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "transformers==4.57.1",
+  "safetensors",
+  # Video-Depth-Anything (upstream checkout, imported from ctx.repo)
+  "opencv-python-headless==4.11.0.86",
+  "einops==0.8.1",
+  "easydict==1.13",
+  "tqdm",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
+# xformers is NOT used: its FA3 (hopper) kernels crash on sm_120; VDA's
+# DINOv2 attention is patched to torch SDPA instead (patches/).

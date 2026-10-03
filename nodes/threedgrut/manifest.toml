@@ -1,0 +1,73 @@
+name = "threedgrut"
+version = "0.1.0"
+description = """
+NVIDIA 3DGRUT Gaussian-splat export, as used by SimFoundry's auto-background
+flow (step 7): convert a 3DGS ply into a NuRec USDZ volume that Omniverse Kit
+/ Isaac Sim / OmniGibson can render. (Node name `threedgrut` because node
+names must be identifiers; upstream repo is nv-tlabs/3dgrut.)
+"""
+
+[upstream]
+repo = "https://github.com/nv-tlabs/3dgrut.git"
+commit = "a37ef721012dea0f29c0fcfff2d525023b4e854a"
+patches = ["patches/3dgrut.patch"]
+
+[system]
+gpu = { min_vram_gb = 4, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.8" }
+disk_gb = 10
+
+[run]
+timeout_sec = 1800
+
+[tasks.ply_to_usdz]
+description = """
+Convert a Gaussian splat ply (INRIA 3DGS layout: x,y,z, f_dc_*, optional
+f_rest_* for SH degree 3, opacity (pre-sigmoid), scale_* (log), rot_*) into a
+NuRec USDZ (`file` output: a .usdz zip with the USD stage and the .nurec
+Gaussian payload; geometry only, no cameras, no mesh). Runs upstream
+threedgrut/export/scripts/ply_to_usd.py exactly like SimFoundry
+(MixtureOfGaussians from apps/colmap_3dgut.yaml defaults, init_from_ply,
+NuRecExporter(export_cameras=False) via SimFoundry patches/3dgrut.patch).
+Coordinates are copied as-is (the splat's world frame, e.g. metres), NuRec
+stages are Z-up. `info` reports what was exported.
+"""
+inputs.gaussians = { type = "gaussians" }
+outputs.usdz = { type = "file", description = "NuRec .usdz (zip: default.usda + *.nurec payload)" }
+outputs.info = { type = "json", description = '{"num_gaussians", "sh_degree", "usdz_members": [...], "prims": [{"path", "type"}], "up_axis", "bytes"}' }
+
+[[known_issues]]
+summary = "Licence: 3DGRUT code is Apache-2.0 (SimFoundry THIRD_PARTY_LICENSES.md #78, NVIDIA-origin); no weights"
+fix = "none needed"
+
+[[known_issues]]
+summary = "The 3DGUT CUDA rasteriser plugin (slangc + tiny-cuda-nn JIT build) is not built: MixtureOfGaussians constructs it in __init__ but export never renders"
+fix = "entry.py replaces threedgut_tracer.Tracer by a no-op stub before building the model; output is identical, but rendering/training with 3dgrut is not available in this node"
+
+[[tests]]
+name = "splat"
+task = "ply_to_usdz"
+timeout_sec = 900
+inputs = { gaussians = "tests/fixture/splat.ply" }
+# fixture: 8000 random Gaussians (opacity > 0.5) of the splatfacto node's
+# bedroom test splat (8000 steps on the RTX 5090 host), SH degree 3, INRIA layout, 2 MB
+[[tests.checks]]
+output = "info"
+path = "num_gaussians"
+eq = 8000
+[[tests.checks]]
+output = "info"
+path = "sh_degree"
+eq = 3
+[[tests.checks]]
+output = "info"
+path = "up_axis"
+eq = "Z"
+[[tests.checks]]
+output = "info"
+path = "prims.2.type"
+eq = "Volume"
+[[tests.checks]]
+output = "info"
+path = "bytes"
+min = 500000

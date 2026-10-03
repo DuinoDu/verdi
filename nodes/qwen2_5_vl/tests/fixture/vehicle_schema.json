@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "vehicle_type": {"type": "string", "enum": ["car", "pickup_truck", "bus", "van", "motorcycle", "bicycle"]},
+    "body_color": {"type": "string"},
+    "wheels_visible": {"type": "integer", "minimum": 0, "maximum": 10},
+    "background_wall_color": {"type": "string"}
+  },
+  "required": ["vehicle_type", "body_color", "wheels_visible", "background_wall_color"],
+  "additionalProperties": false
+}

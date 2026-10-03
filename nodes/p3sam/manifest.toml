@@ -1,0 +1,112 @@
+name = "p3sam"
+version = "0.1.0"
+description = """
+P3-SAM (Tencent Hunyuan3D-Part): native 3D part segmentation of a mesh.
+Fully automatic: Sonata point features + ~400 FPS point prompts, mask
+NMS and connected-region post-processing give one part label per face.
+This is the segmentation backend of SimFoundry's articulation stage
+(stage 9, s3_segment_mesh, segment_method=hunyuan, the default); the node
+uses SimFoundry's patched upstream and its default parameters. Geometry
+only (vertex colours/textures are ignored). Units are passed through.
+Licence: Tencent Hunyuan 3D-Part Community License (non-commercial).
+"""
+
+[upstream]
+repo = "https://github.com/Tencent-Hunyuan/Hunyuan3D-Part.git"
+# SimFoundry pins "df0c911" (its private mirror); the public equivalent is the
+# PR #15 merge ("switch to safetensors"), on which the SimFoundry patch applies cleanly.
+commit = "e96be065375438962375b55326416291342958a7"
+patches = [
+  # verbatim from articulate-anything-sf@dec3a618 patches/hunyuan-simfoundry.patch
+  "patches/hunyuan-simfoundry.patch",
+]
+
+[weights]
+p3sam = { hf = "tencent/Hunyuan3D-Part", revision = "677174466c53571e8bacd5050dff5948734a1a4d", files = ["p3sam/p3sam.safetensors", "p3sam/config.json"] }
+sonata = { hf = "facebook/sonata", revision = "df99897472c09f91ba9288da0a034aacffc0b010", files = ["sonata.pth"] }
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 15
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+FORCE_CUDA = "1"
+MAX_JOBS = "32"
+# flash-attn source build: skip its GitHub wheel download, build sm_90 (H20)
+# + sm_120 (RTX 5090) kernels only
+FLASH_ATTENTION_FORCE_BUILD = "TRUE"
+FLASH_ATTN_CUDA_ARCHS = "90;120"
+NVCC_THREADS = "2"
+
+[run]
+timeout_sec = 1800
+
+[tasks.segment]
+description = """
+Segment a mesh into parts. Every face gets a part id; parts are numbered
+0..K-1 by decreasing surface area, -1 = unassigned (rare, only with
+post_process=false). Outputs:
+- parts (json): {"num_faces": F, "input_faces": F_in, "num_parts": K,
+  "unassigned_faces": n, "parts": [{"id", "num_faces", "area_frac",
+  "aabb": [[xmin,ymin,zmin],[xmax,ymax,zmax]]}], "part_colors": [[r,g,b]
+  per id], "face_labels": [F ints]}. face_labels index the faces of the
+  output mesh (identical to the input faces unless clean_mesh=true, which
+  merges duplicate vertices/faces first; then num_faces < input_faces).
+- mesh (glb): the segmented mesh, untextured, one flat colour per part
+  (tab20 palette, colour of id k = part_colors[k]); same vertices/faces as
+  face_labels. ~1-3 min on H20 at 100k points / 400 prompts, ~10 GB VRAM.
+SimFoundry then smooths part boundaries and hierarchically merges parts
+to <= 15 (plain geometry, not done here).
+"""
+inputs.mesh = { type = "mesh", description = "triangle mesh (glb/obj/ply); scenes are merged into one mesh" }
+outputs.parts = { type = "json", description = "per-face part labels + part table (schema above)" }
+outputs.mesh = { type = "mesh", description = "glb coloured by part id" }
+params.point_num = { type = "int", default = 100000, description = "surface points sampled for the Sonata features" }
+params.prompt_num = { type = "int", default = 400, description = "FPS point prompts (more = finer parts, slower)" }
+params.prompt_bs = { type = "int", default = 8, description = "prompts per forward batch (SimFoundry 8; upstream 32 is faster, more VRAM)" }
+params.threshold = { type = "float", default = 0.85, description = "mask merge IoU threshold (SimFoundry 0.85; upstream CLI 0.95 keeps more, smaller parts)" }
+params.post_process = { type = "bool", default = true, description = "upstream connected-region post-processing (assigns every face)" }
+params.clean_mesh = { type = "bool", default = false, description = "merge duplicate vertices/faces before segmenting (SimFoundry default false)" }
+params.seed = { type = "int", default = 42, description = "sampling seed (SimFoundry uses 42)" }
+
+[[tests]]
+name = "segment"
+task = "segment"
+timeout_sec = 900
+inputs = { mesh = "tests/fixture/beetle_car.glb" }
+# reference run on the RTX 5090 host: 29 parts, all faces assigned; visually
+# checked (wheels, legs, antennae, shell, pylon are separate parts)
+[[tests.checks]]
+output = "mesh"
+field = "faces"
+eq = 39999
+[[tests.checks]]
+output = "parts"
+path = "num_faces"
+eq = 39999
+[[tests.checks]]
+output = "parts"
+path = "unassigned_faces"
+eq = 0
+[[tests.checks]]
+output = "parts"
+path = "num_parts"
+min = 15
+max = 45
+[[tests.checks]]
+output = "parts"
+path = "parts.0.area_frac"
+min = 0.08
+max = 0.25
+
+[[known_issues]]
+summary = "Licence: Hunyuan3D-Part code and p3sam.safetensors are under the Tencent Hunyuan 3D-Part Community License (non-OSS; no rights granted in the EU, UK or South Korea; see LICENSE in the checkout and SimFoundry THIRD_PARTY_LICENSES section 6). The facebook/sonata HF card states no licence (upstream facebookresearch/sonata terms apply)"
+fix = "Research/evaluation use only; review the licences before redistribution or commercial use"
+
+[[known_issues]]
+summary = "SimFoundry pins Hunyuan3D-Part 'df0c911', which does not exist in the public repo"
+fix = "Pinned the public PR #15 merge e96be06 (same 'switch to safetensors' content); the SimFoundry patch applies cleanly there"

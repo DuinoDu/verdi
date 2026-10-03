@@ -1,0 +1,27 @@
+diff --git a/stablenormal/pipeline_stablenormal.py b/stablenormal/pipeline_stablenormal.py
+index 34cb60e..9df02aa 100644
+--- a/stablenormal/pipeline_stablenormal.py
++++ b/stablenormal/pipeline_stablenormal.py
+@@ -54,7 +54,6 @@ from diffusers.pipelines.marigold.marigold_image_processing import MarigoldImage
+ from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+ import torch.nn.functional as F
+ 
+-import pdb
+ 
+ 
+ 
+@@ -116,7 +115,13 @@ class DINOv2_Encoder(torch.nn.Module):
+     ):
+         super(DINOv2_Encoder, self).__init__()
+         
+-        self.model = torch.hub.load('facebookresearch/dinov2', model_name)
++        # pdebug: load DINOv2 from a pinned local checkout + pinned weights
++        # instead of torch.hub network access.
++        import os
++        self.model = torch.hub.load(os.environ['STABLENORMAL_DINOV2_REPO'], model_name,
++                                    source='local', pretrained=False)
++        self.model.load_state_dict(torch.load(os.environ['STABLENORMAL_DINOV2_WEIGHTS'],
++                                              map_location='cpu'))
+         self.model.eval().to(device)
+         self.device = device
+         self.antialias = antialias

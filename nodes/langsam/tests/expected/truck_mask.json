@@ -1,0 +1,27 @@
+{
+  "1": {
+    "label": "truck",
+    "score": 0.8081,
+    "mask_score": 0.9922
+  },
+  "2": {
+    "label": "tire",
+    "score": 0.7447,
+    "mask_score": 0.9805
+  },
+  "3": {
+    "label": "tire",
+    "score": 0.7202,
+    "mask_score": 0.9805
+  },
+  "4": {
+    "label": "tire",
+    "score": 0.5443,
+    "mask_score": 0.9492
+  },
+  "5": {
+    "label": "tire",
+    "score": 0.3567,
+    "mask_score": 0.8516
+  }
+}

@@ -1,0 +1,57 @@
+name = "groundingdino"
+version = "0.1.0"
+description = """
+Grounding DINO (IDEA-Research, via HF transformers): open-vocabulary
+object detection. Give an image and a text listing object categories or
+referring phrases; returns pixel xyxy boxes labelled with the matched
+phrase. Feed the boxes to sam2 / segment_anything for masks, or use the
+langsam node for text -> mask in one step.
+"""
+
+[weights]
+base = { hf = "IDEA-Research/grounding-dino-base", revision = "12bdfa3120f3e7ec7b434d90674b3396eccf88eb", files = ["*.json", "*.txt", "model.safetensors"] }
+tiny = { hf = "IDEA-Research/grounding-dino-tiny", revision = "a2bb814dd30d776dcf7e30523b00659f4f141c71", files = ["*.json", "*.txt", "model.safetensors"] }
+
+[system]
+gpu = { min_vram_gb = 6, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 5
+
+[run]
+timeout_sec = 1200
+
+[tasks.detect]
+description = """
+Detect every instance of the phrases in `text` (e.g. "truck. tire." or
+"truck, tire"; commas and periods both separate phrases, case is ignored).
+Each box carries `label` = the matched phrase (as decoded by the model,
+may be a sub-span or merge of phrases) and `score` = box confidence.
+Boxes are sorted by decreasing score. An empty box list is a valid result
+(nothing above the thresholds).
+"""
+inputs.image = { type = "image" }
+outputs.boxes = { type = "bbox_set", description = "pixel xyxy boxes with label (phrase) and score" }
+params.text = { type = "str", description = "object phrases separated by '.' or ','; e.g. 'person. red car. dog'" }
+params.checkpoint = { type = "str", default = "base", choices = ["base", "tiny"], description = "Swin-B (better) or Swin-T (faster) backbone" }
+params.box_threshold = { type = "float", default = 0.35, description = "minimum box confidence" }
+params.text_threshold = { type = "float", default = 0.25, description = "minimum token score for a phrase to be assigned as label" }
+
+[[tests]]
+name = "detect"
+task = "detect"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { text = "truck. tire." }
+[[tests.checks]]
+output = "boxes"
+field = "labels"
+contains = "truck"
+[[tests.checks]]
+output = "boxes"
+field = "labels"
+contains = "tire"
+[[tests.checks]]
+output = "boxes"
+field = "count"
+min = 3
+max = 4

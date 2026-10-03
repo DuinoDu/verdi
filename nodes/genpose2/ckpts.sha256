@@ -1,0 +1,3 @@
+b991c1d5c40e6c140d542107ba98d09f7516ed9fc32e81958dd4f28ac8fe6db7  ckpts/ScoreNet/scorenet.pth
+5bba887a5b50befdebb170d69fd3ecf4503946bcb146c6926ec88bef5e03f335  ckpts/EnergyNet/energynet.pth
+2544f3720bbd0662d5cfd1ec486ef1fe38a7cffb653787c5861f4b0e62112830  ckpts/ScaleNet/scalenet.pth

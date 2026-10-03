@@ -1,0 +1,22 @@
+{
+  "1": {
+    "label": "tire",
+    "score": 0.94140625
+  },
+  "2": {
+    "label": "tire",
+    "score": 0.94140625
+  },
+  "3": {
+    "label": "tire",
+    "score": 0.890625
+  },
+  "4": {
+    "label": "tire",
+    "score": 0.87109375
+  },
+  "5": {
+    "label": "truck",
+    "score": 0.8671875
+  }
+}

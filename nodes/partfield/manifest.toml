@@ -1,0 +1,101 @@
+name = "partfield"
+version = "0.1.0"
+description = """
+PartField (NVIDIA, ICCV 2025): learned 3D part feature field. A PVCNN +
+triplane transformer predicts a 448-d part feature for every mesh face;
+faces are then grouped into a fixed number of parts by agglomerative
+clustering over the face adjacency graph (the SimFoundry recipe).
+Alternative segmentation backend of SimFoundry's articulation stage
+(stage 9, s3_segment_mesh, segment_method=partfield, method=partfield).
+Geometry only; units are passed through (the model normalises
+internally). Licence: NVIDIA License, non-commercial.
+"""
+
+[upstream]
+repo = "https://github.com/nv-tlabs/PartField.git"
+# SimFoundry clones the default branch unpinned; this is its HEAD at integration time.
+commit = "373025dbd283bb44cc4a6dc78c99994dbc91de32"
+patches = [
+  # verbatim from articulate-anything-sf@dec3a618 patches/partfield.patch
+  # (feature_output_dir option, yacs CfgNode safe-global for torch>=2.6,
+  # run_part_clustering_with_glb.py helper)
+  "patches/partfield.patch",
+  # pdebug: import vtk lazily (only the unused tetgen remesh path needs it);
+  # `import vtk` loads the rendering modules, which need libXrender (X11)
+  "patches/lazy-vtk.patch",
+]
+
+[weights]
+# Official link from the PartField README (Objaverse-trained model).
+partfield = { hf = "mikaelaangel/partfield-ckpt", revision = "90b9b1e08b6a12fdcb6ee26b4854a26235e1765f", files = ["model_objaverse.ckpt", "LICENSE"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 15
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+FORCE_CUDA = "1"
+MAX_JOBS = "16"
+
+[run]
+timeout_sec = 1800
+
+[tasks.segment]
+description = """
+Compute PartField per-face features and cluster them into num_clusters
+parts (SimFoundry default 10). Parts are numbered 0..K-1 by decreasing
+surface area; every face gets a part. Outputs:
+- parts (json): {"num_faces": F, "num_parts": K, "unassigned_faces": 0,
+  "parts": [{"id", "num_faces", "area_frac", "aabb": [[xmin,ymin,zmin],
+  [xmax,ymax,zmax]]}], "part_colors": [[r,g,b] per id],
+  "face_labels": [F ints]}; faces are those of the input mesh (scenes are
+  merged into one mesh, no vertex merging).
+- mesh (glb): the same mesh, untextured, one flat colour per part
+  (colour of id k = part_colors[k]).
+- features (file): .npy float32 [F, 448], raw (not normalised) PartField
+  feature per face, row i = face i; usable for re-clustering with another
+  K or for part correspondence.
+"""
+inputs.mesh = { type = "mesh", description = "triangle mesh (glb/obj/ply)" }
+outputs.parts = { type = "json", description = "per-face part labels + part table (schema above)" }
+outputs.mesh = { type = "mesh", description = "glb coloured by part id" }
+outputs.features = { type = "file", description = ".npy float32 [num_faces, 448] per-face PartField features" }
+params.num_clusters = { type = "int", default = 10, description = "number of parts K (SimFoundry s3_segment_mesh.num_clusters)" }
+params.n_point_per_face = { type = "int", default = 1000, description = "points sampled per face to average its feature (configs/final/demo.yaml: 1000)" }
+
+[[tests]]
+name = "segment"
+task = "segment"
+timeout_sec = 900
+inputs = { mesh = "tests/fixture/beetle_car.glb" }
+# visually checked on the RTX 5090 host: shell, head/antennae, pylon, wheels and each leg
+# are separate parts; largest part (shell) ~23% of the area
+[[tests.checks]]
+output = "parts"
+path = "num_parts"
+eq = 10
+[[tests.checks]]
+output = "parts"
+path = "num_faces"
+eq = 39999
+[[tests.checks]]
+output = "parts"
+path = "unassigned_faces"
+eq = 0
+[[tests.checks]]
+output = "parts"
+path = "parts.0.area_frac"
+min = 0.15
+max = 0.32
+
+[[known_issues]]
+summary = "Licence: PartField code and the Objaverse checkpoint are under the NVIDIA License (non-commercial / research use only; SimFoundry THIRD_PARTY_LICENSES section 6)"
+fix = "Research use only; commercial use needs a separate licence from NVIDIA"
+
+[[known_issues]]
+summary = "SimFoundry does not pin PartField (clones the default branch)"
+fix = "Pinned the HEAD at integration time (373025d); the SimFoundry patch applies cleanly there"

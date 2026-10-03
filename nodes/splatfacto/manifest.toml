@@ -1,0 +1,115 @@
+name = "splatfacto"
+version = "0.1.0"
+description = """
+nerfstudio splatfacto 3D Gaussian Splatting training from posed images (no
+COLMAP), as used by SimFoundry's auto-background flow (ns-train
+splatfacto-big + ns-export gaussian-splat, optional L1 depth supervision).
+Poses are kept as given: no recentring, reorientation or rescaling, so the
+exported Gaussians live in the input world frame (metres if poses/depth are).
+"""
+
+[weights.alexnet]
+# torchvision alexnet (IMAGENET1K_V1): backbone of the torchmetrics LPIPS that
+# splatfacto builds at model init (would be downloaded at run time otherwise)
+url = "https://download.pytorch.org/models/alexnet-owt-7be5be79.pth"
+sha256 = "7be5be791159472b1fbf3c69796f7cb30dca7ad8466c2df70058c37116cdee02"
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13" }
+disk_gb = 15
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+TORCH_EXTENSIONS_DIR = "{venv}/torch_extensions"
+
+[run]
+timeout_sec = 14400
+
+[run.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+TORCH_EXTENSIONS_DIR = "{venv}/torch_extensions"
+TORCHDYNAMO_DISABLE = "1"
+TORCH_COMPILE_DISABLE = "1"
+
+[setup]
+commands = [
+  # SimFoundry patches/splatfacto_depth_loss.patch -> installed nerfstudio
+  # (env-var-gated L1 depth loss). Idempotent: skip when already applied.
+  "SP=$(python -c 'import nerfstudio,os;print(os.path.dirname(os.path.dirname(nerfstudio.__file__)))'); if patch -p1 -d $SP --reverse --dry-run -f < {node_dir}/patches/splatfacto_depth_loss.patch >/dev/null 2>&1; then echo 'depth-loss patch already applied'; else patch -p1 -d $SP --forward -f < {node_dir}/patches/splatfacto_depth_loss.patch; fi",
+  # JIT-build the gsplat CUDA extension once (cached in TORCH_EXTENSIONS_DIR).
+  "python -c 'from gsplat.cuda._backend import _C; assert _C is not None, \"gsplat CUDA build failed\"; print(\"gsplat CUDA ok\")'",
+]
+
+[tasks.train]
+description = """
+Train a Gaussian splat on an image sequence with known cameras and export it.
+Inputs follow pdebug conventions: `trajectory` is T_world_cam (camera-to-world,
+OpenCV camera axes x right / y down / z forward), one pose per frame in frame
+order; `camera` is the pinhole K of the frames (rescaled automatically if the
+frames have a different resolution than camera width/height; distortion is
+ignored). Internally poses are converted to nerfstudio's OpenGL camera axes
+(T_world_cam @ diag(1,-1,-1,1)) and loaded with the nerfstudio-data parser
+with orientation/centering/auto-scaling disabled and scale 1, so the output
+splat is in the same world frame as the input trajectory.
+Initialisation: points back-projected from `depth` (confidence-free, 0 =
+invalid) or the optional `points` cloud; random init otherwise (poor for
+small metric scenes). `masks` (nonzero = pixels to ignore, e.g. dynamic
+objects) are excluded from the photometric loss and from the depth seed.
+With `depth` and use_depth_loss=true the SimFoundry depth-loss patch adds
+depth_loss_mult * L1(rendered depth, depth) on pixels with depth > 0.1 m.
+All frames are used for training (eval-mode all). After export the splat is
+rendered back at every input pose; `renders` holds those views and `metrics`
+the per-frame PSNR against the inputs (a fit-quality check, not held-out).
+"""
+inputs.frames = { type = "image_seq", description = "RGB frames, %06d order = trajectory order" }
+inputs.trajectory = { type = "trajectory", description = "T_world_cam per frame (OpenCV camera-to-world)" }
+inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames" }
+inputs.depth = { type = "depth_seq", optional = true, description = "metric depth per frame (any resolution, resized nearest); seed points + depth loss" }
+inputs.masks = { type = "mask_seq", optional = true, description = "nonzero = ignore pixel (excluded from loss and seed)" }
+inputs.points = { type = "pointcloud", optional = true, description = "seed point cloud (ply xyz + optional rgb) in the trajectory world frame; overrides the depth seed" }
+outputs.gaussians = { type = "gaussians", description = "INRIA-layout 3DGS ply (ns-export gaussian-splat), input world frame" }
+outputs.renders = { type = "image_seq", description = "splat rendered at each input pose" }
+outputs.metrics = { type = "json", description = '{"psnr_mean", "psnr_min", "psnr": [per frame], "num_gaussians", "iterations", "method"}' }
+params.method = { type = "str", default = "splatfacto-big", choices = ["splatfacto", "splatfacto-big"], description = "nerfstudio method; SimFoundry uses splatfacto-big" }
+params.max_num_iterations = { type = "int", default = 80000, description = "training steps (SimFoundry canonical 80000, nerfstudio default 30000). Training runs at 1/4 resolution until step 3000 and 1/2 until 6000, so use >= 8000 even for a quick check" }
+params.camera_optimizer = { type = "str", default = "SO3xR3", choices = ["off", "SO3xR3", "SE3"], description = "pose refinement during training (SimFoundry: SO3xR3)" }
+params.use_depth_loss = { type = "bool", default = true, description = "L1 depth supervision when depth is given (SimFoundry patch)" }
+params.depth_loss_mult = { type = "float", default = 0.5, description = "depth loss weight (SimFoundry A/B winner 0.5)" }
+params.seed_max_points = { type = "int", default = 200000, description = "random subsample size of the depth seed cloud" }
+params.seed = { type = "int", default = 42, description = "training seed" }
+
+[[tests]]
+name = "bedroom"
+task = "train"
+timeout_sec = 3600
+inputs = { frames = "tests/fixture/bedroom", trajectory = "tests/fixture/trajectory.json", camera = "tests/fixture/camera.json", depth = "tests/fixture/depth" }
+# 8000 steps: splatfacto trains at 1/4 then 1/2 resolution until step 6000
+# (num_downscales=2, resolution_schedule=3000), so shorter runs are blurry at
+# full resolution. The fixture has two children jumping (dynamic), which a
+# static splat can only average: PSNR is bounded (~20.5-22.8 dB on the RTX 5090 host,
+# static background visually sharp), hence the moderate threshold.
+params = { max_num_iterations = 8000 }
+[[tests.checks]]
+output = "metrics"
+path = "psnr_min"
+min = 19.5
+[[tests.checks]]
+output = "metrics"
+path = "psnr_mean"
+min = 20.5
+[[tests.checks]]
+output = "gaussians"
+field = "gaussians"
+min = 300000
+
+[[known_issues]]
+summary = "Licences: nerfstudio and gsplat are Apache-2.0 (SimFoundry THIRD_PARTY_LICENSES.md #16); only weights are torchvision alexnet (BSD-3) for the LPIPS metric"
+fix = "none needed"
+
+[[known_issues]]
+summary = "gsplat 1.5.3 overrides nerfstudio 1.1.5's hard gsplat==1.4.0 pin (as in SimFoundry); pip-check style warnings are expected"
+fix = "splatfacto trains fine on gsplat 1.5.3 (verified by the test)"

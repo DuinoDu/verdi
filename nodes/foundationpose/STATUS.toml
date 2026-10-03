@@ -1,0 +1,13 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:09:52+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+upstream_commit = "e3d597b8c6b851d053094ebd6fa240191c5238f8"
+env_lock = "sha256:9e31d324b48337a14829641825d22d0c5f1d2e790e0c73cd1b40b6324e966916"
+untested_tasks = [
+]
+cases = [
+  "PASS estimate (16.18s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}",
+  "PASS track (13.16s): PASS poses.count=3 {'eq': 3}",
+]

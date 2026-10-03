@@ -1,0 +1,139 @@
+name = "internimage_semseg"
+version = "0.1.0"
+description = """
+FlashInternImage (InternImage + DCNv4, OpenGVLab) UPerNet semantic
+segmentation trained on ADE20K (150 classes). Output is a class-id mask:
+pixel value = ADE20K class index + 1 (1 = wall, 2 = building, 3 = sky,
+4 = floor, 5 = tree, ..., 13 = person, 21 = car, 84 = truck, ...;
+0 is never produced unless filtered out by `classes`). The sidecar json
+names every id present in the mask.
+"""
+
+[upstream]
+repo = "https://github.com/OpenGVLab/DCNv4.git"
+commit = "4b848f7dd7da74ff03f7d278f902c6fd05b391b5"
+
+[weights]
+t = { hf = "OpenGVLab/DCNv4", revision = "5cd15e23aa709b55b547ff45b58d75934ca03785", files = ["upernet_flash_internimage_t_512_160k_ade20k.pth"] }
+s = { hf = "OpenGVLab/DCNv4", revision = "5cd15e23aa709b55b547ff45b58d75934ca03785", files = ["upernet_flash_internimage_s_512_160k_ade20k.pth"] }
+b = { hf = "OpenGVLab/DCNv4", revision = "5cd15e23aa709b55b547ff45b58d75934ca03785", files = ["upernet_flash_internimage_b_512_160k_ade20k.pth"] }
+l = { hf = "OpenGVLab/DCNv4", revision = "5cd15e23aa709b55b547ff45b58d75934ca03785", files = ["upernet_flash_internimage_l_640_160k_ade20k.pth"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13" }
+disk_gb = 15
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+MMCV_WITH_OPS = "0"
+MAX_JOBS = "16"
+
+[run]
+timeout_sec = 1800
+
+[tasks.semseg]
+description = """
+ADE20K semantic segmentation of one image. mask value = ADE20K class
+index + 1 (mmseg `get_classes('ade20k')` order). Sidecar mask.json =
+{id: {label, area_ratio}} for every id present. With `classes`, all
+other classes are set to 0 (background).
+"""
+inputs.image = { type = "image" }
+outputs.mask = { type = "mask", description = "class-id mask (ADE20K index + 1), sidecar names the ids" }
+params.model = { type = "str", default = "s", choices = ["t", "s", "b", "l"], description = "UPerNet FlashInternImage size: t/s/b @512, l @640 (s = legacy default)" }
+params.classes = { type = "str", default = "", description = "optional comma-separated ADE20K class names to keep, e.g. 'person,car'; empty = all" }
+
+[tasks.semseg_frames]
+description = """
+Same as `semseg` on every frame of a sequence (video is split into
+frames). labels.json in the mask dir names every id present in any frame.
+"""
+inputs.frames = { type = "image_seq" }
+outputs.masks = { type = "mask_seq", description = "one class-id mask per frame" }
+params.model = { type = "str", default = "s", choices = ["t", "s", "b", "l"], description = "UPerNet FlashInternImage size" }
+params.classes = { type = "str", default = "", description = "optional comma-separated ADE20K class names to keep" }
+
+[tasks.remove_dynamic]
+description = """
+Blank out dynamic objects (legacy remove_dynamic): pixels of the listed
+ADE20K classes are replaced by the mean colour of that class region in
+the image. Uses `mask` if given (a class-id mask from `semseg` on the
+same image), otherwise runs `semseg` first. Also returns the mask of
+removed pixels (id = class id).
+"""
+inputs.image = { type = "image" }
+inputs.mask = { type = "mask", optional = true, description = "class-id mask from this node's semseg task (same size as image)" }
+outputs.image = { type = "image", description = "image with the classes filled by their mean colour" }
+outputs.mask = { type = "mask", description = "removed pixels, value = class id (ADE20K index + 1)" }
+params.classes = { type = "str", default = "person,car", description = "comma-separated ADE20K class names to remove" }
+params.model = { type = "str", default = "s", choices = ["t", "s", "b", "l"], description = "UPerNet size (only used when no mask is given)" }
+
+[[tests]]
+name = "semseg_all"
+task = "semseg"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+min = 4
+max = 7
+[[tests.checks]]
+output = "mask"
+field = "area_ratio"
+eq = 1.0
+
+[[tests]]
+name = "semseg_car"
+task = "semseg"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { classes = "car" }
+[[tests.checks]]
+output = "mask"
+field = "ids"
+eq = [21]
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_car.png"
+min = 0.9
+
+[[tests]]
+name = "frames_person"
+task = "semseg_frames"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom" }
+params = { classes = "person" }
+[[tests.checks]]
+output = "masks"
+field = "nonempty_frames"
+eq = 6
+[[tests.checks]]
+output = "masks"
+metric = "mask_iou"
+expected = "tests/expected/bedroom_person"
+min = 0.85
+
+[[tests]]
+name = "remove_dynamic"
+task = "remove_dynamic"
+timeout_sec = 900
+inputs = { image = "tests/fixture/bedroom/000003.jpg" }
+params = { classes = "person" }
+[[tests.checks]]
+output = "mask"
+field = "ids"
+eq = [13]
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/bedroom3_removed.png"
+min = 0.9
+
+[[known_issues]]
+summary = "mmcv is the lite build (no mmcv._ext CUDA ops); missing ops are shimmed in entry.py"
+fix = "Only UPerNet models are exposed (they use no mmcv ops). Mask2Former checkpoints would need mmcv-full built against torch 2.7"

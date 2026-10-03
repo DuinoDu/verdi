@@ -1,0 +1,32 @@
+[project]
+name = "pdebug-node-foundpose"
+version = "0.1.0"
+requires-python = "==3.11.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "numpy==1.26.4",
+  "scipy",
+  "scikit-learn==1.5.2",
+  "scikit-image",
+  "opencv-python-headless==4.10.0.84",
+  "trimesh==4.5.3",
+  "pyrender==0.1.45",
+  "PyOpenGL==3.1.0",
+  "kornia==0.7.4",
+  "torchinfo",
+  "tabulate",
+  "matplotlib",
+  "pillow",
+  "faiss-cpu==1.11.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
+# DINOv2 code comes from the upstream's pinned git submodule (external/dinov2).

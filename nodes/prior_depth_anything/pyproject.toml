@@ -1,0 +1,38 @@
+[project]
+name = "pdebug-node-prior-depth-anything"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "torch-cluster==1.6.3",
+  "numpy<2",
+  "einops==0.8.1",
+  "opencv-python-headless==4.11.0.86",
+  "matplotlib",
+  "huggingface_hub",
+  "safetensors",
+  "pillow",
+]
+
+[tool.uv]
+package = false
+
+# torch_cluster is built from the PyPI sdist against the runtime torch
+# (CUDA_HOME / TORCH_CUDA_ARCH_LIST from [build.env]); data.pyg.org wheels
+# are not reachable on offline hosts and lag new torch/arch combinations.
+[tool.uv.extra-build-dependencies]
+torch-cluster = [{ requirement = "torch", match-runtime = true }, "setuptools<80", "wheel", "ninja"]
+
+# static metadata so uv can match the build torch to the runtime torch
+[[tool.uv.dependency-metadata]]
+name = "torch-cluster"
+version = "1.6.3"
+requires-dist = ["scipy"]
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
+# Prior-Depth-Anything itself is imported from the patched [upstream] checkout.

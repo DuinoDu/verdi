@@ -1,0 +1,18 @@
+--- a/partfield/dataloader.py
++++ b/partfield/dataloader.py
+@@ -17,7 +17,6 @@
+ ## For remeshing
+ import mesh2sdf
+ import tetgen
+-import vtk
+ import math
+ import tempfile
+ 
+@@ -305,6 +304,7 @@
+             tet.grid.save(tmp_vtk.name)
+ 
+             # extract surface mesh from tet mesh
++            import vtk  # lazy: `import vtk` needs libXrender (X11), only this remesh path uses it
+             reader = vtk.vtkUnstructuredGridReader()
+             reader.SetFileName(tmp_vtk.name)
+             reader.Update()

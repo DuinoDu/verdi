@@ -1,0 +1,45 @@
+[project]
+name = "pdebug-node-threedgrut"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+# Runtime deps of 3dgrut @ a37ef721 (pyproject.toml [project].dependencies)
+# needed by threedgrut.export (PLY -> NuRec USDZ). The repo itself is the
+# pinned [upstream] checkout (put on sys.path by entry.py); the CUDA tracer
+# plugins, tiny-cuda-nn, kaolin, ppisp, fused-ssim and slangc are not needed
+# for export and are not installed. torch 2.8.0 = what SimFoundry's 3dgrut
+# env gets (PyPI 2.8.0 is the cu128 build).
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "setuptools==78.1.1",
+  "pillow",
+  "ninja",
+  "plyfile",
+  "torchmetrics",
+  "addict",
+  "dataclasses_json",
+  "einops",
+  "fire",
+  "hydra-core",
+  "imageio",
+  "kornia",
+  "msgpack",
+  "numpy",
+  "omegaconf",
+  "opencv-python",
+  "piexif",
+  "rich",
+  "scikit-learn",
+  "tensorboard",
+  "tqdm",
+  "simplejpeg",
+  "nvidia-ncore>=19.0.0",
+  "usd-core>=26.5",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }

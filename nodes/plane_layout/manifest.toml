@@ -1,0 +1,171 @@
+name = "plane_layout"
+version = "0.1.0"
+description = """
+Room / support-plane layout from metric geometry: iterative RANSAC plane
+extraction (Open3D segment_plane, least-squares refit, largest connected
+component per plane) on a point cloud or a depth map, gravity-aware labels
+(floor / wall / ceiling / table / other) and a floor-anchored world frame
+(z up = against gravity, origin on the floor). Deterministic algorithm
+node (fixed RANSAC seed): CPU only, no weights. Input must be in metres
+(e.g. depth_pro / moge depth, or a vggt cloud rescaled by
+aruco_scale.scale_align).
+"""
+
+[system]
+disk_gb = 2
+
+[run]
+timeout_sec = 1800
+
+[tasks.extract_planes]
+description = """
+Extract up to max_planes planes and label them. Pass EITHER `pointcloud`
+OR `depth` + `camera` (depth is unprojected in the OpenCV camera frame,
+distortion honoured). Gravity: the `gravity` hint (direction of gravity in
+the input frame; default +y = "down" of an upright OpenCV camera) selects
+near-horizontal planes; the floor = the LOWEST horizontal plane facing up
+with >= min_floor_area_m2 and almost no points below it; its normal then
+defines the exact up axis. Labels (in the world frame): ceiling =
+horizontal, facing down, >= ceiling_min_height_m above the floor; table =
+horizontal, facing up, height within table_height_m; wall = vertical with
+>= min_wall_area_m2; everything else = other. With anchor=floor (default)
+the task fails if no floor is visible; anchor=support/auto anchors the world
+on the largest up-facing horizontal plane instead (table-top close-ups).
+"""
+inputs.pointcloud = { type = "pointcloud", optional = true, description = "metric ply (any frame; the input origin should be a camera position, normals are oriented towards it)" }
+inputs.depth = { type = "depth", optional = true, description = "metric depth map (needs camera)" }
+inputs.camera = { type = "camera", optional = true, description = "intrinsics of the depth map (rescaled if only the resolution differs)" }
+inputs.trajectory = { type = "trajectory", optional = true, description = "camera poses in the input frame (e.g. from the same reconstruction as the point cloud); re-expressed in the layout world frame" }
+outputs.planes = { type = "json", description = "{convention, points_used, voxel_m, counts {floor, wall, ceiling, table, other}, planes: [{id (sorted by inliers), label, orientation horizontal|vertical|slanted, normal [3] + d (n.x + d = 0, metres, INPUT frame, normal oriented towards the input origin), normal_world + d_world (world frame), inliers (after voxel downsampling), centroid_world, bounds_world {min, max}, extent_m [major, minor] (in-plane 1-99 percentile extent), area_m2 (extent product), height_m (horizontal planes: height above the floor)}]}" }
+outputs.world = { type = "json", description = "{definition, T_world_input 4x4 (input frame -> world), T_world_cam (= T_world_input for depth input, else null), gravity_input (refined unit gravity in the input frame), gravity_hint, gravity_hint_angle_deg, floor_plane_id, anchor (floor|support), anchor_plane_id, input_origin_height_m (camera height above the anchor plane for depth input)}; world: z up, origin = foot of the input origin on the anchor plane (floor), x = input z axis (camera forward) projected onto the floor, y = z cross x" }
+outputs.pointcloud = { type = "pointcloud", optional = true, description = "only if labelled_pointcloud: voxelised points in the WORLD frame, rgb by label (floor orange, wall blue, ceiling grey, table red, other green, no plane dark), int property plane = plane id or -1" }
+outputs.trajectory = { type = "trajectory", optional = true, description = "only with the trajectory input: T_world_cam in the layout world frame" }
+params.gravity = { type = "list", default = [0.0, 1.0, 0.0], description = "gravity direction hint in the input frame (default +y: upright OpenCV camera; for aruco_scale board-frame clouds with a horizontal board use [0,0,-1])" }
+params.voxel_m = { type = "float", default = 0.02, description = "voxel downsampling size (0 = off)" }
+params.max_depth_m = { type = "float", default = 10.0, description = "depth input: ignore pixels farther than this" }
+params.distance_threshold_m = { type = "float", default = 0.02, description = "RANSAC inlier distance" }
+params.ransac_iterations = { type = "int", default = 2000, description = "RANSAC iterations per plane" }
+params.max_planes = { type = "int", default = 12, description = "maximum number of planes" }
+params.min_inliers = { type = "int", default = 200, description = "minimum inliers (after downsampling) per plane" }
+params.min_inlier_ratio = { type = "float", default = 0.005, description = "minimum inliers as a fraction of all (downsampled) points" }
+params.split_components = { type = "bool", default = true, description = "keep only the largest DBSCAN component (eps 3 voxels) of each RANSAC plane, so coplanar but separate surfaces become separate planes" }
+params.anchor = { type = "str", default = "floor", choices = ["floor", "support", "auto"], description = "world origin plane: floor (error if no floor is visible), support = the largest up-facing horizontal plane (table-top views without floor; labelled table, no other plane is labelled table), auto = floor if found else support (world.anchor says which)" }
+params.gravity_tol_deg = { type = "float", default = 45.0, description = "floor candidates: max angle between a plane normal and the gravity hint (hand-held cameras often pitch 20-45 deg down)" }
+params.angle_tol_deg = { type = "float", default = 15.0, description = "tolerance for horizontal / vertical classification in the (refined) world frame" }
+params.max_below_ratio = { type = "float", default = 0.02, description = "floor test: max fraction of points lying below the plane" }
+params.min_floor_area_m2 = { type = "float", default = 0.5, description = "floor test: minimum in-plane extent product" }
+params.ceiling_min_height_m = { type = "float", default = 1.8, description = "ceiling label: minimum height above the floor" }
+params.table_height_m = { type = "list", default = [0.4, 1.2], description = "table label: [min, max] height above the floor" }
+params.min_wall_area_m2 = { type = "float", default = 0.5, description = "wall label: minimum in-plane extent product of a vertical plane" }
+params.labelled_pointcloud = { type = "bool", default = true, description = "write the labelled world-frame point cloud" }
+params.seed = { type = "int", default = 0, description = "Open3D RANSAC random seed (results are deterministic for a given seed)" }
+
+[[tests]]
+name = "room"
+task = "extract_planes"
+timeout_sec = 600
+inputs = { pointcloud = "tests/fixture/room.ply" }
+# ground truth: camera 1.5 m above the floor, up vector in the camera frame (make_fixture.py), table 0.75 m, ceiling 2.6 m
+[[tests.checks]]
+output = "planes"
+path = "counts.floor"
+eq = 1
+[[tests.checks]]
+output = "planes"
+path = "counts.wall"
+eq = 2
+[[tests.checks]]
+output = "planes"
+path = "counts.ceiling"
+eq = 1
+[[tests.checks]]
+output = "planes"
+path = "counts.table"
+eq = 1
+[[tests.checks]]
+output = "planes"
+path = "planes.4.label"
+eq = "table"
+[[tests.checks]]
+output = "planes"
+path = "planes.4.height_m"
+min = 0.74
+max = 0.76
+[[tests.checks]]
+output = "planes"
+path = "planes.3.label"
+eq = "ceiling"
+[[tests.checks]]
+output = "planes"
+path = "planes.3.height_m"
+min = 2.59
+max = 2.61
+[[tests.checks]]
+output = "world"
+path = "input_origin_height_m"
+min = 1.49
+max = 1.51
+[[tests.checks]]
+output = "world"
+path = "T_world_input.2.0"
+min = -0.0869
+max = -0.0769
+[[tests.checks]]
+output = "world"
+path = "T_world_input.2.1"
+min = -0.9411
+max = -0.9311
+[[tests.checks]]
+output = "world"
+path = "T_world_input.2.2"
+min = -0.347
+max = -0.337
+[[tests.checks]]
+output = "pointcloud"
+field = "points"
+min = 60000
+
+[[tests]]
+name = "bedroom_depth"
+task = "extract_planes"
+timeout_sec = 600
+inputs = { depth = "tests/fixture/bedroom_depth.npy", camera = "tests/fixture/bedroom_camera.json" }
+params = { anchor = "auto" }
+# real case: depth_pro depth of the bedroom frame (no floor visible -> bed = support plane; labelled cloud checked visually: bed red, walls blue); observed camera 0.54 m above the bed
+[[tests.checks]]
+output = "world"
+path = "anchor"
+eq = "support"
+[[tests.checks]]
+output = "planes"
+path = "counts.floor"
+eq = 0
+[[tests.checks]]
+output = "planes"
+path = "counts.table"
+eq = 1
+[[tests.checks]]
+output = "planes"
+path = "counts.wall"
+min = 1
+[[tests.checks]]
+output = "planes"
+path = "planes.0.label"
+eq = "table"
+[[tests.checks]]
+output = "world"
+path = "input_origin_height_m"
+min = 0.45
+max = 0.65
+[[tests.checks]]
+output = "world"
+path = "gravity_hint_angle_deg"
+max = 10
+
+[[known_issues]]
+summary = "The floor must be visible; the lowest large up-facing horizontal plane with nothing below it is taken as the floor"
+fix = "in a table close-up without visible floor the table top becomes 'floor' (the world origin is then on the table); check planes.json heights / the labelled cloud"
+
+[[known_issues]]
+summary = "Labels are geometric heuristics (orientation, height, area), not semantics"
+fix = "tune table_height_m / ceiling_min_height_m / min_wall_area_m2; large furniture faces (wardrobe doors) can be labelled wall"

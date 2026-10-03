@@ -1,0 +1,205 @@
+name = "sam3d_objects"
+version = "0.1.0"
+description = """
+Meta SAM 3D Objects: one RGB image + object mask(s) -> per object a
+textured 3D mesh (glb) plus its pose and size in the camera frame.
+Pipeline (upstream InferencePipelinePointMap): MoGe point map of the full
+image -> sparse-structure flow (geometry + layout: rotation, translation,
+scale) -> structured-latent flow -> mesh / Gaussian decoders -> mesh
+post-process + texture baking.
+Scale: the pose and size are expressed in the units of the point map the
+model is conditioned on. By default that is upstream's MoGe v1
+(Ruicheng/moge-vitl) point map, which is scale-invariant (affine up to an
+unknown global scale) -> poses/sizes are NOT metric ("units": "relative").
+Give `depth` (metres) + `camera` and the point map is back-projected from
+them instead -> poses/sizes are metric ("units": "metres"). For a phone
+photo without depth, run the `moge` node (MoGe-2, metric) first and pass
+its `depth` + `camera`.
+Licence: SAM License (Meta; code and weights); DINOv2 Apache-2.0;
+MoGe MIT.
+"""
+
+[upstream]
+repo = "https://github.com/facebookresearch/sam-3d-objects.git"
+commit = "f91db411c50efee93d8db7aeb323885650f6f722"
+patches = ["patches/0001-no-kaolin.patch"]
+
+[weights]
+# facebook/sam-3d-objects is gated on HuggingFace (manual approval by Meta).
+# Fetched from the ModelScope mirror of the same repo with the user's approval;
+# every file is sha256-pinned (the yaml sha256 values equal the official HF
+# git blob content, see NOTES.md). The SAM License applies.
+pipeline_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/pipeline.yaml", filename = "pipeline.yaml", sha256 = "53c3d226b21df85c0bb3d16e6e4fa63abde0d6167525765eb929d02bfa9d358c" }
+ss_generator_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/ss_generator.yaml", filename = "ss_generator.yaml", sha256 = "3c265448bca7c057f94e3ef56adea3a895a10bcd9f15f992a41dd03fa35412cd" }
+slat_generator_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_generator.yaml", filename = "slat_generator.yaml", sha256 = "53029fadff6fe34a0344381a16d64d65d0567d603484952712e8969319559c4e" }
+ss_decoder_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/ss_decoder.yaml", filename = "ss_decoder.yaml", sha256 = "baacff269b664f84f7aa1896ebd66128065f6568cdb88d419d5c3d2ccb4193ae" }
+slat_decoder_gs_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_decoder_gs.yaml", filename = "slat_decoder_gs.yaml", sha256 = "53f054e02a0c185f0a6885d30bb6ca0ec92efe0a98148688e7f05f7c26afe670" }
+slat_decoder_gs_4_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_decoder_gs_4.yaml", filename = "slat_decoder_gs_4.yaml", sha256 = "3d1dfd4c56cdac56f30e0cf5eb310d4df973fe25c60ac0a462c86ca4e3bf8b48" }
+slat_decoder_mesh_cfg = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_decoder_mesh.yaml", filename = "slat_decoder_mesh.yaml", sha256 = "8f46952764aa985c50109a56f0b4f07625cdb06457aaded74957d26f3520c69e" }
+ss_generator = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/ss_generator.ckpt", filename = "ss_generator.ckpt", sha256 = "225f40479e4cff4f39d6fa14c55be3abad1475bf55b61af3bec1e19ed2f6c146" }
+slat_generator = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_generator.ckpt", filename = "slat_generator.ckpt", sha256 = "91529bde8e7daa12d09618a66c319e3a5a6398db6b23b958cedcb1c3f28faabb" }
+ss_decoder = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/ss_decoder.ckpt", filename = "ss_decoder.ckpt", sha256 = "6dac1cd7b7fda5a38e0614fadae441f1794f80e39ea2981f1ac8aff0a7e99340" }
+slat_decoder_gs = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_decoder_gs.ckpt", filename = "slat_decoder_gs.ckpt", sha256 = "f8077c36a06eaf890dd93cda1937411f793dea1eb80b3dd9329f2038ba84a111" }
+slat_decoder_gs_4 = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_decoder_gs_4.ckpt", filename = "slat_decoder_gs_4.ckpt", sha256 = "731a0eceaa47945b52aa27f650d695b2aea9cc70945751e5609e5cb5b49f0186" }
+slat_decoder_mesh = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/checkpoints/slat_decoder_mesh.ckpt", filename = "slat_decoder_mesh.ckpt", sha256 = "85907b37b67d8ce5b099a96629bdcfbd873eb407dee6b3aa9a75deb15038db33" }
+license = { url = "https://www.modelscope.cn/models/facebook/sam-3d-objects/resolve/master/LICENSE", filename = "LICENSE", sha256 = "b3a5a0e2d973ab80e6610ccf1cffc40756050d0ace3cd4fec879b3ec290b2e9b" }
+# Depth model of pipeline.yaml (MoGe v1 ViT-L, scale-invariant point map)
+moge_vitl = { hf = "Ruicheng/moge-vitl", revision = "ad326bfb61facd6c52b5a825bc1e34d7c97d9672", files = ["model.pt"] }
+# DINOv2 ViT-L/14 + registers (image/mask conditioning), torch.hub from a pinned local repo copy
+dinov2_ckpt = { url = "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_reg4_pretrain.pth", sha256 = "36e4deffbaef061a2576705b0c36f93621e2ae20bf6274694821b0b492551b51" }
+dinov2_repo = { url = "https://github.com/facebookresearch/dinov2/archive/7764ea0f912e53c92e82eb78a2a1631e92725fc8.zip", archive = "zip", files_sha256 = { "dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8/hubconf.py" = "c1f5090e78ff940b72c076d2bf9c0310d1707c946b3d10e2d6f2b0bdf56a6f64" } }
+
+[system]
+gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+disk_gb = 40
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+FORCE_CUDA = "1"   # pytorch3d: build the CUDA kernels
+MAX_JOBS = "16"
+CC = "gcc"
+CXX = "g++"
+
+[run.env]
+LIDRA_SKIP_INIT = "true"     # as upstream notebook/inference.py
+ATTN_BACKEND = "xformers"    # dense + sparse attention (flash-attn: no wheel for torch 2.8)
+SPCONV_ALGO = "native"       # spconv-cu126 implicit-gemm kernels do not run on sm_120
+PYTORCH_CUDA_ALLOC_CONF = "expandable_segments:True"
+
+[setup]
+commands = [
+  "python -c 'import torch, spconv.pytorch, xformers.ops, pytorch3d.renderer, diff_gaussian_rasterization, gsplat, nvdiffrast.torch, moge.model.v1; print(\"extensions ok\")'",
+]
+
+[run]
+timeout_sec = 3600
+
+[tasks.reconstruct]
+description = """
+Reconstruct every masked object of one image. `mask` is an instance-id
+png (0 = background); each id (or only `mask_id`) is one object, run
+independently (shared point map, so all objects share one scale).
+Outputs, per object k (= mask id):
+- meshes/obj_<k>.glb: textured mesh in the object frame = upstream's glb
+  frame (glTF +Y up), normalised to about [-0.5, 0.5]^3.
+- poses (pose_set): T_cam_obj (4x4 rigid, OpenCV camera frame: x right,
+  y down, z forward) and `scale`: a point v of obj_<k>.glb is at
+  p_cam = R @ (scale * v) + t. `size` = scale * extent of the mesh along
+  the object axes; `units` = "relative" (MoGe point map, not metric) or
+  "metres" (depth + camera given).
+- scene: all objects posed and scaled into the OpenCV camera frame (glb).
+- camera: intrinsics used (MoGe-estimated, or the given camera).
+- render_mask / overlay: the scene projected with `camera` (instance ids
+  / drawn over the image), to check pose against the input mask.
+~1 min per object on an RTX 5090.
+"""
+inputs.image = { type = "image", description = "RGB image" }
+inputs.mask = { type = "mask", description = "instance-id mask (0 = background), same size as image" }
+inputs.depth = { type = "depth", optional = true, description = "metric depth (metres, 0 = invalid); with `camera` it replaces MoGe -> metric poses/sizes" }
+inputs.camera = { type = "camera", optional = true, description = "pinhole intrinsics of `image`; required with `depth`" }
+outputs.meshes = { type = "dir", description = "obj_<id>.glb per object, object frame (glTF +Y up), ~[-0.5,0.5]^3" }
+outputs.poses = { type = "pose_set", description = "per object T_cam_obj (OpenCV), scale, size, units, mask_id, mesh" }
+outputs.scene = { type = "mesh", description = "all objects posed into the OpenCV camera frame (glb), point-map units" }
+outputs.camera = { type = "camera", description = "intrinsics used (pixels)" }
+outputs.render_mask = { type = "mask", description = "projection of the posed meshes (instance ids = mask ids)" }
+outputs.overlay = { type = "image", description = "image with the projected meshes drawn over it" }
+params.mask_id = { type = "int", default = 0, description = "if > 0, reconstruct only this instance id; 0 = every non-zero id" }
+params.seed = { type = "int", default = 42, description = "random seed (upstream demo 42)" }
+params.texture_baking = { type = "bool", default = true, description = "bake a UV texture from the Gaussians (false: vertex colours, faster)" }
+params.mesh_postprocess = { type = "bool", default = true, description = "upstream mesh simplification (95%) + hole filling" }
+params.layout_refine = { type = "bool", default = false, description = "EXPERIMENTAL upstream layout post-optimisation (render-and-compare of the Gaussians against mask + point map); on the RTX 5090 host its internal IoU is 0 and the node then fails rather than return an unverified pose" }
+params.depth_edge_rtol = { type = "float", default = 0.04, description = "with `depth`: drop flying pixels at depth discontinuities (3x3 depth range > rtol * depth, as MoGe's edge filter) before building the point map; 0 = keep all" }
+params.stage1_steps = { type = "int", default = 0, description = "sparse-structure flow steps (0 = upstream default)" }
+params.stage2_steps = { type = "int", default = 0, description = "structured-latent flow steps (0 = upstream default)" }
+
+[[tests]]
+name = "moge"
+task = "reconstruct"
+timeout_sec = 1800
+inputs = { image = "tests/fixture/mustard/color.jpg", mask = "tests/fixture/mustard/mask.png" }
+[[tests.checks]]
+output = "poses"
+field = "count"
+eq = 1
+[[tests.checks]]
+output = "poses"
+path = "poses.0.units"
+eq = "relative"
+[[tests.checks]]
+output = "scene"
+field = "textured"
+eq = true
+[[tests.checks]]
+output = "scene"
+field = "faces"
+min = 2000
+[[tests.checks]]
+output = "render_mask"
+metric = "mask_iou"
+expected = "tests/fixture/mustard/mask.png"
+min = 0.6
+[[tests.checks]]
+output = "render_mask"
+metric = "mask_iou"
+expected = "tests/expected/moge_render_mask.png"
+min = 0.85
+[[tests.checks]]
+output = "poses"
+metric = "pose_rotation_err_deg"
+expected = "tests/expected/moge_poses.json"
+max = 10
+
+# YCB mustard bottle (real size ~0.096 x 0.191 x 0.058 m); depth from the RGB-D sensor
+[[tests]]
+name = "metric_depth"
+task = "reconstruct"
+timeout_sec = 1800
+inputs = { image = "tests/fixture/mustard/color.jpg", mask = "tests/fixture/mustard/mask.png", depth = "tests/fixture/mustard/depth.npy", camera = "tests/fixture/mustard/camera.json" }
+[[tests.checks]]
+output = "poses"
+path = "poses.0.units"
+eq = "metres"
+[[tests.checks]]
+output = "poses"
+path = "poses.0.size.1"
+min = 0.17
+max = 0.21
+[[tests.checks]]
+output = "poses"
+field = "z0"
+min = 0.70
+max = 0.78
+[[tests.checks]]
+output = "scene"
+field = "textured"
+eq = true
+[[tests.checks]]
+output = "render_mask"
+metric = "mask_iou"
+expected = "tests/fixture/mustard/mask.png"
+min = 0.65
+[[tests.checks]]
+output = "poses"
+metric = "pose_translation_err"
+expected = "tests/expected/metric_poses.json"
+max = 0.01
+[[tests.checks]]
+output = "poses"
+metric = "pose_rotation_err_deg"
+expected = "tests/expected/metric_poses.json"
+max = 10
+
+[[known_issues]]
+summary = "facebook/sam-3d-objects is gated on HuggingFace; weights come from the ModelScope mirror"
+fix = "Every file is sha256-pinned; the sha256 values were verified against the official HF repo (rev 2e73555) via the git blob oids of the LFS pointers (see NOTES.md). The SAM License applies to anyone using this node"
+
+[[known_issues]]
+summary = "Without `depth`, poses/sizes are in MoGe v1 point-map units (scale-invariant, NOT metric)"
+fix = "Pass metric `depth` + `camera` (e.g. from the `moge` node = MoGe-2 metric, or a depth sensor); poses.json then has units = metres"
+
+[[known_issues]]
+summary = "Licences: SAM License (Meta, custom, code + weights; trade-control clause, licence text must accompany redistribution); DINOv2 Apache-2.0; MoGe MIT; pytorch3d BSD"
+fix = "Read the SAM License (weight `license`) before commercial use or redistribution"

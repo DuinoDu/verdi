@@ -1,0 +1,168 @@
+name = "langsam"
+version = "0.1.0"
+description = """
+LangSAM (luca-medeiros/lang-segment-anything): text-prompted instance
+segmentation = Grounding DINO (base) text -> boxes, then SAM 2.1 box ->
+mask. Also SAM 2.1 automatic mask generation and an object-crop helper
+for image-to-3D / AIGC pipelines. Instance ids are per detection (no
+tracking across frames; use sam2 segment_video for that).
+"""
+
+[weights]
+gdino = { hf = "IDEA-Research/grounding-dino-base", revision = "12bdfa3120f3e7ec7b434d90674b3396eccf88eb", files = ["*.json", "*.txt", "model.safetensors"] }
+tiny = { hf = "facebook/sam2.1-hiera-tiny", revision = "de431c4043854a71d8101e17995dfe596bf101a5", files = ["*.pt"] }
+small = { hf = "facebook/sam2.1-hiera-small", revision = "ee5bba1d82bb8749febdf90f45e84b687142ba03", files = ["*.pt"] }
+base_plus = { hf = "facebook/sam2.1-hiera-base-plus", revision = "b7320756a13354e7530a63935656d35b2f91a290", files = ["*.pt"] }
+large = { hf = "facebook/sam2.1-hiera-large", revision = "665f8e2ad61cf5f53d65644ff27c8ee525124610", files = ["*.pt"] }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 20
+
+[build.env]
+SAM2_BUILD_CUDA = "0"   # skip optional connected-components kernel
+
+[run]
+timeout_sec = 1800
+
+[tasks.segment]
+description = """
+Text-prompted segmentation of one image (legacy langsam_predict).
+`text` lists phrases separated by '.' or ',' (e.g. "truck. tire").
+Each Grounding DINO box above the thresholds gets a SAM 2.1 mask.
+Instance id i in the mask corresponds to boxes[i-1] (boxes sorted by
+decreasing score); where masks overlap the smaller mask wins. Sidecar
+mask.json = {id: {label, score (box), mask_score}}. Zero detections give
+an all-zero mask and an empty box list (valid result).
+"""
+inputs.image = { type = "image" }
+outputs.mask = { type = "mask", description = "instance id i = boxes[i-1]" }
+outputs.boxes = { type = "bbox_set", description = "Grounding DINO boxes (pixel xyxy), label = matched phrase, score" }
+params.text = { type = "str", description = "object phrases separated by '.' or ','" }
+params.sam_type = { type = "str", default = "small", choices = ["tiny", "small", "base_plus", "large"], description = "SAM 2.1 Hiera checkpoint (upstream default small)" }
+params.box_threshold = { type = "float", default = 0.3, description = "Grounding DINO box confidence threshold" }
+params.text_threshold = { type = "float", default = 0.25, description = "Grounding DINO phrase-token threshold" }
+
+[tasks.segment_frames]
+description = """
+Same as `segment`, independently on every frame of a sequence (video
+input is split into frames). Ids are per-frame detection indices, NOT
+tracked identities. labels.json in the mask dir = {"<frame>": {id:
+{label, score, mask_score}}}; boxes carry `frame`.
+"""
+inputs.frames = { type = "image_seq" }
+outputs.masks = { type = "mask_seq", description = "one mask per frame, ids = per-frame detection index" }
+outputs.boxes = { type = "bbox_set", description = "all boxes with frame index" }
+params.text = { type = "str", description = "object phrases separated by '.' or ','" }
+params.sam_type = { type = "str", default = "small", choices = ["tiny", "small", "base_plus", "large"], description = "SAM 2.1 Hiera checkpoint" }
+params.box_threshold = { type = "float", default = 0.3, description = "Grounding DINO box confidence threshold" }
+params.text_threshold = { type = "float", default = 0.25, description = "Grounding DINO phrase-token threshold" }
+
+[tasks.crop_roi]
+description = """
+Object crop for image-to-3D / AIGC (legacy langsam_for_aigc): segment
+`text`, take the highest-scoring detection, crop its mask bbox plus
+`margin` px, scale to fit `size` x `size` keeping aspect ratio, center
+it on a transparent canvas. Output is an RGBA PNG whose alpha is the
+object mask (background fully transparent). Fails if nothing is detected.
+"""
+inputs.image = { type = "image" }
+outputs.crop = { type = "image", description = "RGBA png size x size, alpha = object mask" }
+outputs.mask = { type = "mask", description = "full-resolution mask of the chosen object (id 1)" }
+params.text = { type = "str", description = "object phrase, e.g. 'cube' or 'red mug'" }
+params.size = { type = "int", default = 1024, description = "output canvas side in px" }
+params.margin = { type = "int", default = 20, description = "extra px around the mask bbox before scaling" }
+params.sam_type = { type = "str", default = "small", choices = ["tiny", "small", "base_plus", "large"], description = "SAM 2.1 Hiera checkpoint" }
+params.box_threshold = { type = "float", default = 0.3, description = "Grounding DINO box confidence threshold" }
+params.text_threshold = { type = "float", default = 0.25, description = "Grounding DINO phrase-token threshold" }
+
+[tasks.auto_masks]
+description = """
+SAM 2.1 automatic mask generation, no prompt (legacy langsam_sam with
+use_auto_mask). Ids 1..N sorted by decreasing area; smaller masks are
+painted over larger ones. Sidecar masks.json = {id: {score
+(predicted_iou), stability_score, area}}.
+"""
+inputs.image = { type = "image" }
+outputs.mask = { type = "mask", description = "instance ids 1..N sorted by decreasing area" }
+params.sam_type = { type = "str", default = "small", choices = ["tiny", "small", "base_plus", "large"], description = "SAM 2.1 Hiera checkpoint" }
+
+[[tests]]
+name = "segment"
+task = "segment"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { text = "truck. tire." }
+[[tests.checks]]
+output = "boxes"
+field = "labels"
+contains = "truck"
+[[tests.checks]]
+output = "mask"
+field = "instances"
+min = 4
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_mask.png"
+min = 0.9
+
+[[tests]]
+name = "frames"
+task = "segment_frames"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom" }
+params = { text = "child" }
+[[tests.checks]]
+output = "masks"
+field = "nonempty_frames"
+eq = 6
+[[tests.checks]]
+output = "masks"
+field = "instances"
+eq = 2
+[[tests.checks]]
+output = "masks"
+metric = "mask_iou"
+expected = "tests/expected/bedroom_masks"
+min = 0.85
+
+[[tests]]
+name = "crop_roi"
+task = "crop_roi"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+params = { text = "truck" }
+[[tests.checks]]
+output = "crop"
+field = "mode"
+eq = "RGBA"
+[[tests.checks]]
+output = "crop"
+field = "width"
+eq = 1024
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_crop_mask.png"
+min = 0.9
+
+[[tests]]
+name = "auto"
+task = "auto_masks"
+timeout_sec = 900
+inputs = { image = "tests/fixture/truck.jpg" }
+[[tests.checks]]
+output = "mask"
+field = "instances"
+min = 20
+[[tests.checks]]
+output = "mask"
+metric = "mask_iou"
+expected = "tests/expected/truck_auto.png"
+min = 0.9
+
+[[known_issues]]
+summary = "Upstream lang-sam pulls gradio/litserve (server UI deps) into the venv"
+fix = "Unused by the node; harmless besides disk size"

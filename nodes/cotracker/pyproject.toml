@@ -1,0 +1,19 @@
+[project]
+name = "pdebug-node-cotracker"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "cotracker",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+cotracker = { git = "https://github.com/facebookresearch/co-tracker.git", rev = "82e02e8029753ad4ef13cf06be7f4fc5facdda4d" }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 / RTX 5090 support); no extra index needed.

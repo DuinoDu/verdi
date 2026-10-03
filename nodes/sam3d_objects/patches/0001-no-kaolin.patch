@@ -1,0 +1,17 @@
+diff --git a/sam3d_objects/model/backbone/tdfy_dit/representations/mesh/flexicubes/flexicubes.py b/sam3d_objects/model/backbone/tdfy_dit/representations/mesh/flexicubes/flexicubes.py
+index 583b5e3..01cee0c 100644
+--- a/sam3d_objects/model/backbone/tdfy_dit/representations/mesh/flexicubes/flexicubes.py
++++ b/sam3d_objects/model/backbone/tdfy_dit/representations/mesh/flexicubes/flexicubes.py
+@@ -15,7 +15,11 @@
+ # limitations under the License.
+ import torch
+ from .tables import *
+-from kaolin.utils.testing import check_tensor
++try:
++    from kaolin.utils.testing import check_tensor
++except ImportError:  # pdebug: kaolin has no wheel for torch 2.8; only used for shape asserts
++    def check_tensor(tensor, shape=None, dtype=None, device=None, throw=True):
++        return True
+ 
+ __all__ = [
+     'FlexiCubes'

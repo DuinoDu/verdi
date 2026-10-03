@@ -1,0 +1,159 @@
+name = "moge"
+version = "0.1.0"
+description = """
+Microsoft MoGe-2: monocular geometry from one RGB image in one forward
+pass: METRIC point map, depth, surface normals, camera intrinsics (FOV)
+and a validity mask (sky / undefined pixels are invalid). Official
+`moge.model.v2.MoGeModel.infer` (upstream defaults: resolution_level 9,
+force_projection, mask applied, fp16).
+Conventions: metres, OpenCV camera frame (x right, y down, z forward),
+principal point at the image centre, square pixels (MoGe does not
+estimate cx/cy or distortion).
+Checkpoints: vitl (Ruicheng/moge-2-vitl-normal, default, 331M), vitb
+(104M), vits (35M); all with metric scale + normal head.
+Licence: MoGe code and MoGe-2 weights MIT (DINOv2 backbone Apache-2.0).
+"""
+
+[weights]
+moge2_vitl = { hf = "Ruicheng/moge-2-vitl-normal", revision = "cb0e8bbd6b1e243589717c78e750b1ba4c093acf", files = ["model.pt"] }
+moge2_vitb = { hf = "Ruicheng/moge-2-vitb-normal", revision = "ca5f0e07ff01d3e5a364c1d954ed12ee1814b368", files = ["model.pt"] }
+moge2_vits = { hf = "Ruicheng/moge-2-vits-normal", revision = "26b477f41595707c5db6770294c0d1721e8ed4ed", files = ["model.pt"] }
+
+[system]
+gpu = { min_vram_gb = 4, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 8
+
+[run]
+timeout_sec = 1800
+
+[tasks.estimate]
+description = """
+Metric geometry of one image. Outputs (all HxW = input size, invalid
+pixels per `mask` are 0):
+- pointmap: .npy float32 HxWx3, metres, OpenCV camera frame; P[v,u] =
+  depth[v,u] * K^-1 [u+0.5, v+0.5, 1] (MoGe's projection-consistent
+  point map, pixel centres; consistent with `depth` and `camera`).
+- depth: z-depth in metres.  - normal: unit normals, OpenCV camera frame
+  (pointing towards the camera, i.e. mostly -z).
+- camera: estimated pinhole K (fx = fy, centred principal point), or the
+  FOV implied by the given `camera` / `fov_x` (then only shift + scale are
+  estimated).  - mask: 1 = valid geometry, 0 = sky / invalid.
+- pointcloud: coloured ply of the valid points minus depth-edge flying
+  pixels (`edge_rtol`), metres, OpenCV camera frame.
+A known focal length (`camera` input or `fov_x`) improves the metric
+scale (MoGe uses only fx -> horizontal FOV; cx/cy/distortion are ignored).
+"""
+inputs.image = { type = "image" }
+inputs.camera = { type = "camera", optional = true, description = "known intrinsics, must match the image size; only fx is used (-> horizontal FOV)" }
+outputs.pointmap = { type = "file", description = ".npy float32 HxWx3 metric point map (metres, OpenCV camera frame x right / y down / z forward), 0 where mask = 0" }
+outputs.depth = { type = "depth", description = "metric z-depth (metres), 0 = invalid" }
+outputs.normal = { type = "normal", description = "unit surface normals, OpenCV camera frame, 0 = invalid" }
+outputs.camera = { type = "camera", description = "pinhole intrinsics of the point map (fx = fy, principal point at the image centre)" }
+outputs.mask = { type = "mask", description = "validity mask: 1 = valid geometry, 0 = invalid (sky, undefined)" }
+outputs.pointcloud = { type = "pointcloud", description = "coloured ply of valid points without depth-edge flying pixels (metres, OpenCV camera frame)" }
+params.checkpoint = { type = "str", default = "vitl", choices = ["vitl", "vitb", "vits"], description = "MoGe-2 model size (all metric + normal)" }
+params.fov_x = { type = "float", default = 0.0, description = "known horizontal field of view in degrees (0 = estimate); ignored if `camera` is given" }
+params.resolution_level = { type = "int", default = 9, description = "0..9 inference resolution (number of ViT tokens 1200..3600); 9 = finest (upstream default)" }
+params.num_tokens = { type = "int", default = 0, description = "explicit ViT token count (overrides resolution_level when > 0)" }
+params.precision = { type = "str", default = "fp16", choices = ["fp16", "fp32"], description = "GPU inference precision (upstream infer uses fp16)" }
+params.edge_rtol = { type = "float", default = 0.04, description = "relative depth-edge threshold for removing flying pixels from `pointcloud` only (upstream infer.py default 0.04; 0 = keep all)" }
+
+[tasks.estimate_seq]
+description = """
+Run MoGe-2 on every frame of a sequence (video input is split into frames
+automatically). Frames are independent (no temporal model). To keep the
+metric scale consistent along a fixed-zoom video, the default
+`fov = "median"` first estimates the FOV on every frame and then re-runs
+all frames with the median FOV (2 passes); "per_frame" lets every frame
+use its own FOV estimate. A given `camera` / `fov_x` fixes the FOV.
+"""
+inputs.frames = { type = "image_seq" }
+inputs.camera = { type = "camera", optional = true, description = "known intrinsics shared by all frames; only fx is used" }
+outputs.depth = { type = "depth_seq", description = "%06d.npy metric z-depth per frame (metres, 0 = invalid)" }
+outputs.pointmap = { type = "dir", description = "%06d.npy float32 HxWx3 metric point map per frame (metres, OpenCV camera frame, 0 = invalid)" }
+outputs.camera = { type = "camera_seq", description = "intrinsics used for every frame" }
+params.checkpoint = { type = "str", default = "vitl", choices = ["vitl", "vitb", "vits"], description = "MoGe-2 model size" }
+params.fov = { type = "str", default = "median", choices = ["median", "per_frame"], description = "how the FOV is shared across frames when no camera / fov_x is given" }
+params.fov_x = { type = "float", default = 0.0, description = "known horizontal FOV in degrees (0 = estimate)" }
+params.resolution_level = { type = "int", default = 9, description = "0..9 inference resolution (9 = finest)" }
+params.num_tokens = { type = "int", default = 0, description = "explicit ViT token count (overrides resolution_level when > 0)" }
+params.precision = { type = "str", default = "fp16", choices = ["fp16", "fp32"], description = "GPU inference precision" }
+
+[[tests]]
+name = "image"
+task = "estimate"
+timeout_sec = 600
+inputs = { image = "tests/fixture/bedroom/000000.jpg" }
+[[tests.checks]]
+output = "mask"
+field = "area_ratio"
+min = 0.95
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.0
+max = 3.6
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 600
+max = 1000
+[[tests.checks]]
+output = "normal"
+field = "mean_z"
+max = -0.3
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/expected/bedroom0_depth.npy"
+max = 0.02
+[[tests.checks]]
+output = "normal"
+metric = "normal_angle_deg"
+expected = "tests/expected/bedroom0_normal.npy"
+max = 2.0
+
+[[tests]]
+name = "image_known_camera"
+task = "estimate"
+timeout_sec = 600
+inputs = { image = "tests/fixture/bedroom/000000.jpg", camera = "tests/fixture/bedroom_camera.json" }
+params = { checkpoint = "vits" }
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 999
+max = 1001
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 3.2
+max = 3.8
+
+[[tests]]
+name = "seq"
+task = "estimate_seq"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom" }
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 4
+[[tests.checks]]
+output = "camera"
+field = "count"
+eq = 4
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 2.4
+max = 3.1
+
+[[known_issues]]
+summary = "MoGe assumes a centred principal point and no distortion; a given camera contributes only its fx (horizontal FOV)"
+fix = "Undistort / centre-crop images first if cx, cy are far from the centre"
+
+[[known_issues]]
+summary = "Licences: MoGe code MIT, MoGe-2 weights MIT"
+fix = "No restriction known"

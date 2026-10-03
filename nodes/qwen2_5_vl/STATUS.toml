@@ -1,0 +1,14 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T00:49:35+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "b7322db439f96df9b820af812f390a8343d15b33"
+upstream_commit = ""
+env_lock = "sha256:18dd23e64a4a962ccb61f36e1d7584319c224c2613f7e917f59541325e1c9425"
+untested_tasks = [
+]
+cases = [
+  "PASS chat_image (86.97s): PASS answer.text='pickup truck' {'contains': 'truck'}; PASS answer.chars=12 {'max': 40}",
+  "PASS chat_frames (33.66s): PASS answer.text='bedroom' {'contains': 'bedroom'}; PASS answer.chars=7 {'max': 20}",
+  "PASS structured (33.0s): PASS result.keys=['background_wall_color', 'body_color', 'vehicle_type', 'wheels_visible'] {'eq': ['background_wall_color', 'body_color', 'vehicle_type', 'wheels_visible']}",
+]

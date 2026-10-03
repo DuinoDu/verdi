@@ -1,0 +1,31 @@
+[project]
+name = "pdebug-node-genpose2"
+version = "0.1.0"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  # upstream requirements.txt (pyrealsense2/flask only serve the camera demo; patched out)
+  "numpy==1.26.3",
+  "scipy==1.12.0",
+  "opencv-python==4.9.0.80",
+  "open3d==0.18.0",
+  "tensorboardX==2.6.2.2",
+  "scikit-learn==1.5.2",
+  "matplotlib==3.9.2",
+  "ipdb==0.13.13",
+  "tqdm",
+  "cutoop==0.1.0",       # Omni6DPose API (data types, bbox/drawing utils)
+  # pointnet2 CUDA extension build
+  "setuptools<80",
+  "ninja==1.11.1.4",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.

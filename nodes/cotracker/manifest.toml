@@ -1,0 +1,100 @@
+name = "cotracker"
+version = "0.1.0"
+description = """
+CoTracker3 (Meta, offline "scaled" checkpoint) dense 2D point tracking over
+a frame sequence (or a video file). Tracks either a regular grid of points
+or user-given query points (each starting at its own frame); every point
+is tracked forward and backward through the whole sequence, including
+through occlusions (visibility flags tell when it is hidden).
+The whole sequence is processed in one pass (internally resized to
+384x512): memory grows with frame count, ~300 frames at 1080p fit on 24 GB.
+"""
+
+[weights]
+cotracker3 = { hf = "facebook/cotracker3", revision = "bf55ea50d4390e1820a267f131cd6587240fb2c5", files = ["scaled_offline.pth"] }
+
+[system]
+gpu = { min_vram_gb = 12, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 8
+
+[run]
+timeout_sec = 1800
+
+[tasks.track_grid]
+description = """
+Track a grid_size x grid_size grid of points laid out on frame
+`grid_query_frame` (optionally only the grid points inside `mask`).
+tracks.npz: xy float32 [T,N,2] pixels in the input frame size, visible
+bool [T,N], plus query_frame int32 [N] (frame each point was sampled on).
+"""
+inputs.frames = { type = "image_seq", description = "frames (video files are split automatically)" }
+inputs.mask = { type = "mask", optional = true, description = "region on grid_query_frame; only grid points on nonzero pixels are tracked" }
+outputs.tracks = { type = "tracks", description = "xy [T,N,2] px, visible [T,N], query_frame [N]" }
+params.grid_size = { type = "int", default = 20, description = "points per side (N = grid_size^2 without mask)" }
+params.grid_query_frame = { type = "int", default = 0, description = "frame the grid is placed on" }
+params.backward_tracking = { type = "bool", default = true, description = "also track backwards in time (needed when grid_query_frame > 0)" }
+params.max_frames = { type = "int", default = 0, description = "use only the first max_frames frames (0 = all)" }
+
+[tasks.track_points]
+description = """
+Track the given query points. Each prompt_set point needs `xy` (px) and
+`frame` (frame index where xy is valid; default 0); `positive` is ignored.
+Output order = input order. tracks.npz: xy float32 [T,N,2] px, visible
+bool [T,N], query_frame int32 [N], obj_id int32 [N] (from the prompt,
+default i+1). Tracking runs both forward and backward from each query
+frame.
+"""
+inputs.frames = { type = "image_seq", description = "frames (video files are split automatically)" }
+inputs.queries = { type = "prompt_set", description = "points with xy (px) and frame" }
+outputs.tracks = { type = "tracks", description = "xy [T,N,2] px, visible [T,N], query_frame [N], obj_id [N]" }
+params.backward_tracking = { type = "bool", default = true, description = "track backwards from each query frame too (otherwise points are invisible before their frame)" }
+params.max_frames = { type = "int", default = 0, description = "use only the first max_frames frames (0 = all)" }
+
+[[tests]]
+name = "grid"
+task = "track_grid"
+timeout_sec = 600
+inputs = { frames = "tests/fixture/bedroom" }
+params = { grid_size = 10 }
+[[tests.checks]]
+output = "tracks"
+field = "frames"
+eq = 6
+[[tests.checks]]
+output = "tracks"
+field = "points"
+eq = 100
+[[tests.checks]]
+output = "tracks"
+field = "visible_ratio"
+min = 0.8
+
+[[tests.checks]]
+output = "tracks"
+metric = "tracks_epe"
+expected = "tests/expected/grid_tracks.npz"
+max = 1.5
+
+[[tests]]
+name = "points"
+task = "track_points"
+timeout_sec = 600
+inputs = { frames = "tests/fixture/bedroom", queries = "tests/fixture/bedroom_queries.json" }
+[[tests.checks]]
+output = "tracks"
+field = "frames"
+eq = 6
+[[tests.checks]]
+output = "tracks"
+field = "points"
+eq = 5
+[[tests.checks]]
+output = "tracks"
+field = "visible_ratio"
+min = 0.8
+[[tests.checks]]
+output = "tracks"
+metric = "tracks_epe"
+expected = "tests/expected/points_tracks.npz"
+max = 1.5

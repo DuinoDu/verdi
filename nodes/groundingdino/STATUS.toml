@@ -1,0 +1,12 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-02T20:52:54+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "079b3d2cc3e4563d981058d7fe6f363397ab9c7c"
+upstream_commit = ""
+env_lock = "sha256:cf871c0a7cb4ead54b379da070f5015721d92e2cf3b39c1df92cf0761a8637f0"
+untested_tasks = [
+]
+cases = [
+  "PASS detect (21.65s): PASS boxes.labels=['tire', 'truck'] {'contains': 'truck'}; PASS boxes.labels=['tire', 'truck'] {'contains': 'tire'}; PASS boxes.count=4 {'min': 3, 'max': 4}",
+]

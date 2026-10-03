@@ -1,0 +1,13 @@
+diff --git a/utils/renderer.py b/utils/renderer.py
+index 11e4b68..acdb000 100644
+--- a/utils/renderer.py
++++ b/utils/renderer.py
+@@ -247,7 +247,7 @@ class PyrenderRasterizer(renderer_base.RendererBase):
+             cx=camera_model_c2w.c[0],
+             cy=camera_model_c2w.c[1],
+             znear=0.1,
+-            zfar=3000.0  
++            zfar=100.0  # metres; 3000 breaks float32 depth linearisation (all pixels = znear)
+         )
+ 
+         # Create a camera node.

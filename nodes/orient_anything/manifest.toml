@@ -1,0 +1,79 @@
+name = "orient_anything"
+version = "0.1.0"
+description = """
+Orient Anything (ICML 2025): 3D orientation of an object from a single
+RGB image (an object crop, or boxes in a full image). Predicts the
+viewpoint azimuth / polar angle / in-plane rotation of the camera
+relative to the object's semantic front, plus a confidence that the
+object has a meaningful front. Rotation only: no translation or scale.
+"""
+
+[upstream]
+repo = "https://github.com/SpatialVision/Orient-Anything.git"
+commit = "759282c26e924988c952d6d33212c48349dc9aff"
+
+[weights]
+orient = { hf = "Viglong/Orient-Anything", revision = "ecfa089828d9fab521d47133bedbdbfdef151cd4", files = ["ronormsigma1/dino_weight.pt"] }
+dinov2_large = { hf = "facebook/dinov2-large", revision = "47b73eefe95e8d44ec3623f8890bd894b6ea2d6c", files = ["*.json", "model.safetensors"] }
+u2net = { url = "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx", sha256 = "8d10d2f3bb75ae3b6d527c77944fc5e7dcd94b29809d47a739a7a728a912b491" }
+
+[system]
+gpu = { min_vram_gb = 4, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 5
+
+[run]
+timeout_sec = 900
+env = { U2NET_HOME = "{weights}/u2net" }
+
+[tasks.estimate_orientation]
+description = """
+Orientation of the object in `image` (a tight crop of one object works
+best), or of every box in `boxes` (each box is cropped with `pad`
+margin). Output json:
+{"objects": [{"azimuth_deg", "polar_deg", "rotation_deg", "confidence",
+"R_cam_obj", "box"?, "label"?}]} (one entry per box, or one for the
+whole image). Angle meaning (upstream convention, degrees):
+azimuth_deg in [0, 360): camera position around the object's vertical
+axis; 0 = camera sees the object's front (object faces the camera), 90 =
+object's front points to the image left, 180 = back view, 270 = front
+points to the image right. polar_deg in [-90, 90): camera elevation;
+> 0 = camera above the object looking down. rotation_deg in [-180, 180):
+in-plane rotation of the object in the image, > 0 = counter-clockwise.
+confidence in [0, 1]: probability that the object has a well-defined
+front; below ~0.5 the angles are meaningless (upstream hides them).
+R_cam_obj: 3x3 rotation of the object frame (x = front, y = left,
+z = up) in the OpenCV camera frame (x right, y down, z forward), built
+from the three angles assuming the object is near the optical axis
+(orthographic approximation, perspective offset ignored).
+"""
+inputs.image = { type = "image" }
+inputs.boxes = { type = "bbox_set", optional = true, description = "pixel xyxy boxes; one orientation per box (frame ignored)" }
+outputs.orientation = { type = "json", description = "{objects: [{azimuth_deg, polar_deg, rotation_deg, confidence, R_cam_obj, box?, label?}]}" }
+params.remove_background = { type = "bool", default = false, description = "remove background with rembg/u2net and re-centre the object before inference (upstream demo default on; use for cluttered crops)" }
+params.test_time_aug = { type = "bool", default = false, description = "upstream test-time ensemble: 3 random crops of the image + 3 of the background-removed image, robust average (random crops seeded with 0 per object)" }
+params.pad = { type = "float", default = 0.1, description = "relative margin added around each box before cropping" }
+
+[[tests]]
+name = "crop"
+task = "estimate_orientation"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck_crop.jpg" }
+[[tests.checks]]
+output = "orientation"
+field = "keys"
+contains = "objects"
+
+[[tests]]
+name = "boxes"
+task = "estimate_orientation"
+timeout_sec = 600
+inputs = { image = "tests/fixture/truck.jpg", boxes = "tests/fixture/truck_boxes.json" }
+[[tests.checks]]
+output = "orientation"
+field = "keys"
+contains = "objects"
+
+[[known_issues]]
+summary = "Tests cannot check the angles: the json summary only exposes top-level keys"
+fix = "Verified manually on the truck fixture (side view, front to the right): azimuth 254-261, polar 4, rotation 2-3, confidence 0.996; see NOTES.md"

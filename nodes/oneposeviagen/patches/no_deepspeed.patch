@@ -1,0 +1,13 @@
+diff --git a/oneposeviagen/trellis/trellis/pipelines/trellis_image_to_3d.py b/oneposeviagen/trellis/trellis/pipelines/trellis_image_to_3d.py
+index 2067d39..e2a66b7 100755
+--- a/oneposeviagen/trellis/trellis/pipelines/trellis_image_to_3d.py
++++ b/oneposeviagen/trellis/trellis/pipelines/trellis_image_to_3d.py
+@@ -19,7 +19,7 @@ from trellis.models.structured_latent_flow import SparseResBlock3d, SparseResBlo
+ import trellis.modules.sparse as sp
+ from trellis.models.sparse_structure_vae import *
+ from ..modules.spatial import patchify, unpatchify
+-from deepspeed.ops.adam import FusedAdam
++# from deepspeed.ops.adam import FusedAdam  # training only (pdebug)
+ from trellis.modules.utils import convert_module_to_bf16, convert_module_to_f16, convert_module_to_f32
+ from contextlib import contextmanager
+ import trellis.models as models

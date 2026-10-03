@@ -1,0 +1,12 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T12:51:21+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "0e66f6375b10350cc9339d7cb7f5af946a7441f6"
+upstream_commit = "e3914f8f551dd4b880661991fd6b28cd1699a97a"
+env_lock = "sha256:6af05b8c870415dbbf44f86ea6ed9662a283f42dc6a2d63c6531c4618a7862af"
+untested_tasks = [
+]
+cases = [
+  "PASS bigben (368.94s): PASS frames.count=25 {'eq': 25}; PASS frames.width=544 {'eq': 544}; PASS frames.height=360 {'eq': 360}; PASS frames.image_psnr=26.904 {'min': 25.0}",
+]

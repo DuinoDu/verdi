@@ -1,0 +1,22 @@
+{
+  "1": {
+    "label": "wall",
+    "area_ratio": 0.13388
+  },
+  "2": {
+    "label": "building",
+    "area_ratio": 0.17833
+  },
+  "7": {
+    "label": "road",
+    "area_ratio": 0.3531
+  },
+  "12": {
+    "label": "sidewalk",
+    "area_ratio": 0.03518
+  },
+  "21": {
+    "label": "car",
+    "area_ratio": 0.29951
+  }
+}

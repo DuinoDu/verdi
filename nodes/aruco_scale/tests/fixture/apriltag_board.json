@@ -1,0 +1,9 @@
+{
+ "type": "apriltag_grid",
+ "dictionary": "DICT_APRILTAG_36h11",
+ "rows": 3,
+ "cols": 4,
+ "marker_length_m": 0.05,
+ "separation_m": 0.015,
+ "first_id": 10
+}

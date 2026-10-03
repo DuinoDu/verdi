@@ -1,0 +1,85 @@
+[project]
+name = "pdebug-node-trellis2"
+version = "0.1.0"
+requires-python = "==3.10.*"
+dependencies = [
+  "pdebug",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  # SimFoundry install_trellis.sh pins transformers==4.57.6 (DINOv3ViTModel)
+  "transformers==4.57.6",
+  "huggingface-hub>=0.34,<1.0",
+  "safetensors",
+  "numpy==1.26.4",
+  "imageio==2.37.0",
+  "imageio-ffmpeg",
+  "tqdm",
+  "easydict==1.13",
+  "opencv-python-headless==4.10.0.84",
+  "trimesh==4.8.3",
+  "zstandard",
+  "plyfile",
+  "kornia==0.8.1",
+  "timm==1.0.20",
+  "psutil",
+  "pillow",                  # upstream suggests pillow-simd (speed only)
+  "xformers==0.0.32.post2",  # attention backend for torch 2.8.0 (flash-attn: no prebuilt wheel at 2.7.3)
+  "ninja",
+  "utils3d",
+  # TRELLIS.2 CUDA extensions (same commits as SimFoundry install_trellis.sh)
+  "nvdiffrast",
+  "nvdiffrec-render",
+  "cumesh",
+  "flex-gemm",
+  "o-voxel",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pdebug = { path = "../..", editable = true }
+utils3d = { git = "https://github.com/EasternJournalist/utils3d.git", rev = "9a4eb15e4021b67b12c460c7057d642626897ec8" }
+nvdiffrast = { git = "https://github.com/NVlabs/nvdiffrast.git", rev = "253ac4fcea7de5f396371124af597e6cc957bfae" }
+nvdiffrec-render = { git = "https://github.com/JeffreyXiang/nvdiffrec.git", rev = "b296927cc7fd01c2ac1087c8065c4d7248f72da4" }
+cumesh = { git = "https://github.com/JeffreyXiang/CuMesh.git", rev = "12289e1062f0603f2f0d0771b02e1395d247f26f" }
+flex-gemm = { git = "https://github.com/JeffreyXiang/FlexGEMM.git", rev = "6dd94a859c26ee8246888502eada3dd8ad85532e" }
+o-voxel = { git = "https://github.com/microsoft/TRELLIS.2.git", rev = "75fbf0183001ed9876c8dbb35de6b68552ee08bd", subdirectory = "o-voxel" }
+
+# The CUDA extensions import torch in setup.py. Static metadata keeps
+# `uv lock` from building them; they are then built against the runtime
+# torch (extra-build-dependencies, match-runtime) with [build.env] applied.
+[[tool.uv.dependency-metadata]]
+name = "nvdiffrast"
+version = "0.4.0"
+requires-dist = ["numpy"]
+
+[[tool.uv.dependency-metadata]]
+name = "nvdiffrec-render"
+version = "0.0.0"
+requires-dist = []
+
+[[tool.uv.dependency-metadata]]
+name = "cumesh"
+version = "0.0.1"
+requires-dist = ["torch", "tqdm"]
+
+[[tool.uv.dependency-metadata]]
+name = "flex-gemm"
+version = "1.0.0"
+requires-dist = ["torch", "triton", "filelock"]
+
+# o-voxel declares unpinned git deps on CuMesh/FlexGEMM; we pin them above.
+[[tool.uv.dependency-metadata]]
+name = "o-voxel"
+version = "0.0.1"
+requires-dist = ["torch", "numpy", "plyfile", "trimesh", "tqdm", "zstandard", "easydict", "cumesh", "flex-gemm"]
+
+[tool.uv.extra-build-dependencies]
+nvdiffrast = [{ requirement = "torch", match-runtime = true }, "numpy==1.26.4", "ninja"]
+nvdiffrec-render = [{ requirement = "torch", match-runtime = true }, "numpy==1.26.4", "ninja", "setuptools<80", "wheel"]
+cumesh = [{ requirement = "torch", match-runtime = true }, "numpy==1.26.4", "ninja"]
+flex-gemm = [{ requirement = "torch", match-runtime = true }, "numpy==1.26.4", "ninja"]
+o-voxel = [{ requirement = "torch", match-runtime = true }, "ninja"]
+
+# torch 2.8.0 on PyPI is the cu128 build (sm_120 / RTX 5090); no extra index needed.

@@ -1,0 +1,12 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:10:52+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+upstream_commit = "e96be065375438962375b55326416291342958a7"
+env_lock = "sha256:67d0a0e82f055269ee4acbd2be0b1301067dc0c9e543d54710de70abb7272591"
+untested_tasks = [
+]
+cases = [
+  "PASS segment (32.08s): PASS mesh.faces=39999 {'eq': 39999}; PASS parts:num_faces=39999 {'eq': 39999}; PASS parts:unassigned_faces=0 {'eq': 0}; PASS parts:num_parts=30 {'min': 15, 'max': 45}; PASS parts:parts.0.area_frac=0.135 {'min': 0.08, 'max': 0.25}",
+]

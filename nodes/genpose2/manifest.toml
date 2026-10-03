@@ -1,0 +1,88 @@
+name = "genpose2"
+version = "0.1.0"
+description = """
+GenPose++ (Omni6DPose, ECCV 2024) category-level 6D object pose and size
+estimation from one RGB-D image plus instance masks: no CAD model needed.
+A diffusion score network samples pose candidates from the masked point
+cloud + DINOv2 features, an energy network ranks/aggregates them and a
+scale network predicts the box size. For pose of a known mesh use sam6d
+(zero-shot instance level) or foundationpose.
+"""
+
+[upstream]
+repo = "https://github.com/Omni6DPose/GenPose2.git"
+commit = "d0993c02d3322b5936e5cc98e5395c36db4e4a68"
+patches = ["patches/infer_offline.patch"]
+
+[weights.ckpts]
+# GenPose++ checkpoints (ScoreNet/EnergyNet/ScaleNet): only published as a
+# Dropbox folder (upstream README). Dropbox generates the folder zip on the
+# fly (archive bytes are not stable), so only the extracted files are pinned.
+# Offline hosts: download the zip elsewhere and put it at
+# <weights>/genpose2/.ckpts.zip (setup extracts + verifies it).
+url = "https://www.dropbox.com/scl/fo/x87lhf7sygjm1gasz153g/AIHBlaGMjhfyW1bKrDe61R4?rlkey=y1f6dqdi40tzcgepccthayudp&st=1sbkxbzf&dl=1"
+archive = "zip"
+files_sha256 = { "ScoreNet/scorenet.pth" = "b991c1d5c40e6c140d542107ba98d09f7516ed9fc32e81958dd4f28ac8fe6db7", "EnergyNet/energynet.pth" = "5bba887a5b50befdebb170d69fd3ecf4503946bcb146c6926ec88bef5e03f335", "ScaleNet/scalenet.pth" = "2544f3720bbd0662d5cfd1ec486ef1fe38a7cffb653787c5861f4b0e62112830" }
+
+[system]
+gpu = { min_vram_gb = 8, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6", toolkit = ">=12.4" }
+compilers = { gcc = ">=9,<13" }
+binaries = ["git"]
+libs = ["libGL.so.1", "libgomp.so.1"]
+disk_gb = 5
+
+[build.env]
+CUDA_HOME = "{cuda_home}"
+TORCH_CUDA_ARCH_LIST = "{cuda_arch}"
+
+[setup]
+commands = [
+  # pointnet2 CUDA extension (imported as top-level `pointnet2_cuda`)
+  "cd networks/pts_encoder/pointnet2_utils/pointnet2 && (ls pointnet2_cuda*.so >/dev/null 2>&1 || python setup.py build_ext --inplace)",
+  # DINOv2 code (torch.hub local source, pinned) - weights are inside the GenPose++ checkpoints
+  "test -d {venv}/dinov2_repo/.git || git clone -q https://github.com/facebookresearch/dinov2.git {venv}/dinov2_repo; cd {venv}/dinov2_repo && git checkout -q 7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+]
+
+[run]
+timeout_sec = 1200
+
+[run.env]
+GENPOSE2_DINOV2_REPO = "{venv}/dinov2_repo"
+# torch>=2.6 defaults to weights_only=True; the GenPose++ checkpoints need full unpickling
+TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = "1"
+
+[tasks.estimate]
+description = """
+Category-level 6D pose + 3D box size of every instance in `mask` (one
+pose per instance id, any rigid object category; no CAD model). Output
+T_cam_obj maps the GenPose++/Omni6DPose canonical object frame (origin at
+the box center, axes aligned with the predicted box) to the OpenCV camera
+frame, metres. Each pose also carries `size` = box side lengths [x, y, z]
+in metres (object frame) and `bbox3d_cam` = the 8 box corners in the
+camera frame (metres). Rotations of symmetric objects are ambiguous
+(e.g. about the axis of a bottle). Depth beyond 4 m is ignored (upstream).
+`vis` draws the predicted boxes and axes on the image.
+"""
+inputs.image = { type = "image", description = "RGB image" }
+inputs.depth = { type = "depth", description = "metric depth aligned with the image (same size), metres, 0 = invalid" }
+inputs.mask = { type = "mask", description = "instance mask (ids 1..254), one object per id, e.g. from sam2 / langsam / sam6d" }
+inputs.camera = { type = "camera", description = "pinhole intrinsics of the image (distortion ignored)" }
+outputs.poses = { type = "pose_set", description = "one pose per mask id (ascending): T_cam_obj (m), label instance_<id>, mask_id, size [x,y,z] m, bbox3d_cam 8x3 m" }
+outputs.vis = { type = "image", description = "image with predicted 3D boxes and pose axes (upstream cutoop drawing)" }
+params.repeat_num = { type = "int", default = 50, description = "number of diffusion pose samples per instance aggregated by the energy network (upstream default 50; fewer is faster but noisier)" }
+
+[[tests]]
+name = "can"
+task = "estimate"
+timeout_sec = 900
+inputs = { image = "tests/fixture/rgb.png", depth = "tests/fixture/depth.npy", mask = "tests/fixture/mask.png", camera = "tests/fixture/camera.json" }
+[[tests.checks]]
+output = "poses"
+field = "count"
+eq = 1
+[[tests.checks]]
+output = "poses"
+metric = "pose_translation_err"
+expected = "tests/expected/poses.json"
+max = 0.01

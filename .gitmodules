@@ -1,0 +1,4 @@
+[submodule "third_party/SimFoundry"]
+	shallow = true
+	path = third_party/SimFoundry
+	url = https://github.com/NVlabs/SimFoundry.git

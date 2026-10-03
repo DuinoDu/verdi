@@ -1,0 +1,13 @@
+# Written by `otn-cli test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-03T08:41:10+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+pdebug_commit = "d1579c8b76e3246a99811c1b0ec92d1744959a12"
+upstream_commit = "759282c26e924988c952d6d33212c48349dc9aff"
+env_lock = "sha256:4111916e95b8e01ac9ae42f303ab864647c0fd160d64d4444f0aedd80d908fc9"
+untested_tasks = [
+]
+cases = [
+  "PASS crop (59.97s): PASS orientation.keys=['objects'] {'contains': 'objects'}",
+  "PASS boxes (6.47s): PASS orientation.keys=['objects'] {'contains': 'objects'}",
+]
