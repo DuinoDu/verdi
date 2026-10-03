@@ -7,6 +7,8 @@ name = "pdebug"
 version = "0.1.0"
 description = "Verified, one-command model inference nodes for AI agents."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 # Core deps are imported by node processes too (pdebug.sdk / pdebug.types):
 # keep them tiny.

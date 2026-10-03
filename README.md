@@ -22,3 +22,17 @@ make env                                   # main env with otn-cli
 - Pipelines that use nodes: [`pipelines/`](pipelines/)
 
 The pre-refactor toolkit is tagged `legacy-v0.0.2`.
+
+## License
+
+pdebug itself (core, CLI, node wrappers, tests) is released under the
+[MIT License](LICENSE).
+
+Each node downloads and runs third-party code and model weights that keep
+their **own licences**, several of which are research / non-commercial only
+(for example FoundationStereo, MASt3R-SLAM, nvdiffrast, the SAM License,
+Meta DINOv3, CC-BY-NC weights). Using a node means accepting the terms of its
+upstream project; the restrictions are listed in each node's
+`manifest.toml` (`[[known_issues]]`) and `NOTES.md`. Test fixtures under
+`nodes/*/tests/` come from the respective upstream projects or public
+datasets and follow their licences.
