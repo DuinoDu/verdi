@@ -6,8 +6,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 # size -> (weight key, hf repo, pinned revision)
 MODELS = {
@@ -26,7 +26,7 @@ def _warm_page_cache(path: Path) -> None:
     """Read weight files sequentially once.
 
     safetensors loads via mmap with scattered page faults, which is very
-    slow on the network filesystem holding PDEBUG_HOME (~5 min per 4 GB
+    slow on the network filesystem holding VERDI_HOME (~5 min per 4 GB
     shard); one sequential pass (~1 GB/s) makes the mmap reads hit RAM.
     """
     import time

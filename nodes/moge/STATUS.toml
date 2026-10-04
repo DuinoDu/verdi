@@ -1,14 +1,14 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T18:14:45+0800"
+tested_at = "2026-10-04T08:40:07+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "4a4c5e44398628ad79e7f88707318d4cf27931c9"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:70a83adb9cfd0d377dea829950a1e691795186b04a62f9b324352b5dd1eb235c"
+env_lock = "sha256:657118bbd378f6e88cb9a10831ffe49f3cba23c5f33df339e930d404beae49af"
 untested_tasks = [
 ]
 cases = [
-  "PASS image (24.31s): PASS mask.area_ratio=1.0 {'min': 0.95}; PASS depth.median=2.7695 {'min': 2.0, 'max': 3.6}; PASS camera.fx=938.4836 {'min': 600, 'max': 1000}; PASS normal.mean_z=-0.6942 {'max': -0.3}; PASS depth.depth_abs_rel=0.0002 {'max': 0.02}; PASS normal.normal_angle_deg=0.1305 {'max': 2.0}",
-  "PASS image_known_camera (3.98s): PASS camera.fx=999.9999 {'min': 999, 'max': 1001}; PASS depth.median=3.4831 {'min': 3.2, 'max': 3.8}",
-  "PASS seq (7.57s): PASS depth.count=4 {'eq': 4}; PASS camera.count=4 {'eq': 4}; PASS depth.median=2.7615 {'min': 2.4, 'max': 3.1}",
+  "PASS image (23.71s): PASS mask.area_ratio=1.0 {'min': 0.95}; PASS depth.median=2.7695 {'min': 2.0, 'max': 3.6}; PASS camera.fx=938.4836 {'min': 600, 'max': 1000}; PASS normal.mean_z=-0.6942 {'max': -0.3}; PASS depth.depth_abs_rel=0.0002 {'max': 0.02}; PASS normal.normal_angle_deg=0.1305 {'max': 2.0}",
+  "PASS image_known_camera (6.39s): PASS camera.fx=999.9999 {'min': 999, 'max': 1001}; PASS depth.median=3.4831 {'min': 3.2, 'max': 3.8}",
+  "PASS seq (17.42s): PASS depth.count=4 {'eq': 4}; PASS camera.count=4 {'eq': 4}; PASS depth.median=2.7615 {'min': 2.4, 'max': 3.1}",
 ]

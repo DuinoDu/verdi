@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-foundationpose"
+name = "verdi-node-foundationpose"
 version = "0.1.0"
 requires-python = "==3.11.*"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "numpy==1.26.4",
@@ -47,7 +47,7 @@ nvdiffrast = [{ requirement = "torch", match-runtime = true }, "setuptools<80", 
 pytorch3d = [{ requirement = "torch", match-runtime = true }, "setuptools<80", "wheel", "ninja"]
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 nvdiffrast = { git = "https://github.com/NVlabs/nvdiffrast.git", rev = "253ac4fcea7de5f396371124af597e6cc957bfae" }
 pytorch3d = { git = "https://github.com/facebookresearch/pytorch3d.git", rev = "33824be3cbc87a7dd1db0f6a9a9de9ac81b2d0ba" }
 

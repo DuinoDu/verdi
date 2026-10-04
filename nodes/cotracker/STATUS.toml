@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-02T22:09:02+0800"
+tested_at = "2026-10-04T08:38:44+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "15df5ed7a28d1c2c07f837d9896446817dcfa727"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:386cc4a8b70c4ad085e079d58c3a9909fe53de8ca5601bd3465087ca158b9506"
+env_lock = "sha256:167df35e567d0993776c515ad812c9f1a0a34797483b84f0d179dce77f6862c6"
 untested_tasks = [
 ]
 cases = [
-  "PASS grid (10.26s): PASS tracks.frames=6 {'eq': 6}; PASS tracks.points=100 {'eq': 100}; PASS tracks.visible_ratio=0.9767 {'min': 0.8}; PASS tracks.tracks_epe=0.0 {'max': 1.5}",
-  "PASS points (18.61s): PASS tracks.frames=6 {'eq': 6}; PASS tracks.points=5 {'eq': 5}; PASS tracks.visible_ratio=1.0 {'min': 0.8}; PASS tracks.tracks_epe=0.0 {'max': 1.5}",
+  "PASS grid (16.21s): PASS tracks.frames=6 {'eq': 6}; PASS tracks.points=100 {'eq': 100}; PASS tracks.visible_ratio=0.9767 {'min': 0.8}; PASS tracks.tracks_epe=0.0 {'max': 1.5}",
+  "PASS points (2.84s): PASS tracks.frames=6 {'eq': 6}; PASS tracks.points=5 {'eq': 5}; PASS tracks.visible_ratio=1.0 {'min': 0.8}; PASS tracks.tracks_epe=0.0 {'max': 1.5}",
 ]

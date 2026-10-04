@@ -20,7 +20,7 @@ patches = [
   # (feature_output_dir option, yacs CfgNode safe-global for torch>=2.6,
   # run_part_clustering_with_glb.py helper)
   "patches/partfield.patch",
-  # pdebug: import vtk lazily (only the unused tetgen remesh path needs it);
+  # verdi: import vtk lazily (only the unused tetgen remesh path needs it);
   # `import vtk` loads the rendering modules, which need libXrender (X11)
   "patches/lazy-vtk.patch",
 ]

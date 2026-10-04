@@ -6,8 +6,8 @@ import types
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 CKPT = {"t": "upernet_flash_internimage_t_512_160k_ade20k",
         "s": "upernet_flash_internimage_s_512_160k_ade20k",

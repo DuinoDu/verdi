@@ -771,85 +771,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-spatracker"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "decord" },
-    { name = "easydict" },
-    { name = "einops" },
-    { name = "flow-vis" },
-    { name = "huggingface-hub" },
-    { name = "jaxtyping" },
-    { name = "kornia" },
-    { name = "matplotlib" },
-    { name = "moviepy" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "pdebug" },
-    { name = "pyceres" },
-    { name = "pycolmap" },
-    { name = "pyyaml" },
-    { name = "safetensors" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "timm" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-    { name = "utils3d" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "decord", specifier = "==0.6.0" },
-    { name = "easydict", specifier = "==1.13" },
-    { name = "einops", specifier = "==0.8.1" },
-    { name = "flow-vis", specifier = "==0.1" },
-    { name = "huggingface-hub", specifier = "==0.33.0" },
-    { name = "jaxtyping", specifier = "==0.3.2" },
-    { name = "kornia", specifier = "==0.8.1" },
-    { name = "matplotlib", specifier = "==3.10.3" },
-    { name = "moviepy", specifier = "==1.0.0" },
-    { name = "numpy", specifier = "<2" },
-    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pyceres", specifier = "==2.4" },
-    { name = "pycolmap", specifier = "==3.11.1" },
-    { name = "pyyaml", specifier = "==6.0.2" },
-    { name = "safetensors", specifier = "==0.5.3" },
-    { name = "scikit-learn" },
-    { name = "scipy", specifier = "==1.15.3" },
-    { name = "timm", specifier = "==1.0.15" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm" },
-    { name = "utils3d", git = "https://github.com/EasternJournalist/utils3d.git?rev=d3a577acf0a9ad7e513a1416449a07b6f47d967f" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1246,6 +1167,86 @@ dependencies = [
     { name = "numpy" },
     { name = "plyfile" },
     { name = "scipy" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-spatracker"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "decord" },
+    { name = "easydict" },
+    { name = "einops" },
+    { name = "flow-vis" },
+    { name = "huggingface-hub" },
+    { name = "jaxtyping" },
+    { name = "kornia" },
+    { name = "matplotlib" },
+    { name = "moviepy" },
+    { name = "numpy" },
+    { name = "opencv-python-headless" },
+    { name = "pyceres" },
+    { name = "pycolmap" },
+    { name = "pyyaml" },
+    { name = "safetensors" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "timm" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "utils3d" },
+    { name = "verdi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "decord", specifier = "==0.6.0" },
+    { name = "easydict", specifier = "==1.13" },
+    { name = "einops", specifier = "==0.8.1" },
+    { name = "flow-vis", specifier = "==0.1" },
+    { name = "huggingface-hub", specifier = "==0.33.0" },
+    { name = "jaxtyping", specifier = "==0.3.2" },
+    { name = "kornia", specifier = "==0.8.1" },
+    { name = "matplotlib", specifier = "==3.10.3" },
+    { name = "moviepy", specifier = "==1.0.0" },
+    { name = "numpy", specifier = "<2" },
+    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
+    { name = "pyceres", specifier = "==2.4" },
+    { name = "pycolmap", specifier = "==3.11.1" },
+    { name = "pyyaml", specifier = "==6.0.2" },
+    { name = "safetensors", specifier = "==0.5.3" },
+    { name = "scikit-learn" },
+    { name = "scipy", specifier = "==1.15.3" },
+    { name = "timm", specifier = "==1.0.15" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm" },
+    { name = "utils3d", git = "https://github.com/EasternJournalist/utils3d.git?rev=d3a577acf0a9ad7e513a1416449a07b6f47d967f" },
+    { name = "verdi", editable = "../../" },
 ]
 
 [[package]]

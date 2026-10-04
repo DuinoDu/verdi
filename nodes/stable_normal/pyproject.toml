@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-stable-normal"
+name = "verdi-node-stable-normal"
 version = "0.1.0"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "diffusers==0.30.3",
@@ -20,7 +20,7 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 
 # torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
 # StableNormal's setup.py pins its whole gradio app env (torch 2.0, ...),

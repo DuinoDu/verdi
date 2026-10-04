@@ -11,8 +11,8 @@ if sys.version_info >= (3, 11):
 else:  # pragma: no cover
     import tomli as tomllib
 
-from pdebug.core import paths
-from pdebug.types import TYPES
+from verdi.core import paths
+from verdi.types import TYPES
 
 PARAM_TYPES = {"str": str, "int": int, "float": float, "bool": bool,
                "list": list, "dict": dict}
@@ -145,7 +145,7 @@ def load(node_or_path: str) -> Manifest:
         path = path / "manifest.toml"
     if not path.exists():
         raise FileNotFoundError(
-            f"no node {node_or_path!r}; run `otn-cli list` to see nodes"
+            f"no node {node_or_path!r}; run `verdi list` to see nodes"
         )
     with open(path, "rb") as f:
         raw = tomllib.load(f)

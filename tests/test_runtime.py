@@ -4,15 +4,15 @@ import shutil
 import numpy as np
 import pytest
 
-from pdebug.core import install, manifest, runner, testing
-from pdebug.types import io
+from verdi.core import install, manifest, runner, testing
+from verdi.types import io
 
 FIXTURE = __import__("pathlib").Path(__file__).parent / "fixtures/nodes"
 
 
 @pytest.fixture()
 def node(tmp_path, monkeypatch):
-    monkeypatch.setenv("PDEBUG_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("VERDI_HOME", str(tmp_path / "home"))
     node_dir = FIXTURE / "echo_node"
     io.write_image(node_dir / "tests" / "in.png",
                    np.zeros((4, 6, 3), np.uint8))

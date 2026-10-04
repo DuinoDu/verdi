@@ -1,12 +1,12 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T08:29:54+0800"
+tested_at = "2026-10-04T08:45:48+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "d1579c8b76e3246a99811c1b0ec92d1744959a12"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "373025dbd283bb44cc4a6dc78c99994dbc91de32"
-env_lock = "sha256:dc8c70ad109dfe513cc294fdd7802a3c3f58e52f2c4e2da17fea0d82b995a1a1"
+env_lock = "sha256:cafdd1114a654b79102251207c0b148ddfbe23ce0d55e455b553db02900df932"
 untested_tasks = [
 ]
 cases = [
-  "PASS segment (26.38s): PASS parts:num_parts=10 {'eq': 10}; PASS parts:num_faces=39999 {'eq': 39999}; PASS parts:unassigned_faces=0 {'eq': 0}; PASS parts:parts.0.area_frac=0.2339 {'min': 0.15, 'max': 0.32}",
+  "PASS segment (31.46s): PASS parts:num_parts=10 {'eq': 10}; PASS parts:num_faces=39999 {'eq': 39999}; PASS parts:unassigned_faces=0 {'eq': 0}; PASS parts:parts.0.area_frac=0.2339 {'min': 0.15, 'max': 0.32}",
 ]

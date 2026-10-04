@@ -5,13 +5,13 @@ import importlib
 import sys
 import types
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 
 def _warm_page_cache(path) -> None:
     """Read the weights sequentially once: safetensors' scattered mmap reads
-    are very slow on the network filesystem holding PDEBUG_HOME."""
+    are very slow on the network filesystem holding VERDI_HOME."""
     buf = bytearray(64 << 20)
     with open(path, "rb", buffering=0) as fh:
         while fh.readinto(buf):

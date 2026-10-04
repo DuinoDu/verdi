@@ -7,8 +7,8 @@ import tempfile
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 
 def _seed(seed: int) -> None:

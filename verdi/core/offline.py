@@ -2,10 +2,10 @@
 
 Run on a machine WITH internet (e.g. the ubuntu laptop)::
 
-    otn-cli offline-fetch --all --out /data/pdebug-offline
+    verdi offline-fetch --all --out /data/verdi-offline
 
 then copy ``<out>/git-mirror`` and ``<out>/weights`` to the offline host and
-point its ``$PDEBUG_HOME/config.toml`` at them::
+point its ``$VERDI_HOME/config.toml`` at them::
 
     [network]
     github_mirror = "<copied>/git-mirror"
@@ -29,8 +29,8 @@ import sys
 from pathlib import Path
 from typing import Iterable, List, Set
 
-from pdebug.core import paths
-from pdebug.core.manifest import Manifest
+from verdi.core import paths
+from verdi.core.manifest import Manifest
 
 GH = re.compile(r"https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)")
 
@@ -96,9 +96,9 @@ def mirror_repo(name: str, root: Path, seen: Set[str]) -> None:
 
 def fetch_url_weights(m: Manifest, root: Path, hf: bool) -> None:
     """Download url (and optionally hf) weights into root/<node>/<key>."""
-    from pdebug.core import install
+    from verdi.core import install
 
-    os.environ["PDEBUG_OFFLINE_WEIGHTS"] = str(root)
+    os.environ["VERDI_OFFLINE_WEIGHTS"] = str(root)
     weights = {k: w for k, w in m.weights.items()
                if not w.get("lazy") and (hf or "hf" not in w)}
     if not weights:

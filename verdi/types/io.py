@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import numpy as np
 
-from pdebug.types.registry import IMAGE_EXT
+from verdi.types.registry import IMAGE_EXT
 
 VIDEO_EXT = (".mp4", ".mov", ".avi", ".mkv", ".webm")
 

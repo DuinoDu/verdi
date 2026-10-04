@@ -4,7 +4,7 @@
 
 - Upstream: Tencent-Hunyuan/Hunyuan3D-2.1 @ 82920d64 (same pin as
   SimFoundry `scripts/installation/install_hunyuan.sh`), checked out by
-  setup into `$PDEBUG_HOME/repos/hunyuan3d`. `entry.py` puts
+  setup into `$VERDI_HOME/repos/hunyuan3d`. `entry.py` puts
   `hy3dshape/`, `hy3dpaint/` and `hy3dpaint/custom_rasterizer/` on
   `sys.path` exactly like upstream `demo.py`.
 - `patches/Hunyuan3D-2.1.patch` = SimFoundry `patches/Hunyuan3D-2.1.patch`
@@ -18,7 +18,7 @@
     convert the textured OBJ to GLB; entry.py does that conversion with
     trimesh instead (glTF PBR: baseColor + metallicRoughness, roughness in
     G and metallic in B), calling the pipeline with `save_glb=False`.
-- Weights (all pinned, under `$PDEBUG_HOME/weights/hunyuan3d`):
+- Weights (all pinned, under `$VERDI_HOME/weights/hunyuan3d`):
   `tencent/Hunyuan3D-2.1` (only `hunyuan3d-dit-v2-1` and
   `hunyuan3d-paintpbr-v2-1`), `facebook/dinov2-giant` (paint conditioning),
   `RealESRGAN_x4plus.pth` (paint view super-resolution, sha256 pinned),

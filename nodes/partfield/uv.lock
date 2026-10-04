@@ -1000,88 +1000,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-partfield"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "boto3" },
-    { name = "einops" },
-    { name = "h5py" },
-    { name = "lightning" },
-    { name = "loguru" },
-    { name = "matplotlib" },
-    { name = "mesh2sdf" },
-    { name = "networkx" },
-    { name = "numpy" },
-    { name = "open3d" },
-    { name = "pdebug" },
-    { name = "plyfile" },
-    { name = "psutil" },
-    { name = "pymeshlab" },
-    { name = "scikit-image" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "setuptools" },
-    { name = "tetgen" },
-    { name = "torch" },
-    { name = "torch-scatter" },
-    { name = "trimesh" },
-    { name = "vtk" },
-    { name = "yacs" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3" },
-    { name = "einops", specifier = "==0.8.0" },
-    { name = "h5py", specifier = "==3.12.1" },
-    { name = "lightning", specifier = "==2.2.5" },
-    { name = "loguru", specifier = "==0.7.2" },
-    { name = "matplotlib", specifier = "==3.9.2" },
-    { name = "mesh2sdf", specifier = "==1.1.0" },
-    { name = "networkx", specifier = "==3.3" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "open3d", specifier = "==0.18.0" },
-    { name = "pdebug", editable = "../../" },
-    { name = "plyfile", specifier = "==1.1" },
-    { name = "psutil" },
-    { name = "pymeshlab", specifier = "==2023.12.post2" },
-    { name = "scikit-image", specifier = "==0.24.0" },
-    { name = "scikit-learn", specifier = "==1.5.2" },
-    { name = "scipy", specifier = "==1.14.1" },
-    { name = "setuptools", specifier = "<80" },
-    { name = "tetgen", specifier = "==0.6.4" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torch-scatter", specifier = "==2.1.2" },
-    { name = "trimesh", specifier = "==4.4.7" },
-    { name = "vtk", specifier = "==9.3.1" },
-    { name = "yacs", specifier = "==0.1.8" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1769,6 +1687,89 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-partfield"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "boto3" },
+    { name = "einops" },
+    { name = "h5py" },
+    { name = "lightning" },
+    { name = "loguru" },
+    { name = "matplotlib" },
+    { name = "mesh2sdf" },
+    { name = "networkx" },
+    { name = "numpy" },
+    { name = "open3d" },
+    { name = "plyfile" },
+    { name = "psutil" },
+    { name = "pymeshlab" },
+    { name = "scikit-image" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "tetgen" },
+    { name = "torch" },
+    { name = "torch-scatter" },
+    { name = "trimesh" },
+    { name = "verdi" },
+    { name = "vtk" },
+    { name = "yacs" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "boto3" },
+    { name = "einops", specifier = "==0.8.0" },
+    { name = "h5py", specifier = "==3.12.1" },
+    { name = "lightning", specifier = "==2.2.5" },
+    { name = "loguru", specifier = "==0.7.2" },
+    { name = "matplotlib", specifier = "==3.9.2" },
+    { name = "mesh2sdf", specifier = "==1.1.0" },
+    { name = "networkx", specifier = "==3.3" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "open3d", specifier = "==0.18.0" },
+    { name = "plyfile", specifier = "==1.1" },
+    { name = "psutil" },
+    { name = "pymeshlab", specifier = "==2023.12.post2" },
+    { name = "scikit-image", specifier = "==0.24.0" },
+    { name = "scikit-learn", specifier = "==1.5.2" },
+    { name = "scipy", specifier = "==1.14.1" },
+    { name = "setuptools", specifier = "<80" },
+    { name = "tetgen", specifier = "==0.6.4" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torch-scatter", specifier = "==2.1.2" },
+    { name = "trimesh", specifier = "==4.4.7" },
+    { name = "verdi", editable = "../../" },
+    { name = "vtk", specifier = "==9.3.1" },
+    { name = "yacs", specifier = "==0.1.8" },
 ]
 
 [[package]]

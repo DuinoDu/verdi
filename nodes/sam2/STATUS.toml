@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-02T23:05:15+0800"
+tested_at = "2026-10-04T08:47:43+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "15df5ed7a28d1c2c07f837d9896446817dcfa727"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:62d94bde22da6f11b3650c15d353ab6b3fe1da0930f9efb7e6848eb46fc0d4af"
+env_lock = "sha256:f68625fe66a12e504732c5ea5ed1b1437261a2a7332be355054b5893da5a9459"
 untested_tasks = [
 ]
 cases = [
-  "PASS video (21.3s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.instances=2 {'eq': 2}; PASS masks.mask_iou=0.9995 {'min': 0.9}",
-  "PASS image (13.15s): PASS mask.instances=2 {'eq': 2}; PASS mask.mask_iou=0.9996 {'min': 0.9}",
+  "PASS video (11.75s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.instances=2 {'eq': 2}; PASS masks.mask_iou=0.9995 {'min': 0.9}",
+  "PASS image (6.06s): PASS mask.instances=2 {'eq': 2}; PASS mask.mask_iou=0.9996 {'min': 0.9}",
 ]

@@ -25,7 +25,7 @@
   `Pose_Estimation_Model/checkpoints`).
 - Blender 3.3.1 (the version blenderproc 2.6.1 hard-codes) is downloaded
   by `[setup]` from the TUNA mirror (sha256 pinned from
-  download.blender.org) into `$PDEBUG_HOME/weights/sam6d/blender/` and
+  download.blender.org) into `$VERDI_HOME/weights/sam6d/blender/` and
   used via `--custom-blender-path`.
 
 ## Pitfalls / fixes

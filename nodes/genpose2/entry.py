@@ -7,8 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 CKPTS = {"score": "ScoreNet/scorenet.pth", "energy": "EnergyNet/energynet.pth",
          "scale": "ScaleNet/scalenet.pth"}
@@ -24,7 +24,7 @@ def _load_genpose2(ctx: Context):
         path = ctx.weight("ckpts") / rel
         if not path.exists():
             raise NodeError(f"GenPose++ checkpoint missing: {path}",
-                            hint="run `otn-cli setup genpose2` (see NOTES.md "
+                            hint="run `verdi setup genpose2` (see NOTES.md "
                             "for the Dropbox download)", kind="setup")
         paths[k] = str(path)
     argv, sys.argv = sys.argv, sys.argv[:1]  # upstream config parses argv

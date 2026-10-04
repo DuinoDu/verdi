@@ -19,7 +19,7 @@
   `outputs.predicted_depth/field_of_view` are cast to fp32 before
   post-processing to avoid fp16 overflow in 1/depth.
 - Legacy `ml_depth_pro` also supported Lance datasets and a json with
-  depth statistics; dropped (pdebug nodes take files; stats are in the
+  depth statistics; dropped (verdi nodes take files; stats are in the
   output summary).
 - Fixture expected depth is stored as float16 (1 MB) for the abs_rel check.
 

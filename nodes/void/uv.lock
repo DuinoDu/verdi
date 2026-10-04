@@ -979,127 +979,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-void"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "absl-py" },
-    { name = "accelerate" },
-    { name = "albumentations" },
-    { name = "av" },
-    { name = "beautifulsoup4" },
-    { name = "decord" },
-    { name = "diffusers" },
-    { name = "easydict" },
-    { name = "einops" },
-    { name = "fire" },
-    { name = "ftfy" },
-    { name = "func-timeout" },
-    { name = "imageio" },
-    { name = "imageio-ffmpeg" },
-    { name = "kornia" },
-    { name = "loguru" },
-    { name = "matplotlib" },
-    { name = "mediapy" },
-    { name = "ml-collections" },
-    { name = "moviepy" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "opencv-python" },
-    { name = "packaging" },
-    { name = "pdebug" },
-    { name = "peft" },
-    { name = "pillow" },
-    { name = "py3nvml" },
-    { name = "requests" },
-    { name = "rich" },
-    { name = "rp" },
-    { name = "safetensors" },
-    { name = "scikit-image" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "sentencepiece" },
-    { name = "timm" },
-    { name = "tomesd" },
-    { name = "torch" },
-    { name = "torchdiffeq" },
-    { name = "torchsde" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-    { name = "transformers" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "absl-py", specifier = "==2.3.1" },
-    { name = "accelerate", specifier = "==1.12.0" },
-    { name = "albumentations", specifier = "==2.0.8" },
-    { name = "av", specifier = "==12.3.0" },
-    { name = "beautifulsoup4", specifier = "==4.13.5" },
-    { name = "decord", specifier = "==0.6.0" },
-    { name = "diffusers", specifier = "==0.33.1" },
-    { name = "easydict" },
-    { name = "einops", specifier = "==0.8.0" },
-    { name = "fire" },
-    { name = "ftfy", specifier = "==6.1.1" },
-    { name = "func-timeout", specifier = "==4.3.5" },
-    { name = "imageio", specifier = "==2.37.0" },
-    { name = "imageio-ffmpeg", specifier = "==0.6.0" },
-    { name = "kornia", specifier = "==0.8.1" },
-    { name = "loguru", specifier = "==0.7.3" },
-    { name = "matplotlib", specifier = "==3.10.6" },
-    { name = "mediapy", specifier = "==1.2.4" },
-    { name = "ml-collections", specifier = "==1.1.0" },
-    { name = "moviepy" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "omegaconf", specifier = "==2.3.0" },
-    { name = "opencv-python", specifier = "==4.10.0.84" },
-    { name = "packaging", specifier = "==25.0" },
-    { name = "pdebug", editable = "../../" },
-    { name = "peft", specifier = "==0.17.1" },
-    { name = "pillow", specifier = "==11.3.0" },
-    { name = "py3nvml" },
-    { name = "requests", specifier = "==2.32.5" },
-    { name = "rich" },
-    { name = "rp" },
-    { name = "safetensors", specifier = "==0.6.2" },
-    { name = "scikit-image", specifier = "==0.25.2" },
-    { name = "scikit-learn", specifier = "==1.7.2" },
-    { name = "scipy", specifier = "==1.14.0" },
-    { name = "sentencepiece", specifier = "==0.2.1" },
-    { name = "timm", specifier = "==1.0.19" },
-    { name = "tomesd", specifier = "==0.1.3" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchdiffeq", specifier = "==0.2.5" },
-    { name = "torchsde", specifier = "==0.2.6" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm", specifier = "==4.67.1" },
-    { name = "transformers", specifier = "==4.57.1" },
-]
-
-[[package]]
 name = "peft"
 version = "0.17.1"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1920,6 +1799,128 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-void"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "absl-py" },
+    { name = "accelerate" },
+    { name = "albumentations" },
+    { name = "av" },
+    { name = "beautifulsoup4" },
+    { name = "decord" },
+    { name = "diffusers" },
+    { name = "easydict" },
+    { name = "einops" },
+    { name = "fire" },
+    { name = "ftfy" },
+    { name = "func-timeout" },
+    { name = "imageio" },
+    { name = "imageio-ffmpeg" },
+    { name = "kornia" },
+    { name = "loguru" },
+    { name = "matplotlib" },
+    { name = "mediapy" },
+    { name = "ml-collections" },
+    { name = "moviepy" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "opencv-python" },
+    { name = "packaging" },
+    { name = "peft" },
+    { name = "pillow" },
+    { name = "py3nvml" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "rp" },
+    { name = "safetensors" },
+    { name = "scikit-image" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "sentencepiece" },
+    { name = "timm" },
+    { name = "tomesd" },
+    { name = "torch" },
+    { name = "torchdiffeq" },
+    { name = "torchsde" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "verdi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "absl-py", specifier = "==2.3.1" },
+    { name = "accelerate", specifier = "==1.12.0" },
+    { name = "albumentations", specifier = "==2.0.8" },
+    { name = "av", specifier = "==12.3.0" },
+    { name = "beautifulsoup4", specifier = "==4.13.5" },
+    { name = "decord", specifier = "==0.6.0" },
+    { name = "diffusers", specifier = "==0.33.1" },
+    { name = "easydict" },
+    { name = "einops", specifier = "==0.8.0" },
+    { name = "fire" },
+    { name = "ftfy", specifier = "==6.1.1" },
+    { name = "func-timeout", specifier = "==4.3.5" },
+    { name = "imageio", specifier = "==2.37.0" },
+    { name = "imageio-ffmpeg", specifier = "==0.6.0" },
+    { name = "kornia", specifier = "==0.8.1" },
+    { name = "loguru", specifier = "==0.7.3" },
+    { name = "matplotlib", specifier = "==3.10.6" },
+    { name = "mediapy", specifier = "==1.2.4" },
+    { name = "ml-collections", specifier = "==1.1.0" },
+    { name = "moviepy" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "omegaconf", specifier = "==2.3.0" },
+    { name = "opencv-python", specifier = "==4.10.0.84" },
+    { name = "packaging", specifier = "==25.0" },
+    { name = "peft", specifier = "==0.17.1" },
+    { name = "pillow", specifier = "==11.3.0" },
+    { name = "py3nvml" },
+    { name = "requests", specifier = "==2.32.5" },
+    { name = "rich" },
+    { name = "rp" },
+    { name = "safetensors", specifier = "==0.6.2" },
+    { name = "scikit-image", specifier = "==0.25.2" },
+    { name = "scikit-learn", specifier = "==1.7.2" },
+    { name = "scipy", specifier = "==1.14.0" },
+    { name = "sentencepiece", specifier = "==0.2.1" },
+    { name = "timm", specifier = "==1.0.19" },
+    { name = "tomesd", specifier = "==0.1.3" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchdiffeq", specifier = "==0.2.5" },
+    { name = "torchsde", specifier = "==0.2.6" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm", specifier = "==4.67.1" },
+    { name = "transformers", specifier = "==4.57.1" },
+    { name = "verdi", editable = "../../" },
 ]
 
 [[package]]

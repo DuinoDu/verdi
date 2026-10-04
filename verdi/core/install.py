@@ -1,4 +1,4 @@
-"""``otn-cli setup``: upstream checkout, uv environment, weights.
+"""``verdi setup``: upstream checkout, uv environment, weights.
 
 ``[upstream]``::
 
@@ -8,7 +8,7 @@
     lfs = false
     patches = ["patches/fix.patch"]   # applied with `git apply`
 
-``[weights.<key>]`` (downloaded into PDEBUG_HOME/weights/<node>/<key>)::
+``[weights.<key>]`` (downloaded into VERDI_HOME/weights/<node>/<key>)::
 
     hf = "facebook/sam2.1-hiera-large"  revision = "..."  files = ["*.pt"]
     url = "https://..."  sha256 = "..."  filename = "model.pt"
@@ -34,10 +34,10 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pdebug.core import config, doctor, paths
-from pdebug.core.manifest import Manifest
+from verdi.core import config, doctor, paths
+from verdi.core.manifest import Manifest
 
-RECORD = ".pdebug_setup.json"
+RECORD = ".verdi_setup.json"
 
 
 class SetupError(RuntimeError):
@@ -94,8 +94,24 @@ def lock_hash(m: Manifest) -> Optional[str]:
     return "sha256:" + sha256(lock) if lock.exists() else None
 
 
+LEGACY = {".verdi_setup.json": ".pdebug_setup.json",
+          ".verdi_complete": ".pdebug_complete",
+          ".verdi_extracted": ".pdebug_extracted",
+          ".verdi_patches": ".pdebug_patches"}
+
+
+def _marker(path: Path) -> Path:
+    """Return ``path`` or its pre-rename (pdebug) equivalent if only that
+    exists, so installs and weights made before the rename stay valid."""
+    if not path.exists() and path.name in LEGACY:
+        old = path.with_name(LEGACY[path.name])
+        if old.exists():
+            return old
+    return path
+
+
 def read_record(node: str) -> Dict[str, Any]:
-    path = paths.venv_dir(node) / RECORD
+    path = _marker(paths.venv_dir(node) / RECORD)
     return json.loads(path.read_text()) if path.exists() else {}
 
 
@@ -132,7 +148,7 @@ def checkout(m: Manifest) -> Optional[str]:
                           capture_output=True, text=True).stdout.strip()
     patches = [m.node_dir / p for p in up.get("patches", [])]
     patch_sig = ",".join(sha256(p)[:12] for p in patches)
-    marker = dest / ".pdebug_patches"
+    marker = _marker(dest / ".verdi_patches")
     applied = marker.read_text() if marker.exists() else ""
     if head.startswith(up["commit"]) and applied == patch_sig:
         _log(f"upstream already at {up['commit'][:12]}")
@@ -201,7 +217,7 @@ def _copy_into(src: Path, dest: Path) -> None:
         shutil.copyfile(src, dest)
 
 
-HF_MARKER = ".pdebug_complete"
+HF_MARKER = ".verdi_complete"
 
 
 def _hf_id(w: Dict[str, Any]) -> str:
@@ -213,12 +229,12 @@ def _already_done(key: str, w: Dict[str, Any], dest: Path) -> Optional[str]:
     if w.get("lazy"):
         return f"lazy:{w.get('hf') or w.get('url')}"
     if "hf" in w:
-        marker = dest / HF_MARKER
+        marker = _marker(dest / HF_MARKER)
         if marker.exists() and marker.read_text().strip() == _hf_id(w):
             return _hf_id(w)
         return None
     if "url" in w and w.get("archive"):
-        done = dest / ".pdebug_extracted"
+        done = _marker(dest / ".verdi_extracted")
         files = w.get("files_sha256", {})
         if done.exists() and all((dest / f).exists() and
                                  sha256(dest / f) == h
@@ -237,7 +253,7 @@ def _already_done(key: str, w: Dict[str, Any], dest: Path) -> Optional[str]:
 def fetch_weights(m: Manifest) -> Dict[str, str]:
     """Fetch missing weights; keys already complete in place are skipped.
 
-    HF snapshots get a ``.pdebug_complete`` marker (repo@revision); url
+    HF snapshots get a ``.verdi_complete`` marker (repo@revision); url
     weights are verified by sha256; archives by ``files_sha256``.
     """
     root = paths.weights_dir(m.name)
@@ -325,7 +341,7 @@ def _fetch_archive(key: str, w: Dict[str, Any], dest: Path) -> str:
     import zipfile
 
     files = w.get("files_sha256", {})
-    done = dest / ".pdebug_extracted"
+    done = _marker(dest / ".verdi_extracted")
     if done.exists() and all(
             (dest / f).exists() and sha256(dest / f) == h
             for f, h in files.items()):

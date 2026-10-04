@@ -4,7 +4,7 @@
 
 - Upstream `facebookresearch/foundpose@3103473b` (+ submodules
   `external/dinov2@e1277af2`, `external/bop_toolkit@e7ba9f23`), cloned into
-  `$PDEBUG_HOME/repos/foundpose`; repo root and `external/dinov2` are put
+  `$VERDI_HOME/repos/foundpose`; repo root and `external/dinov2` are put
   on `sys.path`.
 - The upstream scripts (`gen_templates.py`, `gen_repre.py`, `infer.py`)
   are tied to the BOP dataset layout (bop_toolkit config paths, test

@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-vggt"
+name = "verdi-node-vggt"
 version = "0.1.0"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "numpy<2",
@@ -15,7 +15,7 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 vggt = { git = "https://github.com/facebookresearch/vggt.git", rev = "a288dd0f14786c93483e45524328726ab7b1b4ce" }
 
 # torch 2.8.0 on PyPI is the cu128 build (sm_120 / RTX 5090 support); no extra index needed.

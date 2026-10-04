@@ -3,7 +3,7 @@
 ## How upstream is used
 
 - `[upstream]` taeyeopl/Any6D @ 80eb486 (the commit SimFoundry pins),
-  cloned into `$PDEBUG_HOME/repos/any6d`; `foundationpose/` and the repo
+  cloned into `$VERDI_HOME/repos/any6d`; `foundationpose/` and the repo
   root go on `sys.path`; `estimater` is imported with cwd = `foundationpose/`
   (mycpp is resolved relative to it).
 - `estimate` = the official `run_demo.py` path: `Any6D(...).register_any6d`
@@ -36,7 +36,7 @@
   `site-packages/cmeel.prefix`, passed as `CMAKE_PREFIX_PATH`).
 - hf-mirror answered 429 (rate limit) on the snapshot listing; the
   identical snapshot (sha256 checked) was copied from the foundationpose
-  weights dir with the core `.pdebug_complete` marker.
+  weights dir with the core `.verdi_complete` marker.
 
 ## Fixture / tests
 

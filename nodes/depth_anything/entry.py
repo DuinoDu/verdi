@@ -5,8 +5,8 @@ import sys
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 VDA_VITL = {"encoder": "vitl", "features": 256,
             "out_channels": [256, 512, 1024, 1024]}

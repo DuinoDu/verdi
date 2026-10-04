@@ -1,4 +1,4 @@
-"""otn-cli: list / describe / doctor / setup / run / test / types.
+"""verdi: list / describe / doctor / setup / run / test / types.
 
 stdout carries machine-readable output (JSON for ``run``/``test``);
 progress and model logs go to stderr.
@@ -11,13 +11,13 @@ from typing import List, Optional
 
 import typer
 
-from pdebug import types
-from pdebug.core import describe as describe_mod
-from pdebug.core import doctor as doctor_mod
-from pdebug.core import install, manifest, runner, testing
+from verdi import types
+from verdi.core import describe as describe_mod
+from verdi.core import doctor as doctor_mod
+from verdi.core import install, manifest, runner, testing
 
 app = typer.Typer(add_completion=False, no_args_is_help=True,
-                  help="Run verified model inference nodes (pdebug).")
+                  help="Run verified model inference nodes (verdi).")
 
 
 def _err(msg: str) -> None:
@@ -172,10 +172,10 @@ def offline_fetch_cmd(
     hf: bool = typer.Option(False, "--hf", help="also fetch HF weights"),
 ):
     """On an online machine: mirror GitHub repos + url weights for offline
-    hosts (see pdebug/core/offline.py)."""
+    hosts (see verdi/core/offline.py)."""
     from pathlib import Path
 
-    from pdebug.core import offline
+    from verdi.core import offline
 
     names = manifest.all_nodes() if all_ else (nodes or [])
     if not names:

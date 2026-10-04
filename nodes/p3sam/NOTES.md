@@ -30,7 +30,7 @@ Not covered (plain geometry in the fork, not a model): `smooth_segment_boundarie
 ## Build pitfalls
 - flash-attn: no PyPI wheel. Uses the official v2.8.3 release wheel
   (cu12 / torch2.7 / cxx11abiTRUE / cp310). uv URL sources are not rewritten by
-  the pdebug GitHub proxy, so the URL carries the `gh-proxy.com` prefix.
+  the verdi GitHub proxy, so the URL carries the `gh-proxy.com` prefix.
 - torch-scatter 2.1.2 is sdist-only: static `dependency-metadata` +
   `extra-build-dependencies` (torch match-runtime), compiled for sm_90 (~10 min).
 - spconv-cu126 2.3.8 wheel works with torch 2.7.1 (cu126).

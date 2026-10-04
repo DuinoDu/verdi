@@ -18,8 +18,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 BOARD_TYPES = ("aruco_grid", "charuco", "apriltag_grid")
 
@@ -36,7 +36,7 @@ class Board:
         btype = spec.get("type")
         if btype not in BOARD_TYPES:
             raise NodeError(f"board.type {btype!r} not in {BOARD_TYPES}",
-                            hint="see `otn-cli describe aruco_scale`")
+                            hint="see `verdi describe aruco_scale`")
         self.type = btype
         try:
             self.rows, self.cols = int(spec["rows"]), int(spec["cols"])

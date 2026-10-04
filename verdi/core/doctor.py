@@ -27,8 +27,8 @@ from typing import Any, Dict, List, Optional
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from pdebug.core import paths
-from pdebug.core.manifest import Manifest
+from verdi.core import paths
+from verdi.core.manifest import Manifest
 
 APT_HINTS = {
     "ffmpeg": "ffmpeg", "ffprobe": "ffmpeg", "git": "git",
@@ -135,7 +135,7 @@ def run_checks(manifest: Manifest) -> List[Check]:
             f"driver supports CUDA {found} (need {cuda['driver']})",
             "upgrade the NVIDIA driver or install cuda-compat"))
     if "toolkit" in cuda:
-        from pdebug.core.install import expand
+        from verdi.core.install import expand
 
         cuda_home = manifest.build_env.get("CUDA_HOME")
         found = toolkit_cuda(expand(cuda_home, manifest) if cuda_home
@@ -180,7 +180,7 @@ def run_checks(manifest: Manifest) -> List[Check]:
         checks.append(Check(
             "disk", free >= float(sysreq["disk_gb"]),
             f"{free:.0f} GB free at {home} (need {sysreq['disk_gb']})",
-            "free space or point PDEBUG_HOME elsewhere"))
+            "free space or point VERDI_HOME elsewhere"))
 
     for var in sysreq.get("env", []):
         checks.append(Check(f"env.{var}", bool(os.environ.get(var)),

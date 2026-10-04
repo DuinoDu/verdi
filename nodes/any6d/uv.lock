@@ -898,103 +898,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-any6d"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "cmake" },
-    { name = "cmeel-eigen" },
-    { name = "h5py" },
-    { name = "imageio" },
-    { name = "joblib" },
-    { name = "kornia" },
-    { name = "matplotlib" },
-    { name = "ninja" },
-    { name = "numpy" },
-    { name = "nvdiffrast" },
-    { name = "omegaconf" },
-    { name = "open3d" },
-    { name = "opencv-python-headless" },
-    { name = "pandas" },
-    { name = "pdebug" },
-    { name = "pillow" },
-    { name = "psutil" },
-    { name = "pybind11" },
-    { name = "pytorch3d" },
-    { name = "pyyaml" },
-    { name = "ruamel-yaml" },
-    { name = "scikit-image" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "setuptools" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-    { name = "transformations" },
-    { name = "trimesh" },
-    { name = "warp-lang" },
-    { name = "wheel" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cmake", specifier = ">=3.27,<4" },
-    { name = "cmeel-eigen", specifier = ">=3.4,<3.5" },
-    { name = "h5py" },
-    { name = "imageio" },
-    { name = "joblib" },
-    { name = "kornia", specifier = "==0.7.4" },
-    { name = "matplotlib" },
-    { name = "ninja" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "nvdiffrast", git = "https://github.com/NVlabs/nvdiffrast.git?rev=253ac4fcea7de5f396371124af597e6cc957bfae" },
-    { name = "omegaconf" },
-    { name = "open3d", specifier = "==0.19.0" },
-    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
-    { name = "pandas" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pillow" },
-    { name = "psutil" },
-    { name = "pybind11", specifier = "==2.13.6" },
-    { name = "pytorch3d", git = "https://github.com/facebookresearch/pytorch3d.git?rev=33824be3cbc87a7dd1db0f6a9a9de9ac81b2d0ba" },
-    { name = "pyyaml" },
-    { name = "ruamel-yaml" },
-    { name = "scikit-image" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "setuptools", specifier = "<80" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm" },
-    { name = "transformations", specifier = "==2024.6.1" },
-    { name = "trimesh", specifier = "==4.5.3" },
-    { name = "warp-lang", specifier = "==1.0.2" },
-    { name = "wheel" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1532,6 +1435,104 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-any6d"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "cmake" },
+    { name = "cmeel-eigen" },
+    { name = "h5py" },
+    { name = "imageio" },
+    { name = "joblib" },
+    { name = "kornia" },
+    { name = "matplotlib" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "nvdiffrast" },
+    { name = "omegaconf" },
+    { name = "open3d" },
+    { name = "opencv-python-headless" },
+    { name = "pandas" },
+    { name = "pillow" },
+    { name = "psutil" },
+    { name = "pybind11" },
+    { name = "pytorch3d" },
+    { name = "pyyaml" },
+    { name = "ruamel-yaml" },
+    { name = "scikit-image" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformations" },
+    { name = "trimesh" },
+    { name = "verdi" },
+    { name = "warp-lang" },
+    { name = "wheel" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cmake", specifier = ">=3.27,<4" },
+    { name = "cmeel-eigen", specifier = ">=3.4,<3.5" },
+    { name = "h5py" },
+    { name = "imageio" },
+    { name = "joblib" },
+    { name = "kornia", specifier = "==0.7.4" },
+    { name = "matplotlib" },
+    { name = "ninja" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "nvdiffrast", git = "https://github.com/NVlabs/nvdiffrast.git?rev=253ac4fcea7de5f396371124af597e6cc957bfae" },
+    { name = "omegaconf" },
+    { name = "open3d", specifier = "==0.19.0" },
+    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
+    { name = "pandas" },
+    { name = "pillow" },
+    { name = "psutil" },
+    { name = "pybind11", specifier = "==2.13.6" },
+    { name = "pytorch3d", git = "https://github.com/facebookresearch/pytorch3d.git?rev=33824be3cbc87a7dd1db0f6a9a9de9ac81b2d0ba" },
+    { name = "pyyaml" },
+    { name = "ruamel-yaml" },
+    { name = "scikit-image" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "setuptools", specifier = "<80" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm" },
+    { name = "transformations", specifier = "==2024.6.1" },
+    { name = "trimesh", specifier = "==4.5.3" },
+    { name = "verdi", editable = "../../" },
+    { name = "warp-lang", specifier = "==1.0.2" },
+    { name = "wheel" },
 ]
 
 [[package]]

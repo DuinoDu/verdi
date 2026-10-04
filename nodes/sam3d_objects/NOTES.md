@@ -147,4 +147,4 @@ Meta SAM 3D Objects (arXiv:2511.16624). NOT the `sam3` segmentation node.
   inference.
 - hf-mirror API calls are rate-limited (HTTP 429) from the RTX 5090 host; `resolve/`
   downloads still work. Weights were placed manually where setup expects
-  them (sha256 / `.pdebug_complete` marker identical to what setup writes).
+  them (sha256 / `.verdi_complete` marker identical to what setup writes).

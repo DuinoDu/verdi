@@ -8,8 +8,8 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 COLORS = {"floor": (200, 160, 60), "wall": (70, 130, 220),
           "ceiling": (160, 160, 160), "table": (220, 60, 60),

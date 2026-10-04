@@ -1206,80 +1206,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-sam6d"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "blenderproc" },
-    { name = "distinctipy" },
-    { name = "einops" },
-    { name = "gorilla-core" },
-    { name = "hydra-core" },
-    { name = "imageio" },
-    { name = "ninja" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "opencv-python-headless" },
-    { name = "pdebug" },
-    { name = "pycocotools" },
-    { name = "pytorch-lightning" },
-    { name = "ruamel-yaml" },
-    { name = "scikit-image" },
-    { name = "setuptools" },
-    { name = "timm" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "trimesh" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "blenderproc", specifier = "==2.6.1" },
-    { name = "distinctipy", specifier = "==1.3.4" },
-    { name = "einops", specifier = "==0.8.1" },
-    { name = "gorilla-core", specifier = "==0.2.7.8" },
-    { name = "hydra-core", specifier = "==1.3.2" },
-    { name = "imageio", specifier = "==2.37.0" },
-    { name = "ninja", specifier = "==1.11.1.4" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "omegaconf", specifier = "==2.3.0" },
-    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pycocotools", specifier = "==2.0.10" },
-    { name = "pytorch-lightning", specifier = "==2.5.2" },
-    { name = "ruamel-yaml", specifier = "==0.18.14" },
-    { name = "scikit-image", specifier = "==0.25.2" },
-    { name = "setuptools", specifier = "<80" },
-    { name = "timm", specifier = "==0.9.16" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "trimesh", specifier = "==4.0.8" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1980,6 +1906,81 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-sam6d"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "blenderproc" },
+    { name = "distinctipy" },
+    { name = "einops" },
+    { name = "gorilla-core" },
+    { name = "hydra-core" },
+    { name = "imageio" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "opencv-python-headless" },
+    { name = "pycocotools" },
+    { name = "pytorch-lightning" },
+    { name = "ruamel-yaml" },
+    { name = "scikit-image" },
+    { name = "setuptools" },
+    { name = "timm" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "trimesh" },
+    { name = "verdi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "blenderproc", specifier = "==2.6.1" },
+    { name = "distinctipy", specifier = "==1.3.4" },
+    { name = "einops", specifier = "==0.8.1" },
+    { name = "gorilla-core", specifier = "==0.2.7.8" },
+    { name = "hydra-core", specifier = "==1.3.2" },
+    { name = "imageio", specifier = "==2.37.0" },
+    { name = "ninja", specifier = "==1.11.1.4" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "omegaconf", specifier = "==2.3.0" },
+    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
+    { name = "pycocotools", specifier = "==2.0.10" },
+    { name = "pytorch-lightning", specifier = "==2.5.2" },
+    { name = "ruamel-yaml", specifier = "==0.18.14" },
+    { name = "scikit-image", specifier = "==0.25.2" },
+    { name = "setuptools", specifier = "<80" },
+    { name = "timm", specifier = "==0.9.16" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "trimesh", specifier = "==4.0.8" },
+    { name = "verdi", editable = "../../" },
 ]
 
 [[package]]

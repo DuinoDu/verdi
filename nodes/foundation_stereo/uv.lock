@@ -834,69 +834,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-foundation-stereo"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "einops" },
-    { name = "imageio" },
-    { name = "joblib" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "open3d" },
-    { name = "opencv-python-headless" },
-    { name = "pandas" },
-    { name = "pdebug" },
-    { name = "requests" },
-    { name = "scipy" },
-    { name = "timm" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "trimesh" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "einops", specifier = "==0.8.1" },
-    { name = "imageio" },
-    { name = "joblib" },
-    { name = "numpy", specifier = "<2" },
-    { name = "omegaconf", specifier = "==2.3.0" },
-    { name = "open3d", specifier = "==0.19.0" },
-    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
-    { name = "pandas" },
-    { name = "pdebug", editable = "../../" },
-    { name = "requests" },
-    { name = "scipy" },
-    { name = "timm", specifier = "==1.0.15" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "trimesh" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1377,6 +1314,70 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-foundation-stereo"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "einops" },
+    { name = "imageio" },
+    { name = "joblib" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "open3d" },
+    { name = "opencv-python-headless" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "scipy" },
+    { name = "timm" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "trimesh" },
+    { name = "verdi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "einops", specifier = "==0.8.1" },
+    { name = "imageio" },
+    { name = "joblib" },
+    { name = "numpy", specifier = "<2" },
+    { name = "omegaconf", specifier = "==2.3.0" },
+    { name = "open3d", specifier = "==0.19.0" },
+    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
+    { name = "pandas" },
+    { name = "requests" },
+    { name = "scipy" },
+    { name = "timm", specifier = "==1.0.15" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "trimesh" },
+    { name = "verdi", editable = "../../" },
 ]
 
 [[package]]

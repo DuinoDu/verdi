@@ -1,4 +1,4 @@
-"""``otn-cli test``: run the manifest fixtures and record STATUS.toml.
+"""``verdi test``: run the manifest fixtures and record STATUS.toml.
 
 One ``[[tests]]`` entry per case (cover every task)::
 
@@ -18,7 +18,7 @@ One ``[[tests]]`` entry per case (cover every task)::
     min = 200
     [[tests.checks]]              # comparison with a reference output
     output = "mask"
-    metric = "mask_iou"           # see pdebug.types.registry.COMPARATORS
+    metric = "mask_iou"           # see verdi.types.registry.COMPARATORS
     expected = "tests/expected/cups_mask.png"
     min = 0.8
 """
@@ -28,9 +28,9 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from pdebug import types
-from pdebug.core import runner
-from pdebug.core.manifest import Manifest
+from verdi import types
+from verdi.core import runner
+from verdi.core.manifest import Manifest
 
 
 def _resolve(data: Any, path: str) -> Any:
@@ -114,12 +114,12 @@ def run_case(m: Manifest, case: Dict[str, Any],
 def run_test(m: Manifest, device: str = "cuda") -> Dict[str, Any]:
     if not m.tests:
         return {"status": "untested", "detail": ["manifest has no tests"]}
-    from pdebug.core import install
+    from verdi.core import install
 
     not_ready = install.is_ready(m)
     if not_ready:  # do not overwrite STATUS.toml with a setup problem
         return {"status": "untested",
-                "detail": [f"{not_ready}: run `otn-cli setup {m.name}`"]}
+                "detail": [f"{not_ready}: run `verdi setup {m.name}`"]}
     cases = [run_case(m, c, device) for c in m.tests]
     prov = cases[-1].pop("_prov")
     for c in cases:
@@ -129,7 +129,7 @@ def run_test(m: Manifest, device: str = "cuda") -> Dict[str, Any]:
         "status": "pass" if all(c["passed"] for c in cases) else "fail",
         "tested_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "gpu": prov.get("gpu"),
-        "pdebug_commit": prov.get("pdebug_commit"),
+        "verdi_commit": prov.get("verdi_commit"),
         "upstream_commit": prov.get("upstream_commit"),
         "env_lock": prov.get("env_lock"),
         "untested_tasks": untested,
@@ -157,7 +157,7 @@ def _toml_value(v: Any) -> str:
 
 
 def write_status(path: Path, status: Dict[str, Any]) -> None:
-    lines = ["# Written by `otn-cli test`. Do not edit by hand."]
+    lines = ["# Written by `verdi test`. Do not edit by hand."]
     lines += [f"{k} = {_toml_value(v)}" for k, v in status.items()]
     path.write_text("\n".join(lines) + "\n")
 
@@ -166,7 +166,7 @@ def read_status(node_dir: Path) -> Dict[str, Any]:
     path = node_dir / "STATUS.toml"
     if not path.exists():
         return {}
-    from pdebug.core.manifest import tomllib
+    from verdi.core.manifest import tomllib
 
     with open(path, "rb") as f:
         return tomllib.load(f)

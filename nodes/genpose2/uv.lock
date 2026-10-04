@@ -1141,70 +1141,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-genpose2"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "cutoop" },
-    { name = "ipdb" },
-    { name = "matplotlib" },
-    { name = "ninja" },
-    { name = "numpy" },
-    { name = "open3d" },
-    { name = "opencv-python" },
-    { name = "pdebug" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "setuptools" },
-    { name = "tensorboardx" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cutoop", specifier = "==0.1.0" },
-    { name = "ipdb", specifier = "==0.13.13" },
-    { name = "matplotlib", specifier = "==3.9.2" },
-    { name = "ninja", specifier = "==1.11.1.4" },
-    { name = "numpy", specifier = "==1.26.3" },
-    { name = "open3d", specifier = "==0.18.0" },
-    { name = "opencv-python", specifier = "==4.9.0.80" },
-    { name = "pdebug", editable = "../../" },
-    { name = "scikit-learn", specifier = "==1.5.2" },
-    { name = "scipy", specifier = "==1.12.0" },
-    { name = "setuptools", specifier = "<80" },
-    { name = "tensorboardx", specifier = "==2.6.2.2" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm" },
-]
-
-[[package]]
 name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1883,6 +1819,71 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-genpose2"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "cutoop" },
+    { name = "ipdb" },
+    { name = "matplotlib" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "open3d" },
+    { name = "opencv-python" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "tensorboardx" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "verdi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cutoop", specifier = "==0.1.0" },
+    { name = "ipdb", specifier = "==0.13.13" },
+    { name = "matplotlib", specifier = "==3.9.2" },
+    { name = "ninja", specifier = "==1.11.1.4" },
+    { name = "numpy", specifier = "==1.26.3" },
+    { name = "open3d", specifier = "==0.18.0" },
+    { name = "opencv-python", specifier = "==4.9.0.80" },
+    { name = "scikit-learn", specifier = "==1.5.2" },
+    { name = "scipy", specifier = "==1.12.0" },
+    { name = "setuptools", specifier = "<80" },
+    { name = "tensorboardx", specifier = "==2.6.2.2" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm" },
+    { name = "verdi", editable = "../../" },
 ]
 
 [[package]]

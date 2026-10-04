@@ -3,9 +3,9 @@ import json
 import numpy as np
 import pytest
 
-from pdebug import types
-from pdebug.types import io
-from pdebug.types.registry import TypeError_
+from verdi import types
+from verdi.types import io
+from verdi.types.registry import TypeError_
 
 
 def test_image_seq_and_mask(tmp_path):
@@ -42,7 +42,7 @@ def test_bbox_rejects_xywh_like(tmp_path):
 
 
 def test_new_metrics_and_types(tmp_path):
-    from pdebug.core.testing import _resolve
+    from verdi.core.testing import _resolve
 
     ids = np.zeros((6, 6), np.uint8)
     ids[:3] = 1
@@ -95,14 +95,14 @@ def test_new_metrics_and_types(tmp_path):
 
 
 def test_config_paths_and_mirror(tmp_path, monkeypatch):
-    from pdebug.core import config, offline, paths
+    from verdi.core import config, offline, paths
 
     home = tmp_path / "home"
     home.mkdir()
     (home / "config.toml").write_text(
         '[paths]\nweights = "/bucket/w"\n[network]\n'
         'github_mirror = "/m"\n[build]\ncuda_home = "/c"\ncuda_arch = "12.0"\n')
-    monkeypatch.setenv("PDEBUG_HOME", str(home))
+    monkeypatch.setenv("VERDI_HOME", str(home))
     config.load.cache_clear()
     assert str(paths.weights_dir("x")) == "/bucket/w/x"
     env = paths.node_env("x")
@@ -123,7 +123,7 @@ def test_config_paths_and_mirror(tmp_path, monkeypatch):
 def test_weights_skip_when_present(tmp_path, monkeypatch):
     import hashlib
 
-    from pdebug.core import install
+    from verdi.core import install
 
     f = tmp_path / "w" / "k" / "model.bin"
     f.parent.mkdir(parents=True)

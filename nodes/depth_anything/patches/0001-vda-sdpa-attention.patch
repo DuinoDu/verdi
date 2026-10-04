@@ -22,7 +22,7 @@ index 815a2bf..dc3388e 100644
 -
 -        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
 +        q, k, v = qkv[0], qkv[1], qkv[2]
-+        # pdebug: fused SDPA (same math, scale = head_dim**-0.5) instead of an
++        # verdi: fused SDPA (same math, scale = head_dim**-0.5) instead of an
 +        # explicit B x heads x N x N attention matrix (OOM for 32-frame windows
 +        # on 32 GB GPUs; xformers FA3 kernels crash on sm_120).
 +        x = torch.nn.functional.scaled_dot_product_attention(

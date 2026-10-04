@@ -1,5 +1,5 @@
 [project]
-name = "pdebug-node-threedgrut"
+name = "verdi-node-threedgrut"
 version = "0.1.0"
 requires-python = ">=3.11,<3.12"
 # Runtime deps of 3dgrut @ a37ef721 (pyproject.toml [project].dependencies)
@@ -9,7 +9,7 @@ requires-python = ">=3.11,<3.12"
 # for export and are not installed. torch 2.8.0 = what SimFoundry's 3dgrut
 # env gets (PyPI 2.8.0 is the cu128 build).
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "setuptools==78.1.1",
@@ -42,4 +42,4 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }

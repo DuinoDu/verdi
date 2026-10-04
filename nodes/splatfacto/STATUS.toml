@@ -1,12 +1,12 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T08:24:03+0800"
+tested_at = "2026-10-04T08:49:01+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:72e93cc71e3589acf3b0055c258444ff0023b797c8d0215965d6e7464d58d0dd"
+env_lock = "sha256:40d45851e98796304cb78784bd24478d999e4f37202f4f651b047736b9e4d10b"
 untested_tasks = [
 ]
 cases = [
-  "PASS bedroom (203.57s): PASS metrics:psnr_min=20.5353 {'min': 19.5}; PASS metrics:psnr_mean=21.6852 {'min': 20.5}; PASS gaussians.gaussians=676374 {'min': 300000}",
+  "PASS bedroom (198.4s): PASS metrics:psnr_min=20.5395 {'min': 19.5}; PASS metrics:psnr_mean=21.7332 {'min': 20.5}; PASS gaussians.gaussians=672152 {'min': 300000}",
 ]

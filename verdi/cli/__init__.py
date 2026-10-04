@@ -1,0 +1,1 @@
+"""``verdi`` command line interface."""

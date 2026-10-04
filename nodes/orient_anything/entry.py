@@ -6,8 +6,8 @@ import sys
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 CKPT = "ronormsigma1/dino_weight.pt"   # upstream app.py default checkpoint
 OUT_DIM = 360 + 180 + 360 + 2           # azimuth, polar, rotation bins + conf

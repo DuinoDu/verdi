@@ -16,8 +16,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 N_TEMPLATES = 42
 
@@ -105,7 +105,7 @@ def estimate(ctx: Context) -> None:
     blender = Path(os.environ.get("SAM6D_BLENDER", ""))
     if not (blender / "blender").exists():
         raise NodeError(f"Blender not found at {blender}",
-                        hint="run `otn-cli setup sam6d`", kind="setup")
+                        hint="run `verdi setup sam6d`", kind="setup")
     py = Path(sys.executable)
     work = ctx.output_path("_work")
 

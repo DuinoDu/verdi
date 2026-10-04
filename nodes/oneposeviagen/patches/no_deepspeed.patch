@@ -7,7 +7,7 @@ index 2067d39..e2a66b7 100755
  from trellis.models.sparse_structure_vae import *
  from ..modules.spatial import patchify, unpatchify
 -from deepspeed.ops.adam import FusedAdam
-+# from deepspeed.ops.adam import FusedAdam  # training only (pdebug)
++# from deepspeed.ops.adam import FusedAdam  # training only (verdi)
  from trellis.modules.utils import convert_module_to_bf16, convert_module_to_f16, convert_module_to_f32
  from contextlib import contextmanager
  import trellis.models as models

@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pdebug import types
-from pdebug.core.manifest import Manifest, Task
+from verdi import types
+from verdi.core.manifest import Manifest, Task
 
 
 class RequestError(ValueError):

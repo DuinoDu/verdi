@@ -1173,98 +1173,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-oneposeviagen"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "diff-gaussian-rasterization" },
-    { name = "easydict" },
-    { name = "huggingface-hub" },
-    { name = "igraph" },
-    { name = "imageio" },
-    { name = "ninja" },
-    { name = "numpy" },
-    { name = "nvdiffrast" },
-    { name = "onnxruntime" },
-    { name = "open3d" },
-    { name = "opencv-python-headless" },
-    { name = "pdebug" },
-    { name = "pillow" },
-    { name = "plyfile" },
-    { name = "pymeshfix" },
-    { name = "pytorch-lightning" },
-    { name = "pyvista" },
-    { name = "rembg" },
-    { name = "safetensors" },
-    { name = "scipy" },
-    { name = "spconv-cu126" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-    { name = "transformers" },
-    { name = "trimesh" },
-    { name = "utils3d" },
-    { name = "xatlas" },
-    { name = "xformers" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "diff-gaussian-rasterization", git = "https://github.com/autonomousvision/mip-splatting.git?subdirectory=submodules%2Fdiff-gaussian-rasterization&rev=dda02ab5ecf45d6edb8c540d9bb65c7e451345a9" },
-    { name = "easydict", specifier = "==1.13" },
-    { name = "huggingface-hub", specifier = ">=0.30,<1.0" },
-    { name = "igraph", specifier = "==0.11.8" },
-    { name = "imageio", specifier = "==2.37.0" },
-    { name = "ninja" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "nvdiffrast", git = "https://github.com/NVlabs/nvdiffrast.git?rev=253ac4fcea7de5f396371124af597e6cc957bfae" },
-    { name = "onnxruntime", specifier = "==1.19.2" },
-    { name = "open3d", specifier = "==0.18.0" },
-    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pillow" },
-    { name = "plyfile" },
-    { name = "pymeshfix", specifier = "==0.17.0" },
-    { name = "pytorch-lightning", specifier = "==2.5.2" },
-    { name = "pyvista", specifier = "==0.44.2" },
-    { name = "rembg", specifier = "==2.0.65" },
-    { name = "safetensors" },
-    { name = "scipy", specifier = "==1.14.1" },
-    { name = "spconv-cu126", specifier = "==2.3.8" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm" },
-    { name = "transformers", specifier = "==4.46.3" },
-    { name = "trimesh", specifier = "==4.5.3" },
-    { name = "utils3d", git = "https://github.com/EasternJournalist/utils3d.git?rev=9a4eb15e4021b67b12c460c7057d642626897ec8" },
-    { name = "xatlas", specifier = "==0.0.9" },
-    { name = "xformers", specifier = "==0.0.32.post2" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -2066,6 +1974,99 @@ dependencies = [
     { name = "numpy" },
     { name = "plyfile" },
     { name = "scipy" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-oneposeviagen"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "diff-gaussian-rasterization" },
+    { name = "easydict" },
+    { name = "huggingface-hub" },
+    { name = "igraph" },
+    { name = "imageio" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "nvdiffrast" },
+    { name = "onnxruntime" },
+    { name = "open3d" },
+    { name = "opencv-python-headless" },
+    { name = "pillow" },
+    { name = "plyfile" },
+    { name = "pymeshfix" },
+    { name = "pytorch-lightning" },
+    { name = "pyvista" },
+    { name = "rembg" },
+    { name = "safetensors" },
+    { name = "scipy" },
+    { name = "spconv-cu126" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "trimesh" },
+    { name = "utils3d" },
+    { name = "verdi" },
+    { name = "xatlas" },
+    { name = "xformers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "diff-gaussian-rasterization", git = "https://github.com/autonomousvision/mip-splatting.git?subdirectory=submodules%2Fdiff-gaussian-rasterization&rev=dda02ab5ecf45d6edb8c540d9bb65c7e451345a9" },
+    { name = "easydict", specifier = "==1.13" },
+    { name = "huggingface-hub", specifier = ">=0.30,<1.0" },
+    { name = "igraph", specifier = "==0.11.8" },
+    { name = "imageio", specifier = "==2.37.0" },
+    { name = "ninja" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "nvdiffrast", git = "https://github.com/NVlabs/nvdiffrast.git?rev=253ac4fcea7de5f396371124af597e6cc957bfae" },
+    { name = "onnxruntime", specifier = "==1.19.2" },
+    { name = "open3d", specifier = "==0.18.0" },
+    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
+    { name = "pillow" },
+    { name = "plyfile" },
+    { name = "pymeshfix", specifier = "==0.17.0" },
+    { name = "pytorch-lightning", specifier = "==2.5.2" },
+    { name = "pyvista", specifier = "==0.44.2" },
+    { name = "rembg", specifier = "==2.0.65" },
+    { name = "safetensors" },
+    { name = "scipy", specifier = "==1.14.1" },
+    { name = "spconv-cu126", specifier = "==2.3.8" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm" },
+    { name = "transformers", specifier = "==4.46.3" },
+    { name = "trimesh", specifier = "==4.5.3" },
+    { name = "utils3d", git = "https://github.com/EasternJournalist/utils3d.git?rev=9a4eb15e4021b67b12c460c7057d642626897ec8" },
+    { name = "verdi", editable = "../../" },
+    { name = "xatlas", specifier = "==0.0.9" },
+    { name = "xformers", specifier = "==0.0.32.post2" },
 ]
 
 [[package]]

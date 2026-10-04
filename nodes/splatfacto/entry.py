@@ -18,8 +18,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 # OpenCV camera axes (x right, y down, z forward) -> nerfstudio / OpenGL
 # camera axes (x right, y up, z backward): flip the camera y and z axes.
@@ -335,7 +335,7 @@ def train(ctx: Context) -> None:
     psnrs = _render_views(ctx, config_path, frames, renders)
     ctx.set_output("renders", renders)
 
-    from pdebug.types.registry import validate
+    from verdi.types.registry import validate
 
     n = validate("gaussians", out_ply)["gaussians"]
     metrics = {"psnr_mean": float(np.mean(psnrs)),

@@ -15,7 +15,7 @@ index 34cb60e..9df02aa 100644
          super(DINOv2_Encoder, self).__init__()
          
 -        self.model = torch.hub.load('facebookresearch/dinov2', model_name)
-+        # pdebug: load DINOv2 from a pinned local checkout + pinned weights
++        # verdi: load DINOv2 from a pinned local checkout + pinned weights
 +        # instead of torch.hub network access.
 +        import os
 +        self.model = torch.hub.load(os.environ['STABLENORMAL_DINOV2_REPO'], model_name,

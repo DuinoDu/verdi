@@ -1,15 +1,15 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-02T22:34:33+0800"
+tested_at = "2026-10-04T08:47:25+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "15df5ed7a28d1c2c07f837d9896446817dcfa727"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:9b07e6286955a02e434bbb0dcfd7f5f2589fc0c95d5b40ce17b1ec5633884800"
+env_lock = "sha256:0dc6723f5c58e2eb3c3befb16b735f89aa2c434c4550dac2c35a2d9d7e639d1a"
 untested_tasks = [
 ]
 cases = [
-  "PASS caption (28.91s): PASS caption.text='A white pickup truck with black rims and a canopy is parked on a street, facing right, with a red building in the background.' {'contains': 'truck'}",
-  "PASS query (12.52s): PASS answer.text='Red' {'contains': 'red'}; PASS answer.chars=3 {'max': 20}",
-  "PASS detect (10.79s): PASS boxes.count=1 {'eq': 1}; PASS boxes.labels=['truck'] {'eq': ['truck']}",
-  "PASS point (11.89s): PASS points.points=2 {'eq': 2}; PASS points.text='wheel' {'eq': 'wheel'}",
+  "PASS caption (26.19s): PASS caption.text='A white pickup truck with black rims and a canopy is parked on a street, facing right, with a red building in the background.' {'contains': 'truck'}",
+  "PASS query (7.26s): PASS answer.text='Red' {'contains': 'red'}; PASS answer.chars=3 {'max': 20}",
+  "PASS detect (6.98s): PASS boxes.count=1 {'eq': 1}; PASS boxes.labels=['truck'] {'eq': ['truck']}",
+  "PASS point (7.25s): PASS points.points=2 {'eq': 2}; PASS points.text='wheel' {'eq': 'wheel'}",
 ]

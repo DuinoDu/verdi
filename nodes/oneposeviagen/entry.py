@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
+from verdi.sdk import Context, NodeError, main
 
 DINOV2_REPO = "dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8"
 DINOV2_CKPT = "dinov2_vitl14_reg4_pretrain.pth"

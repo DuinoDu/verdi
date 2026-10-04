@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T12:29:24+0800"
+tested_at = "2026-10-04T08:51:29+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "70901923e836dd69ede76e27ca388d0010b536ed"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "1c2543b3b6faa1f1d81b3c7291f8b371d71e50c2"
-env_lock = "sha256:6a71b463884663fed74f8118a523cd1efbab3b8f66160626945e482df5397ae2"
+env_lock = "sha256:51d88614b3a74eede45534a8eb523bb02ff8e5c7e1c18344266e51ca4d94df6a"
 untested_tasks = [
 ]
 cases = [
-  "PASS example (130.56s): PASS poses.count=1 {'eq': 1}; PASS mask.instances=1 {'eq': 1}; PASS poses.pose_translation_err=0.0007 {'max': 0.01}; PASS mask.mask_iou=1.0 {'min': 0.9}",
-  "PASS with_mask (80.39s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0005 {'max': 0.01}",
+  "PASS example (116.0s): PASS poses.count=1 {'eq': 1}; PASS mask.instances=1 {'eq': 1}; PASS poses.pose_translation_err=0.0006 {'max': 0.01}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+  "PASS with_mask (77.79s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0005 {'max': 0.01}",
 ]

@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T22:13:29+0800"
-gpu = ""
-pdebug_commit = "2ce2bc86602d65039f0badff6212797564bf54ea"
+tested_at = "2026-10-04T08:40:57+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:15ef30c45ec26b3a25e03993a8ffcf7bc7d1c11d03fd1f09ab403262cde051bd"
+env_lock = "sha256:6755fab240aa6b09281517339061d52fd49a92d38f4a85e78a5d59041472df62"
 untested_tasks = [
 ]
 cases = [
-  "PASS room (1.83s): PASS planes:counts.floor=1 {'eq': 1}; PASS planes:counts.wall=2 {'eq': 2}; PASS planes:counts.ceiling=1 {'eq': 1}; PASS planes:counts.table=1 {'eq': 1}; PASS planes:planes.4.label='table' {'eq': 'table'}; PASS planes:planes.4.height_m=0.7498 {'min': 0.74, 'max': 0.76}; PASS planes:planes.3.label='ceiling' {'eq': 'ceiling'}; PASS planes:planes.3.height_m=2.5998 {'min': 2.59, 'max': 2.61}; PASS world:input_origin_height_m=1.4999 {'min': 1.49, 'max': 1.51}; PASS world:T_world_input.2.0=-0.0818 {'min': -0.0869, 'max': -0.0769}; PASS world:T_world_input.2.1=-0.9361 {'min': -0.9411, 'max': -0.9311}; PASS world:T_world_input.2.2=-0.342 {'min': -0.347, 'max': -0.337}; PASS pointcloud.points=71113 {'min': 60000}",
-  "PASS bedroom_depth (1.84s): PASS world:anchor='support' {'eq': 'support'}; PASS planes:counts.floor=0 {'eq': 0}; PASS planes:counts.table=1 {'eq': 1}; PASS planes:counts.wall=3 {'min': 1}; PASS planes:planes.0.label='table' {'eq': 'table'}; PASS world:input_origin_height_m=0.5415 {'min': 0.45, 'max': 0.65}; PASS world:gravity_hint_angle_deg=4.5879 {'max': 10}",
+  "PASS room (10.53s): PASS planes:counts.floor=1 {'eq': 1}; PASS planes:counts.wall=2 {'eq': 2}; PASS planes:counts.ceiling=1 {'eq': 1}; PASS planes:counts.table=1 {'eq': 1}; PASS planes:planes.4.label='table' {'eq': 'table'}; PASS planes:planes.4.height_m=0.7498 {'min': 0.74, 'max': 0.76}; PASS planes:planes.3.label='ceiling' {'eq': 'ceiling'}; PASS planes:planes.3.height_m=2.5998 {'min': 2.59, 'max': 2.61}; PASS world:input_origin_height_m=1.4999 {'min': 1.49, 'max': 1.51}; PASS world:T_world_input.2.0=-0.0818 {'min': -0.0869, 'max': -0.0769}; PASS world:T_world_input.2.1=-0.9361 {'min': -0.9411, 'max': -0.9311}; PASS world:T_world_input.2.2=-0.342 {'min': -0.347, 'max': -0.337}; PASS pointcloud.points=71113 {'min': 60000}",
+  "PASS bedroom_depth (10.83s): PASS world:anchor='support' {'eq': 'support'}; PASS planes:counts.floor=0 {'eq': 0}; PASS planes:counts.table=1 {'eq': 1}; PASS planes:counts.wall=3 {'min': 1}; PASS planes:planes.0.label='table' {'eq': 'table'}; PASS world:input_origin_height_m=0.5415 {'min': 0.45, 'max': 0.65}; PASS world:gravity_hint_angle_deg=4.5879 {'max': 10}",
 ]

@@ -40,7 +40,6 @@ build
 **/*.hbir
 **/*.dot
 **/*.json
-!pdebug/otn/pipeline/simfoundry/*/*.json
 **/*.hbm
 **/*.log
 **/*.tar
@@ -61,7 +60,7 @@ build
 # git mergetool
 *.orig
 
-!pdebug/templates/static/disc.png
+!verdi/templates/static/disc.png
 .runnb
 .cache
 

@@ -15,7 +15,7 @@
 - `cutoop==0.1.0` (Omni6DPose API) from PyPI provides data types/drawing.
 - Checkpoints: only on Dropbox (folder link in the upstream README).
   `[setup]` downloads the folder zip, unpacks it into
-  `$PDEBUG_HOME/weights/genpose2/ckpts` and verifies per-file sha256
+  `$VERDI_HOME/weights/genpose2/ckpts` and verifies per-file sha256
   (`ckpts.sha256`). Dropbox is blocked on the H20: the files were
   downloaded on another machine and copied into that directory; setup then
   only verifies them. The DINOv2 ViT-S/14 tensors are part of the
@@ -53,7 +53,7 @@
   Dropbox builds the zip on the fly). The curl/unzip setup command is gone
   (setup must not download). Dropbox is unreachable from the RTX 5090 host and from the
   ubuntu fetch host; the sha256-identical H20 copy was placed in
-  `<weights>/genpose2/ckpts/` with a `.pdebug_extracted` marker, so setup
+  `<weights>/genpose2/ckpts/` with a `.verdi_extracted` marker, so setup
   only verifies it.
 - The pinned DINOv2 code checkout moved from `{weights}/dinov2_repo` to
   `{venv}/dinov2_repo`: the the RTX 5090 host weights bucket refuses rename/unlink, so

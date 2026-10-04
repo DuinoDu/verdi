@@ -9,8 +9,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 
 def _paths(ctx: Context) -> None:
@@ -142,7 +142,7 @@ def paint(ctx: Context) -> None:
         from DifferentiableRenderer import mesh_inpaint_processor  # noqa
     except ImportError as exc:
         raise NodeError(f"compiled extension missing: {exc}",
-                        hint="otn-cli setup hunyuan3d (builds "
+                        hint="verdi setup hunyuan3d (builds "
                         "custom_rasterizer + mesh_inpaint_processor)",
                         kind="setup") from exc
     from textureGenPipeline import Hunyuan3DPaintConfig, Hunyuan3DPaintPipeline

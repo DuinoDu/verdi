@@ -52,12 +52,12 @@ class Context:
     @property
     def repo(self) -> Path:
         """Checkout of the pinned upstream repository."""
-        return Path(os.environ["PDEBUG_NODE_REPO"])
+        return Path(os.environ["VERDI_NODE_REPO"])
 
     @property
     def weights(self) -> Path:
         """Directory holding weights declared in the manifest."""
-        return Path(os.environ["PDEBUG_NODE_WEIGHTS"])
+        return Path(os.environ["VERDI_NODE_WEIGHTS"])
 
     def weight(self, key: str, prefetch: bool = False) -> Path:
         """Path of a manifest weight; ``prefetch`` warms the page cache.
@@ -68,7 +68,7 @@ class Context:
         path = self.weights / key
         if not path.exists():
             raise NodeError(f"weight {key!r} missing at {path}",
-                            hint=f"run `otn-cli setup {self.node}`",
+                            hint=f"run `verdi setup {self.node}`",
                             kind="setup")
         if prefetch:
             prefetch_files(path)
@@ -76,7 +76,7 @@ class Context:
 
     @property
     def node(self) -> str:
-        return os.environ.get("PDEBUG_NODE", self.request.get("node", ""))
+        return os.environ.get("VERDI_NODE", self.request.get("node", ""))
 
     # ---- inputs / params
     def has_input(self, name: str) -> bool:

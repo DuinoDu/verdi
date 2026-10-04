@@ -5,7 +5,7 @@ import sys
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
+from verdi.sdk import Context, NodeError, main
 
 # Upstream StableNormal output: x LEFT, y up, z towards the viewer
 # (verified against normals derived from metric depth, see NOTES.md).

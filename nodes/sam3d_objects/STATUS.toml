@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T22:20:28+0800"
+tested_at = "2026-10-04T08:45:58+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "2ce2bc86602d65039f0badff6212797564bf54ea"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "f91db411c50efee93d8db7aeb323885650f6f722"
-env_lock = "sha256:706c21ebb6c7ee84969b3f794f6fc96c0ef754ae45b4736e39d30549830607c3"
+env_lock = "sha256:bd7d8700b7bf30afed46a30268acfde0da0932369ac0df965964e3834ed5ebd5"
 untested_tasks = [
 ]
 cases = [
-  "PASS moge (76.27s): PASS poses.count=1 {'eq': 1}; PASS poses:poses.0.units='relative' {'eq': 'relative'}; PASS scene.textured=True {'eq': True}; PASS scene.faces=7414 {'min': 2000}; PASS render_mask.mask_iou=0.6702 {'min': 0.6}; PASS render_mask.mask_iou=0.9066 {'min': 0.85}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
-  "PASS metric_depth (67.09s): PASS poses:poses.0.units='metres' {'eq': 'metres'}; PASS poses:poses.0.size.1=0.1923 {'min': 0.17, 'max': 0.21}; PASS poses.z0=0.7453 {'min': 0.7, 'max': 0.78}; PASS scene.textured=True {'eq': True}; PASS render_mask.mask_iou=0.7428 {'min': 0.65}; PASS poses.pose_translation_err=0.0 {'max': 0.01}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
+  "PASS moge (277.12s): PASS poses.count=1 {'eq': 1}; PASS poses:poses.0.units='relative' {'eq': 'relative'}; PASS scene.textured=True {'eq': True}; PASS scene.faces=7408 {'min': 2000}; PASS render_mask.mask_iou=0.6701 {'min': 0.6}; PASS render_mask.mask_iou=0.9097 {'min': 0.85}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
+  "PASS metric_depth (89.99s): PASS poses:poses.0.units='metres' {'eq': 'metres'}; PASS poses:poses.0.size.1=0.1923 {'min': 0.17, 'max': 0.21}; PASS poses.z0=0.7453 {'min': 0.7, 'max': 0.78}; PASS scene.textured=True {'eq': True}; PASS render_mask.mask_iou=0.741 {'min': 0.65}; PASS poses.pose_translation_err=0.0 {'max': 0.01}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
 ]

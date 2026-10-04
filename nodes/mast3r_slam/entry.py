@@ -17,8 +17,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 # checkpoints store argparse Namespaces (torch>=2.6 defaults to weights_only)
 os.environ.setdefault("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "1")
@@ -71,7 +71,7 @@ def _write_ply(path: Path, xyz: np.ndarray, rgb: np.ndarray) -> None:
 def _one_file(d: Path, pattern: str) -> Path:
     files = sorted(d.glob(pattern))
     if not files:
-        raise NodeError(f"no {pattern} in {d}", hint="run `otn-cli setup mast3r_slam`",
+        raise NodeError(f"no {pattern} in {d}", hint="run `verdi setup mast3r_slam`",
                         kind="setup")
     return files[0]
 

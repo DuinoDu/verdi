@@ -1,16 +1,16 @@
-"""Render a manifest as agent-readable markdown (``otn-cli describe``)."""
+"""Render a manifest as agent-readable markdown (``verdi describe``)."""
 from __future__ import annotations
 
 import shlex
 from typing import Optional
 
-from pdebug import types
-from pdebug.core import install, testing
-from pdebug.core.manifest import Manifest, Task
+from verdi import types
+from verdi.core import install, testing
+from verdi.core.manifest import Manifest, Task
 
 
 def _example(m: Manifest, t: Task) -> str:
-    parts = ["otn-cli", "run", m.name]
+    parts = ["verdi", "run", m.name]
     if len(m.tasks) > 1:
         parts += ["--task", t.name]
     for name, port in t.inputs.items():
@@ -49,7 +49,7 @@ def describe(m: Manifest, task: Optional[str] = None) -> str:
     ready = install.is_ready(m)
     out = [f"## {m.name} (v{m.version})", "", m.description.strip(), ""]
     out.append(f"- setup: {'ready' if not ready else ready}"
-               + ("" if not ready else f" -> `otn-cli setup {m.name}`"))
+               + ("" if not ready else f" -> `verdi setup {m.name}`"))
     if status:
         out.append(f"- last test: {status.get('status')} at "
                    f"{status.get('tested_at')} on {status.get('gpu')}")

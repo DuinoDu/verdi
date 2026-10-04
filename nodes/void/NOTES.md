@@ -24,7 +24,14 @@
 - torch 2.7.1 -> 2.8.0, torchvision 0.23.0, `sm_120` in gpu.arch, re-locked.
 - Weights (~45 GB) were downloaded with parallel ranged requests from
   hf-mirror to local disk and copied into the bucket (bucket forbids rename),
-  with `.pdebug_complete` markers so setup skips them.
+  with `.verdi_complete` markers so setup skips them.
 - Test reference `tests/expected/bigben_inpainted` = the visually verified the RTX 5090 host
   run (tower and its reflection removed), JPEG q95. Re-runs on the same GPU
   scored 28.4 and 26.9 dB `image_psnr` (not bit-exact), threshold 25 dB.
+
+## Multi-GPU hosts
+
+`rp.select_torch_device` (used by the Go-with-the-Flow subprocess) picks a GPU by
+physical nvidia-smi index, which is invalid when the runner exposes a single
+GPU via CUDA_VISIBLE_DEVICES (it does for every --device cuda:N except 0).
+entry.py puts a sitecustomize on PYTHONPATH that pins it to the visible GPU.

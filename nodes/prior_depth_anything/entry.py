@@ -6,8 +6,8 @@ import time
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 MIN_DEPTH = 1e-4  # upstream SparseSampler.min_depth
 

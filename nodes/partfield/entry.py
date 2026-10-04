@@ -8,8 +8,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 
 def _load_mesh(path):
@@ -49,7 +49,7 @@ def _extract_features(ctx: Context, mesh_file: Path, work: Path) -> np.ndarray:
         "-c", os.path.join(repo, "configs", "final", "demo.yaml"),
         "--opts",
         "continue_ckpt", str(ckpt),
-        "result_name", "pdebug",
+        "result_name", "verdi",
         "dataset.data_path", str(mesh_file.parent),
         "feature_output_dir", str(feat_dir),
         "n_point_per_face", str(int(ctx.param("n_point_per_face", 1000))),

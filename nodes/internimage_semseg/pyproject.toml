@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-internimage-semseg"
+name = "verdi-node-internimage-semseg"
 version = "0.1.0"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "mmcv==1.7.2",            # lite build (no CUDA ops); see NOTES.md
@@ -23,7 +23,7 @@ package = false
 build-constraint-dependencies = ["setuptools<70"]
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 DCNv4 = { git = "https://github.com/OpenGVLab/DCNv4.git", rev = "4b848f7dd7da74ff03f7d278f902c6fd05b391b5", subdirectory = "DCNv4_op" }
 
 [tool.uv.extra-build-dependencies]

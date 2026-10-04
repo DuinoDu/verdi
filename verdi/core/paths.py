@@ -1,20 +1,23 @@
-"""Filesystem layout of the repository and of ``PDEBUG_HOME``."""
+"""Filesystem layout of the repository and of ``VERDI_HOME``."""
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
-from pdebug.core import config
+from verdi.core import config
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 NODES_DIR = REPO_ROOT / "nodes"
 
-_DEFAULT_HOME = "~/.cache/pdebug"
+_DEFAULT_HOME = "~/.cache/verdi"
 
 
 def home() -> Path:
-    """Return ``PDEBUG_HOME`` (repos, venvs, weights, caches, runs)."""
-    return Path(os.environ.get("PDEBUG_HOME", _DEFAULT_HOME)).expanduser()
+    """Return ``VERDI_HOME`` (repos, venvs, weights, caches, runs)."""
+    # VERDI_HOME; PDEBUG_HOME is accepted for installs made before the rename
+    value = (os.environ.get("VERDI_HOME") or os.environ.get("PDEBUG_HOME")
+             or _DEFAULT_HOME)
+    return Path(value).expanduser()
 
 
 def repos_dir(node: str) -> Path:
@@ -51,7 +54,7 @@ def hf_home() -> Path:
 
 
 def uv_bin() -> str:
-    """Locate the ``uv`` executable (PATH first, then PDEBUG_HOME/bin)."""
+    """Locate the ``uv`` executable (PATH first, then VERDI_HOME/bin)."""
     from shutil import which
 
     found = which("uv")
@@ -69,10 +72,10 @@ def uv_bin() -> str:
 def node_env(node: str) -> dict:
     """Environment variables shared by setup/run for one node."""
     return {
-        "PDEBUG_HOME": str(home()),
-        "PDEBUG_NODE": node,
-        "PDEBUG_NODE_REPO": str(repos_dir(node)),
-        "PDEBUG_NODE_WEIGHTS": str(weights_dir(node)),
+        "VERDI_HOME": str(home()),
+        "VERDI_NODE": node,
+        "VERDI_NODE_REPO": str(repos_dir(node)),
+        "VERDI_NODE_WEIGHTS": str(weights_dir(node)),
         "UV_CACHE_DIR": str(uv_cache_dir()),
         "UV_PROJECT_ENVIRONMENT": str(venv_dir(node)),
         "HF_HOME": str(hf_home()),

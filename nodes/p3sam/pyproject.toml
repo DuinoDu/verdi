@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-p3sam"
+name = "verdi-node-p3sam"
 version = "0.1.0"
 requires-python = "==3.10.*"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   # Sonata (PointTransformerV3) backbone deps (XPart/partgen/models/sonata)
   "spconv-cu126==2.3.8",
@@ -49,6 +49,6 @@ torch-scatter = [{ requirement = "torch", match-runtime = true }, "setuptools<80
 flash-attn = [{ requirement = "torch", match-runtime = true }, "setuptools<80", "wheel", "ninja", "packaging", "psutil", "einops"]
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 
 # torch 2.8.0 on PyPI is the cu128 build (sm_120 capable); no extra index needed.

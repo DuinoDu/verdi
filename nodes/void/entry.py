@@ -20,8 +20,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 RAFT_FILE = "raft_large_C_T_SKHT_V2-ff5fadd5.pth"
 CHUNK_SIZE = 173        # pass 1: VAE cap 197, (L-1) % 4 == 0
@@ -134,7 +134,34 @@ def _env(ctx: Context, work: Path) -> dict:
     if not link.exists():
         os.symlink(ctx.weight("raft") / RAFT_FILE, link)
     env["TORCH_HOME"] = str(work / "torch_home")
+    # rp.select_torch_device picks a GPU by *physical* index from nvidia-smi,
+    # which is invalid when CUDA_VISIBLE_DEVICES exposes a single GPU (the
+    # runner always does). A sitecustomize on PYTHONPATH (also loaded by the
+    # Go-with-the-Flow subprocess) pins it to the one visible device.
+    site = work / "_sitecustomize"
+    site.mkdir(parents=True, exist_ok=True)
+    (site / "sitecustomize.py").write_text(_SITECUSTOMIZE)
+    env["PYTHONPATH"] = os.pathsep.join(
+        [str(site)] + [x for x in [env.get("PYTHONPATH")] if x])
     return env
+
+
+_SITECUSTOMIZE = """\
+import os
+if os.environ.get("CUDA_VISIBLE_DEVICES", "") not in ("",):
+    try:
+        import rp.r as _rpr
+        import torch as _torch
+
+        def _one_visible_device(*_a, **_k):
+            return _torch.device("cuda:0")
+
+        _rpr.select_torch_device = _one_visible_device
+        import rp as _rp
+        _rp.select_torch_device = _one_visible_device
+    except Exception:  # rp not importable here: nothing to patch
+        pass
+"""
 
 
 def _run(cmd, ctx: Context, env: dict, what: str) -> None:

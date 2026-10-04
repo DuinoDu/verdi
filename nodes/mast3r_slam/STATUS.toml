@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T22:12:07+0800"
+tested_at = "2026-10-04T08:44:57+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "747cef5069e0ed675aad6af4367006c7a2c3af01"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "e6f4e3d474fad0e11f561482012be864ba8c3f17"
-env_lock = "sha256:e40c59985b8b1805b9b5dd7f5ccd73a31a4d9750f9ba3ad23f19f9ba7a8543bd"
+env_lock = "sha256:a2e3c888ad84d50c0bbaad9d5f39751acd418d91171c845d9ff38149fbe88e0e"
 untested_tasks = [
 ]
 cases = [
-  "PASS fr1_desk_uncalibrated (21.08s): PASS trajectory.count=204 {'min': 195}; PASS trajectory.trajectory_ate=0.0685 {'max': 0.12}; PASS keyframes.count=16 {'min': 8, 'max': 30}; PASS depth.count=16 {'min': 8}; PASS pointcloud.points=2000000 {'min': 1500000}",
-  "PASS fr1_desk_calibrated (21.27s): PASS trajectory.count=205 {'eq': 205}; PASS trajectory.trajectory_ate=0.0213 {'max': 0.04}; PASS keyframes.count=14 {'min': 8, 'max': 30}; PASS pointcloud.points=2000000 {'min': 1000000}",
+  "PASS fr1_desk_uncalibrated (43.92s): PASS trajectory.count=204 {'min': 195}; PASS trajectory.trajectory_ate=0.0685 {'max': 0.12}; PASS keyframes.count=16 {'min': 8, 'max': 30}; PASS depth.count=16 {'min': 8}; PASS pointcloud.points=2000000 {'min': 1500000}",
+  "PASS fr1_desk_calibrated (309.91s): PASS trajectory.count=205 {'eq': 205}; PASS trajectory.trajectory_ate=0.0213 {'max': 0.04}; PASS keyframes.count=14 {'min': 8, 'max': 30}; PASS pointcloud.points=2000000 {'min': 1000000}",
 ]

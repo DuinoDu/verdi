@@ -89,7 +89,7 @@
 
 ## Runtime / VRAM (RTX 5090, 512x384 network resolution)
 - fr1_room, 1362 frames 640x480: SLAM 76.8 s uncalibrated (17.7 fps), 87.0 s
-  calibrated (15.7 fps), plus ~7 s model load and ~20 s otn-cli/venv overhead.
+  calibrated (15.7 fps), plus ~7 s model load and ~20 s verdi/venv overhead.
   That is about 56 s (uncalibrated) / 64 s (calibrated) of SLAM per 1000
   frames on a hand-held indoor walk (~40 keyframes per 1000 frames).
 - Peak VRAM: 8.3 GB allocated / 9.3-9.6 GB reserved (nvidia-smi ~10.2-10.5

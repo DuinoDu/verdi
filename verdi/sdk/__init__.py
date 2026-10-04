@@ -2,7 +2,7 @@
 
 Usage::
 
-    from pdebug.sdk import Context, main
+    from verdi.sdk import Context, main
 
     def segment_image(ctx: Context) -> None:
         image = ctx.input("image")              # Path
@@ -16,7 +16,7 @@ Usage::
 Rules: never fabricate outputs. If the model fails, raise; ``main``
 turns the exception into ``status=error``.
 """
-from pdebug.sdk.context import (  # noqa: F401
+from verdi.sdk.context import (  # noqa: F401
     Context,
     NodeError,
     main,

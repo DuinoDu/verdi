@@ -547,94 +547,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-trellis2"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "cumesh" },
-    { name = "easydict" },
-    { name = "flex-gemm" },
-    { name = "huggingface-hub" },
-    { name = "imageio" },
-    { name = "imageio-ffmpeg" },
-    { name = "kornia" },
-    { name = "ninja" },
-    { name = "numpy" },
-    { name = "nvdiffrast" },
-    { name = "nvdiffrec-render" },
-    { name = "o-voxel" },
-    { name = "opencv-python-headless" },
-    { name = "pdebug" },
-    { name = "pillow" },
-    { name = "plyfile" },
-    { name = "psutil" },
-    { name = "safetensors" },
-    { name = "timm" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-    { name = "transformers" },
-    { name = "trimesh" },
-    { name = "utils3d" },
-    { name = "xformers" },
-    { name = "zstandard" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cumesh", git = "https://github.com/JeffreyXiang/CuMesh.git?rev=12289e1062f0603f2f0d0771b02e1395d247f26f" },
-    { name = "easydict", specifier = "==1.13" },
-    { name = "flex-gemm", git = "https://github.com/JeffreyXiang/FlexGEMM.git?rev=6dd94a859c26ee8246888502eada3dd8ad85532e" },
-    { name = "huggingface-hub", specifier = ">=0.34,<1.0" },
-    { name = "imageio", specifier = "==2.37.0" },
-    { name = "imageio-ffmpeg" },
-    { name = "kornia", specifier = "==0.8.1" },
-    { name = "ninja" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "nvdiffrast", git = "https://github.com/NVlabs/nvdiffrast.git?rev=253ac4fcea7de5f396371124af597e6cc957bfae" },
-    { name = "nvdiffrec-render", git = "https://github.com/JeffreyXiang/nvdiffrec.git?rev=b296927cc7fd01c2ac1087c8065c4d7248f72da4" },
-    { name = "o-voxel", git = "https://github.com/microsoft/TRELLIS.2.git?subdirectory=o-voxel&rev=75fbf0183001ed9876c8dbb35de6b68552ee08bd" },
-    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pillow" },
-    { name = "plyfile" },
-    { name = "psutil" },
-    { name = "safetensors" },
-    { name = "timm", specifier = "==1.0.20" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm" },
-    { name = "transformers", specifier = "==4.57.6" },
-    { name = "trimesh", specifier = "==4.8.3" },
-    { name = "utils3d", git = "https://github.com/EasternJournalist/utils3d.git?rev=9a4eb15e4021b67b12c460c7057d642626897ec8" },
-    { name = "xformers", specifier = "==0.0.32.post2" },
-    { name = "zstandard" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1004,6 +916,95 @@ dependencies = [
     { name = "numpy" },
     { name = "plyfile" },
     { name = "scipy" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-trellis2"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "cumesh" },
+    { name = "easydict" },
+    { name = "flex-gemm" },
+    { name = "huggingface-hub" },
+    { name = "imageio" },
+    { name = "imageio-ffmpeg" },
+    { name = "kornia" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "nvdiffrast" },
+    { name = "nvdiffrec-render" },
+    { name = "o-voxel" },
+    { name = "opencv-python-headless" },
+    { name = "pillow" },
+    { name = "plyfile" },
+    { name = "psutil" },
+    { name = "safetensors" },
+    { name = "timm" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "trimesh" },
+    { name = "utils3d" },
+    { name = "verdi" },
+    { name = "xformers" },
+    { name = "zstandard" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cumesh", git = "https://github.com/JeffreyXiang/CuMesh.git?rev=12289e1062f0603f2f0d0771b02e1395d247f26f" },
+    { name = "easydict", specifier = "==1.13" },
+    { name = "flex-gemm", git = "https://github.com/JeffreyXiang/FlexGEMM.git?rev=6dd94a859c26ee8246888502eada3dd8ad85532e" },
+    { name = "huggingface-hub", specifier = ">=0.34,<1.0" },
+    { name = "imageio", specifier = "==2.37.0" },
+    { name = "imageio-ffmpeg" },
+    { name = "kornia", specifier = "==0.8.1" },
+    { name = "ninja" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "nvdiffrast", git = "https://github.com/NVlabs/nvdiffrast.git?rev=253ac4fcea7de5f396371124af597e6cc957bfae" },
+    { name = "nvdiffrec-render", git = "https://github.com/JeffreyXiang/nvdiffrec.git?rev=b296927cc7fd01c2ac1087c8065c4d7248f72da4" },
+    { name = "o-voxel", git = "https://github.com/microsoft/TRELLIS.2.git?subdirectory=o-voxel&rev=75fbf0183001ed9876c8dbb35de6b68552ee08bd" },
+    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
+    { name = "pillow" },
+    { name = "plyfile" },
+    { name = "psutil" },
+    { name = "safetensors" },
+    { name = "timm", specifier = "==1.0.20" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm" },
+    { name = "transformers", specifier = "==4.57.6" },
+    { name = "trimesh", specifier = "==4.8.3" },
+    { name = "utils3d", git = "https://github.com/EasternJournalist/utils3d.git?rev=9a4eb15e4021b67b12c460c7057d642626897ec8" },
+    { name = "verdi", editable = "../../" },
+    { name = "xformers", specifier = "==0.0.32.post2" },
+    { name = "zstandard" },
 ]
 
 [[package]]

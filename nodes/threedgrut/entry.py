@@ -5,8 +5,8 @@ import sys
 import zipfile
 from pathlib import Path
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 
 class _NoRenderTracer:

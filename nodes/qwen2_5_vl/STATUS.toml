@@ -1,14 +1,14 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T00:49:35+0800"
+tested_at = "2026-10-04T08:43:21+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "b7322db439f96df9b820af812f390a8343d15b33"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:18dd23e64a4a962ccb61f36e1d7584319c224c2613f7e917f59541325e1c9425"
+env_lock = "sha256:67242fae5d40814b588b73f4af7fde0471c2b73c7b7194b2228f770b3feebb1e"
 untested_tasks = [
 ]
 cases = [
-  "PASS chat_image (86.97s): PASS answer.text='pickup truck' {'contains': 'truck'}; PASS answer.chars=12 {'max': 40}",
-  "PASS chat_frames (33.66s): PASS answer.text='bedroom' {'contains': 'bedroom'}; PASS answer.chars=7 {'max': 20}",
-  "PASS structured (33.0s): PASS result.keys=['background_wall_color', 'body_color', 'vehicle_type', 'wheels_visible'] {'eq': ['background_wall_color', 'body_color', 'vehicle_type', 'wheels_visible']}",
+  "PASS chat_image (116.86s): PASS answer.text='pickup truck' {'contains': 'truck'}; PASS answer.chars=12 {'max': 40}",
+  "PASS chat_frames (36.98s): PASS answer.text='bedroom' {'contains': 'bedroom'}; PASS answer.chars=7 {'max': 20}",
+  "PASS structured (38.69s): PASS result.keys=['background_wall_color', 'body_color', 'vehicle_type', 'wheels_visible'] {'eq': ['background_wall_color', 'body_color', 'vehicle_type', 'wheels_visible']}",
 ]

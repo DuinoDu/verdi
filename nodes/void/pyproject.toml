@@ -1,11 +1,11 @@
 [project]
-name = "pdebug-node-void"
+name = "verdi-node-void"
 version = "0.1.0"
 requires-python = ">=3.11,<3.12"
 # Mirrors deps/void-model/requirements.txt @ e3914f8f (inference subset) plus
 # the fixes from SimFoundry install_void.sh (av==12.3.0, numpy==1.26.4, rp).
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "torchdiffeq==0.2.5",
@@ -55,4 +55,4 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }

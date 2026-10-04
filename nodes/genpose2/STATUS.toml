@@ -1,12 +1,12 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T08:10:18+0800"
+tested_at = "2026-10-04T08:38:51+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "d0993c02d3322b5936e5cc98e5395c36db4e4a68"
-env_lock = "sha256:013c78593f1eff46aab14aa4981e0f15a8aae92d929ec2bf2c37c4e41d02d37b"
+env_lock = "sha256:71c79b1165b513adf01529afa1beb88359dbceade7f67cd26521b9c6588f8ee7"
 untested_tasks = [
 ]
 cases = [
-  "PASS can (13.28s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}",
+  "PASS can (12.94s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}",
 ]

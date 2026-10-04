@@ -3,14 +3,14 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pdebug"
+name = "verdi"
 version = "0.1.0"
 description = "Verified, one-command model inference nodes for AI agents."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
-# Core deps are imported by node processes too (pdebug.sdk / pdebug.types):
+# Core deps are imported by node processes too (verdi.sdk / verdi.types):
 # keep them tiny.
 dependencies = [
   "numpy",
@@ -24,10 +24,10 @@ cli = ["typer>=0.12", "huggingface_hub>=0.24", "imageio-ffmpeg>=0.5"]
 dev = ["pytest>=8"]
 
 [project.scripts]
-otn-cli = "pdebug.cli.main:cli"
+verdi = "verdi.cli.main:cli"
 
 [tool.setuptools.packages.find]
-include = ["pdebug*"]
+include = ["verdi*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

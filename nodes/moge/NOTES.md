@@ -39,7 +39,7 @@
   extensions; no code changes needed for sm_120.
 - Peak VRAM (one 960x540 image, resolution_level 9, fp16, torch max
   allocated / reserved): vitl 1.39 / 2.26 GB, vits 0.78 / 1.08 GB.
-- Timings in `otn-cli test` (includes model load): image 24 s (first run,
+- Timings in `verdi test` (includes model load): image 24 s (first run,
   cold weight cache), image_known_camera 4 s, seq (8 forward passes) 8 s.
-- Note: `otn-cli test --device cuda:N` sets CUDA_VISIBLE_DEVICES itself; an
+- Note: `verdi test --device cuda:N` sets CUDA_VISIBLE_DEVICES itself; an
   outer CUDA_VISIBLE_DEVICES is overridden.

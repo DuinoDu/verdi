@@ -5,8 +5,8 @@ import re
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 SAM_FILES = {"tiny": "sam2.1_hiera_tiny.pt", "small": "sam2.1_hiera_small.pt",
              "base_plus": "sam2.1_hiera_base_plus.pt",

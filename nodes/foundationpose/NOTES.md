@@ -3,7 +3,7 @@
 ## How upstream is used
 
 - Upstream `NVlabs/FoundationPose` pinned to `e3d597b8` (the same commit
-  SimFoundry pins), cloned into `$PDEBUG_HOME/repos/foundationpose`, put on
+  SimFoundry pins), cloned into `$VERDI_HOME/repos/foundationpose`, put on
   `sys.path`. `entry.py` imports `estimater` and calls
   `FoundationPose.register` (estimate) and `register` + `track_one` (track)
   just like `run_demo.py`.
@@ -18,7 +18,7 @@
     Boost is not installed on the H20 and apt is broken there (half-installed
     `fsx` package), so the dependency was dropped instead.
 - `[setup].commands` builds `mycpp` (cmake + pybind11 from the venv +
-  system Eigen3) and symlinks `<repo>/weights -> $PDEBUG_HOME/weights/foundationpose/fp`
+  system Eigen3) and symlinks `<repo>/weights -> $VERDI_HOME/weights/foundationpose/fp`
   (upstream hardcodes `<repo>/weights/<run_name>`).
 - Weights: official refiner `2023-10-28-18-33-37` and scorer
   `2024-01-11-20-02-45`. The official release is on Google Drive (not
@@ -49,7 +49,7 @@
 - Upstream `register` silently returns a guessed translation with identity
   rotation when < 4 masked pixels have depth; the node raises instead.
 - Eigen3 headers come from the system (`libeigen3-dev`); doctor has no
-  header check, so this is not verified by `otn-cli doctor`.
+  header check, so this is not verified by `verdi doctor`.
 - `pytorch3d` is only needed because `Utils.py` imports it at module
   level (rendering uses nvdiffrast).
 

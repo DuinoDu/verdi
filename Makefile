@@ -1,5 +1,5 @@
-# Main environment = otn-cli only. Each node has its own venv (otn-cli setup).
-UV ?= $(shell command -v uv || echo $${PDEBUG_HOME:-$$HOME/.cache/pdebug}/bin/uv)
+# Main environment = verdi only. Each node has its own venv (verdi setup).
+UV ?= $(shell command -v uv || echo $${VERDI_HOME:-$$HOME/.cache/verdi}/bin/uv)
 
 env:
 	$(UV) venv --allow-existing .venv
@@ -10,6 +10,6 @@ test:
 
 # Real model tests on this GPU machine (serial), updates nodes/*/STATUS.toml
 test-nodes:
-	.venv/bin/otn-cli test --all
+	.venv/bin/verdi test --all
 
 .PHONY: env test test-nodes

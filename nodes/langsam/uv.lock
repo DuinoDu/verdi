@@ -1421,56 +1421,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-langsam"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "lang-sam" },
-    { name = "numpy" },
-    { name = "pdebug" },
-    { name = "pillow" },
-    { name = "sam-2" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "transformers" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "lang-sam", git = "https://github.com/luca-medeiros/lang-segment-anything.git?rev=918043ed4666eea04da88aa179eb8d27ef4b1a1d" },
-    { name = "numpy", specifier = "<2.3" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pillow" },
-    { name = "sam-2", git = "https://github.com/facebookresearch/segment-anything-2?rev=c2ec8e14a185632b0a5d8b161928ceb50197eddc" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "transformers", specifier = "==4.57.1" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -2388,6 +2338,57 @@ wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/51/27/c1d2f9fa977f8f42ea294604166df10e0027e6dc6cd17f85ede386c9bf36/uvloop-0.23.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:090865d8ce7a03986755a3ce711b7dd0d4b44eb14ab74368b717f3fad1180208" },
     { url = "https://mirrors.aliyun.com/pypi/packages/42/dd/2cb6a2c8a30ca55c07a882dd4ae4ceae0fa7d8c15b25b3b7cb9a4b6cf4ca/uvloop-0.23.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:bd6f2f81c7b9da99d301c0b16b82044e76fe887086e42e1590ecf520b94dbdac" },
     { url = "https://mirrors.aliyun.com/pypi/packages/f4/52/29989cbaa4022dc4ef35c1dd60a4ab989e4c2065f341ed483ae71d2bd950/uvloop-0.23.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:a6ac96da66c35bf789bdcde78a88dc7d56b7907d8379648c54adc1c61594575d" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-langsam"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "lang-sam" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "sam-2" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "transformers" },
+    { name = "verdi" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "lang-sam", git = "https://github.com/luca-medeiros/lang-segment-anything.git?rev=918043ed4666eea04da88aa179eb8d27ef4b1a1d" },
+    { name = "numpy", specifier = "<2.3" },
+    { name = "pillow" },
+    { name = "sam-2", git = "https://github.com/facebookresearch/segment-anything-2?rev=c2ec8e14a185632b0a5d8b161928ceb50197eddc" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "transformers", specifier = "==4.57.1" },
+    { name = "verdi", editable = "../../" },
 ]
 
 [[package]]

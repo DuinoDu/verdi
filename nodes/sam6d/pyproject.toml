@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-sam6d"
+name = "verdi-node-sam6d"
 version = "0.1.0"
 requires-python = ">=3.10,<3.12"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "numpy==1.26.4",  # trimesh 4.0.8 (upstream pin) needs numpy<2
@@ -33,6 +33,6 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 
 # torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.

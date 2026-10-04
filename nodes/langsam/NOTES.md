@@ -32,6 +32,6 @@
   No code changes; H20 references pass (mask_iou >= 0.9995).
 - hf-mirror answered 429 on the tree API for hours; the weights were
   identical to already-downloaded ones, so they were copied in the bucket
-  with `.pdebug_complete` markers: gdino from groundingdino/base (same repo
+  with `.verdi_complete` markers: gdino from groundingdino/base (same repo
   + revision), sam2.1 checkpoints from sam2/* after checking that each
   repo's main commit (X-Repo-Commit) equals the revision pinned here.

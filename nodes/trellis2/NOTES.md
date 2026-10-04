@@ -57,7 +57,7 @@
 - pillow-simd (upstream) is replaced by plain pillow (speed only).
 - hf-mirror sometimes times out on the 2.5 GB checkpoints
   (`ReadTimeout`) or answers 429 (rate limit); rerunning
-  `otn-cli setup trellis2` resumes (`HF_HUB_DOWNLOAD_TIMEOUT=120` helps).
+  `verdi setup trellis2` resumes (`HF_HUB_DOWNLOAD_TIMEOUT=120` helps).
 - `pipe.low_vram` defaults to True upstream (moves sub-models CPU<->GPU);
   the node sets it from the `low_vram` param (default false, H20 has
   enough memory).

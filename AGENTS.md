@@ -1,26 +1,26 @@
 # Repository Guidelines
 
-pdebug = verified, one-command model inference nodes for AI agents, run
-through `otn-cli`. Read `skills/pdebug/SKILL.md` (usage) and
-`skills/pdebug/references/add-node.md` (node rules) first.
+verdi = verified, one-command model inference nodes for AI agents, run
+through `verdi`. Read `skills/verdi/SKILL.md` (usage) and
+`skills/verdi/references/add-node.md` (node rules) first.
 
 ## Where things run
 
-Nodes run on a Linux host with NVIDIA GPUs. `PDEBUG_HOME` (default
-`~/.cache/pdebug`) holds upstream checkouts, venvs, weights, caches and run
+Nodes run on a Linux host with NVIDIA GPUs. `VERDI_HOME` (default
+`~/.cache/verdi`) holds upstream checkouts, venvs, weights, caches and run
 outputs. Per-host settings (PyPI/HF mirrors, a local git mirror for offline
 hosts, CUDA toolkit path/arch, where weights live) go in
-`$PDEBUG_HOME/config.toml`; see the docstring of `pdebug/core/config.py`.
-Offline hosts: run `otn-cli offline-fetch` on a machine with internet and
+`$VERDI_HOME/config.toml`; see the docstring of `verdi/core/config.py`.
+Offline hosts: run `verdi offline-fetch` on a machine with internet and
 copy its output over. Run GPU tests serially per GPU (`--device cuda:N`).
 
 ## Layout
 
-- `pdebug/core/`: manifest, envelope, runner, doctor, install, testing,
+- `verdi/core/`: manifest, envelope, runner, doctor, install, testing,
   offline prefetch, host config
-- `pdebug/types/`: unified data types (registry, comparators, io helpers)
-- `pdebug/sdk/`: imported by node `entry.py` inside node venvs
-- `pdebug/cli/`: `otn-cli`
+- `verdi/types/`: unified data types (registry, comparators, io helpers)
+- `verdi/sdk/`: imported by node `entry.py` inside node venvs
+- `verdi/cli/`: `verdi`
 - `nodes/<name>/`: one model (or deterministic algorithm) per node,
   standalone uv project; `tests/` fixtures/references via git LFS
 - `pipelines/`: multi-node pipelines (SimFoundry = official repo in
@@ -29,9 +29,9 @@ copy its output over. Run GPU tests serially per GPU (`--device cuda:N`).
 
 ## Commands
 
-- `make env`: main venv `.venv` with `otn-cli`
+- `make env`: main venv `.venv` with `verdi`
 - `make test`: core tests (fast, CPU)
-- `otn-cli test <node>` / `make test-nodes`: real model tests on the GPU host
+- `verdi test <node>` / `make test-nodes`: real model tests on the GPU host
 
 ## Rules
 

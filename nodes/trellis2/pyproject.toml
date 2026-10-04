@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-trellis2"
+name = "verdi-node-trellis2"
 version = "0.1.0"
 requires-python = "==3.10.*"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   # SimFoundry install_trellis.sh pins transformers==4.57.6 (DINOv3ViTModel)
@@ -38,7 +38,7 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 utils3d = { git = "https://github.com/EasternJournalist/utils3d.git", rev = "9a4eb15e4021b67b12c460c7057d642626897ec8" }
 nvdiffrast = { git = "https://github.com/NVlabs/nvdiffrast.git", rev = "253ac4fcea7de5f396371124af597e6cc957bfae" }
 nvdiffrec-render = { git = "https://github.com/JeffreyXiang/nvdiffrec.git", rev = "b296927cc7fd01c2ac1087c8065c4d7248f72da4" }

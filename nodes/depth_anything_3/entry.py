@@ -7,8 +7,8 @@ from typing import Dict, List
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 PATCH = 14
 _SKY: List[np.ndarray] = []  # non-sky masks captured from the nested model
@@ -31,7 +31,7 @@ def _hook_sky() -> None:
     """
     import depth_anything_3.model.da3 as da3mod
 
-    if getattr(da3mod, "_pdebug_hooked", False):
+    if getattr(da3mod, "_verdi_hooked", False):
         return
     orig = da3mod.set_sky_regions_to_max_depth
 
@@ -43,7 +43,7 @@ def _hook_sky() -> None:
         return orig(depth, depth_conf, non_sky_mask, max_depth=max_depth)
 
     da3mod.set_sky_regions_to_max_depth = wrapped
-    da3mod._pdebug_hooked = True
+    da3mod._verdi_hooked = True
 
 
 def _load(ctx: Context, key: str):

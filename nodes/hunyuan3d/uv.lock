@@ -1153,106 +1153,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "tomli" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-hunyuan3d"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "accelerate" },
-    { name = "basicsr" },
-    { name = "diffusers" },
-    { name = "einops" },
-    { name = "huggingface-hub" },
-    { name = "imageio" },
-    { name = "ninja" },
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "onnxruntime" },
-    { name = "open3d" },
-    { name = "opencv-python-headless" },
-    { name = "pdebug" },
-    { name = "pybind11" },
-    { name = "pygltflib" },
-    { name = "pymeshlab" },
-    { name = "pytorch-lightning" },
-    { name = "pyyaml" },
-    { name = "realesrgan" },
-    { name = "rembg" },
-    { name = "safetensors" },
-    { name = "scikit-image" },
-    { name = "scipy" },
-    { name = "setuptools" },
-    { name = "timm" },
-    { name = "torch" },
-    { name = "torchdiffeq" },
-    { name = "torchvision" },
-    { name = "tqdm" },
-    { name = "transformers" },
-    { name = "trimesh" },
-    { name = "wheel" },
-    { name = "xatlas" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", specifier = "==1.1.1" },
-    { name = "basicsr", specifier = "==1.4.2" },
-    { name = "diffusers", specifier = "==0.30.0" },
-    { name = "einops", specifier = "==0.8.0" },
-    { name = "huggingface-hub", specifier = "==0.30.2" },
-    { name = "imageio", specifier = "==2.36.0" },
-    { name = "ninja", specifier = "==1.11.1.1" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "omegaconf", specifier = "==2.3.0" },
-    { name = "onnxruntime", specifier = "==1.19.2" },
-    { name = "open3d", specifier = "==0.18.0" },
-    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
-    { name = "pdebug", editable = "../../" },
-    { name = "pybind11", specifier = "==2.13.4" },
-    { name = "pygltflib", specifier = "==1.16.3" },
-    { name = "pymeshlab", specifier = "==2022.2.post3" },
-    { name = "pytorch-lightning", specifier = "==1.9.5" },
-    { name = "pyyaml", specifier = "==6.0.2" },
-    { name = "realesrgan", specifier = "==0.3.0" },
-    { name = "rembg", specifier = "==2.0.65" },
-    { name = "safetensors", specifier = "==0.4.4" },
-    { name = "scikit-image", specifier = "==0.24.0" },
-    { name = "scipy", specifier = "==1.14.1" },
-    { name = "setuptools", specifier = "<80" },
-    { name = "timm" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchdiffeq" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "tqdm", specifier = "==4.66.5" },
-    { name = "transformers", specifier = "==4.46.0" },
-    { name = "trimesh", specifier = "==4.4.7" },
-    { name = "wheel" },
-    { name = "xatlas", specifier = "==0.0.9" },
-]
-
-[[package]]
 name = "pillow"
 version = "12.3.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -2046,6 +1946,107 @@ source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "tomli" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-hunyuan3d"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "accelerate" },
+    { name = "basicsr" },
+    { name = "diffusers" },
+    { name = "einops" },
+    { name = "huggingface-hub" },
+    { name = "imageio" },
+    { name = "ninja" },
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "onnxruntime" },
+    { name = "open3d" },
+    { name = "opencv-python-headless" },
+    { name = "pybind11" },
+    { name = "pygltflib" },
+    { name = "pymeshlab" },
+    { name = "pytorch-lightning" },
+    { name = "pyyaml" },
+    { name = "realesrgan" },
+    { name = "rembg" },
+    { name = "safetensors" },
+    { name = "scikit-image" },
+    { name = "scipy" },
+    { name = "setuptools" },
+    { name = "timm" },
+    { name = "torch" },
+    { name = "torchdiffeq" },
+    { name = "torchvision" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "trimesh" },
+    { name = "verdi" },
+    { name = "wheel" },
+    { name = "xatlas" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "accelerate", specifier = "==1.1.1" },
+    { name = "basicsr", specifier = "==1.4.2" },
+    { name = "diffusers", specifier = "==0.30.0" },
+    { name = "einops", specifier = "==0.8.0" },
+    { name = "huggingface-hub", specifier = "==0.30.2" },
+    { name = "imageio", specifier = "==2.36.0" },
+    { name = "ninja", specifier = "==1.11.1.1" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "omegaconf", specifier = "==2.3.0" },
+    { name = "onnxruntime", specifier = "==1.19.2" },
+    { name = "open3d", specifier = "==0.18.0" },
+    { name = "opencv-python-headless", specifier = "==4.10.0.84" },
+    { name = "pybind11", specifier = "==2.13.4" },
+    { name = "pygltflib", specifier = "==1.16.3" },
+    { name = "pymeshlab", specifier = "==2022.2.post3" },
+    { name = "pytorch-lightning", specifier = "==1.9.5" },
+    { name = "pyyaml", specifier = "==6.0.2" },
+    { name = "realesrgan", specifier = "==0.3.0" },
+    { name = "rembg", specifier = "==2.0.65" },
+    { name = "safetensors", specifier = "==0.4.4" },
+    { name = "scikit-image", specifier = "==0.24.0" },
+    { name = "scipy", specifier = "==1.14.1" },
+    { name = "setuptools", specifier = "<80" },
+    { name = "timm" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchdiffeq" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "tqdm", specifier = "==4.66.5" },
+    { name = "transformers", specifier = "==4.46.0" },
+    { name = "trimesh", specifier = "==4.4.7" },
+    { name = "verdi", editable = "../../" },
+    { name = "wheel" },
+    { name = "xatlas", specifier = "==0.0.9" },
 ]
 
 [[package]]

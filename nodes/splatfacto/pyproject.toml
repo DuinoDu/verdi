@@ -1,12 +1,12 @@
 [project]
-name = "pdebug-node-splatfacto"
+name = "verdi-node-splatfacto"
 version = "0.1.0"
 requires-python = ">=3.10,<3.11"
 # Same stack as SimFoundry install_nerfstudio.sh (nerfstudio 1.1.5 + gsplat
 # 1.5.3 overriding nerfstudio's hard gsplat==1.4.0 pin) with the PyPI
 # torch 2.8.0 build (= cu128, needed for sm_120 / RTX 5090).
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "nerfstudio==1.1.5",
@@ -21,4 +21,4 @@ package = false
 override-dependencies = ["gsplat==1.5.3"]
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }

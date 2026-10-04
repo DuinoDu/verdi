@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-prior-depth-anything"
+name = "verdi-node-prior-depth-anything"
 version = "0.1.0"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "torch-cluster==1.6.3",
@@ -32,7 +32,7 @@ version = "1.6.3"
 requires-dist = ["scipy"]
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 
 # torch 2.8.0 on PyPI is the cu128 build (sm_120); no extra index needed.
 # Prior-Depth-Anything itself is imported from the patched [upstream] checkout.

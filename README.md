@@ -1,31 +1,31 @@
-# pdebug
+# verdi
 
-`pdebug` is not for humans. It is for AI coding.
+**Verified, one-command model inference for AI agents.**
 
-It packages existing models as **nodes** that an agent can run with one
-command and trust: each node has its own uv venv, a pinned upstream
-commit, pinned weights, declared system requirements and a fixture test
-that has passed on a real GPU (`STATUS.toml`).
+verdi packages existing vision / 3D models as **nodes** that an agent can
+run with one command and trust: each node has its own uv venv, a pinned
+upstream commit, pinned weights, declared system requirements, unified
+typed inputs/outputs (metres, OpenCV camera frame) and a fixture test that
+has passed on a real GPU (`STATUS.toml`). It is built for AI coding agents
+first, humans second.
 
 ```bash
-make env                                   # main env with otn-cli
-.venv/bin/otn-cli list                     # nodes + last test status
-.venv/bin/otn-cli describe sam2            # typed IO, params, example
-.venv/bin/otn-cli setup sam2               # doctor + uv sync + weights
-.venv/bin/otn-cli run sam2 --task segment_image \
+make env                                 # main env with the verdi CLI
+.venv/bin/verdi list                     # nodes + last test status
+.venv/bin/verdi describe sam2            # typed IO, params, example
+.venv/bin/verdi setup sam2               # doctor + uv sync + weights
+.venv/bin/verdi run sam2 --task segment_image \
     -i image=truck.jpg -i prompts=prompts.json
-.venv/bin/otn-cli test sam2                # fixture test -> STATUS.toml
+.venv/bin/verdi test sam2                # fixture test -> STATUS.toml
 ```
 
-- Agent entry point: [`skills/pdebug/SKILL.md`](skills/pdebug/SKILL.md)
-- Adding a node: [`skills/pdebug/references/add-node.md`](skills/pdebug/references/add-node.md)
+- Agent entry point: [`skills/verdi/SKILL.md`](skills/verdi/SKILL.md)
+- Adding a node: [`skills/verdi/references/add-node.md`](skills/verdi/references/add-node.md)
 - Pipelines that use nodes: [`pipelines/`](pipelines/)
-
-The pre-refactor toolkit is tagged `legacy-v0.0.2`.
 
 ## License
 
-pdebug itself (core, CLI, node wrappers, tests) is released under the
+verdi itself (core, CLI, node wrappers, tests) is released under the
 [MIT License](LICENSE).
 
 Each node downloads and runs third-party code and model weights that keep

@@ -9,8 +9,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 CFGS = ("pipeline", "ss_generator", "slat_generator", "ss_decoder",
         "slat_decoder_gs", "slat_decoder_gs_4", "slat_decoder_mesh")

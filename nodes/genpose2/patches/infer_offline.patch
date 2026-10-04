@@ -7,7 +7,7 @@ index 52da316..62e8aab 100644
          ''' dino v2 '''
          if cfg.dino != 'none':
 -            self.dino : nn.Module = torch.hub.load('facebookresearch/dinov2', GFObjectPose.dino_name).to(cfg.device)
-+            # pdebug: load DINOv2 from a pinned local checkout instead of the
++            # verdi: load DINOv2 from a pinned local checkout instead of the
 +            # unpinned torch.hub github download (weights come from the
 +            # GenPose++ checkpoints, which contain the dino.* tensors)
 +            if os.environ.get('GENPOSE2_DINOV2_REPO'):
@@ -27,7 +27,7 @@ index 963c6a0..bb39bb1 100644
  import open3d as o3d
 -import pyrealsense2 as rs
 -import pyrealsense2 as rs
-+# pdebug: pyrealsense2 (camera streaming only) not needed for inference
++# verdi: pyrealsense2 (camera streaming only) not needed for inference
  import numpy as np
  import glob
  
@@ -37,7 +37,7 @@ index 963c6a0..bb39bb1 100644
  
 -from flask import Flask, request
 -flask_app = Flask(__name__)
-+# pdebug: flask app (camera server) removed
++# verdi: flask app (camera server) removed
  
  
  class GenPose2:

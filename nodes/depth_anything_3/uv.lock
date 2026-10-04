@@ -1231,55 +1231,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pdebug"
-version = "0.1.0"
-source = { editable = "../../" }
-dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pillow" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "tomli", marker = "python_full_version < '3.11'" },
-    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
-]
-provides-extras = ["cli", "dev"]
-
-[[package]]
-name = "pdebug-node-depth-anything-3"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "addict" },
-    { name = "depth-anything-3" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "pdebug" },
-    { name = "torch" },
-    { name = "torchvision" },
-    { name = "xformers" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "addict", specifier = "==2.4.0" },
-    { name = "depth-anything-3", git = "https://github.com/ByteDance-Seed/Depth-Anything-3.git?rev=3d835ec1a5802d64a8b8b15f817a1ab54809bfe4" },
-    { name = "numpy", specifier = "<2" },
-    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
-    { name = "pdebug", editable = "../../" },
-    { name = "torch", specifier = "==2.8.0" },
-    { name = "torchvision", specifier = "==0.23.0" },
-    { name = "xformers", specifier = "==0.0.32.post2" },
-]
-
-[[package]]
 name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
@@ -1975,6 +1926,56 @@ dependencies = [
 sdist = { url = "https://mirrors.aliyun.com/pypi/packages/da/34/30e9280707135d2cfc589dfff3cb796bd07a3aeb1a3e415ba09dd89d7bb4/uvicorn-0.54.0.tar.gz", hash = "sha256:a2e33cbfaa0306f8e6b0c13e0cb89d7d7a2da3e62b90c66e18c33d9807b28620" }
 wheels = [
     { url = "https://mirrors.aliyun.com/pypi/packages/38/0c/b54a4fdd7f90a3af8b02ebc9ce6712c2c208b7926a2f7bad95c33ebbe943/uvicorn-0.54.0-py3-none-any.whl", hash = "sha256:505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf" },
+]
+
+[[package]]
+name = "verdi"
+version = "0.1.0"
+source = { editable = "../../" }
+dependencies = [
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", marker = "extra == 'cli'", specifier = ">=0.24" },
+    { name = "imageio-ffmpeg", marker = "extra == 'cli'", specifier = ">=0.5" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pillow" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
+]
+provides-extras = ["cli", "dev"]
+
+[[package]]
+name = "verdi-node-depth-anything-3"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "addict" },
+    { name = "depth-anything-3" },
+    { name = "numpy" },
+    { name = "opencv-python-headless" },
+    { name = "torch" },
+    { name = "torchvision" },
+    { name = "verdi" },
+    { name = "xformers" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "addict", specifier = "==2.4.0" },
+    { name = "depth-anything-3", git = "https://github.com/ByteDance-Seed/Depth-Anything-3.git?rev=3d835ec1a5802d64a8b8b15f817a1ab54809bfe4" },
+    { name = "numpy", specifier = "<2" },
+    { name = "opencv-python-headless", specifier = "==4.11.0.86" },
+    { name = "torch", specifier = "==2.8.0" },
+    { name = "torchvision", specifier = "==0.23.0" },
+    { name = "verdi", editable = "../../" },
+    { name = "xformers", specifier = "==0.0.32.post2" },
 ]
 
 [[package]]

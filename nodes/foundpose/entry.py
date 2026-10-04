@@ -17,8 +17,8 @@ from pathlib import Path
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 # DINOv2 variants (upstream extractor names); vits14-reg/layer 9 is the
 # configuration of the released LM-O/TUD-L configs.
@@ -43,7 +43,7 @@ def _upstream(ctx: Context):
             sys.path.insert(0, str(p))
     if not (ctx.repo / "external" / "dinov2" / "dinov2").is_dir():
         raise NodeError("dinov2 submodule missing in upstream checkout",
-                        kind="setup", hint="run `otn-cli setup foundpose`")
+                        kind="setup", hint="run `verdi setup foundpose`")
 
 
 _EGL_CHECKED = False
@@ -112,7 +112,7 @@ def _extractor(ctx: Context, name: str, device: str):
     ckpt = ctx.weight(name.replace("-", "_")) / fname
     if not ckpt.exists():
         raise NodeError(f"missing {ckpt}", kind="setup",
-                        hint="run `otn-cli setup foundpose`")
+                        hint="run `verdi setup foundpose`")
     # dinov2 hub code downloads into $TORCH_HOME/hub/checkpoints/<fname>;
     # point it at the pinned file instead of the network.
     th = Path(tempfile.mkdtemp(prefix="foundpose_torch_"))

@@ -1,14 +1,14 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T00:36:21+0800"
+tested_at = "2026-10-04T08:47:25+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "b7322db439f96df9b820af812f390a8343d15b33"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "82920d643c0dc2f7bfd7255f45f62d386edfe60c"
-env_lock = "sha256:6114c865e0a03eed9c967c7ce64ee72d0b5c8191747e562763ec4599677fd4ce"
+env_lock = "sha256:2c4f59d48349b4b93e531bb24f2022061f2ef2529ef7e572ee9a220c0bd99e63"
 untested_tasks = [
 ]
 cases = [
-  "PASS rembg (77.96s): PASS mask.instances=1 {'eq': 1}; PASS mask.mask_iou=1.0 {'min': 0.95}",
-  "PASS shape (216.82s): PASS mesh.format='glb' {'eq': 'glb'}; PASS mesh.bytes=13207100 {'min': 1000000}",
-  "PASS paint (127.86s): PASS mesh.format='glb' {'eq': 'glb'}; PASS mesh.bytes=5190956 {'min': 2000000}",
+  "PASS rembg (12.25s): PASS mask.instances=1 {'eq': 1}; PASS mask.mask_iou=1.0 {'min': 0.95}",
+  "PASS shape (304.88s): PASS mesh.format='glb' {'eq': 'glb'}; PASS mesh.bytes=13207100 {'min': 1000000}",
+  "PASS paint (130.52s): PASS mesh.format='glb' {'eq': 'glb'}; PASS mesh.bytes=5190956 {'min': 2000000}",
 ]

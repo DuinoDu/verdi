@@ -7,8 +7,8 @@ import sys
 
 import numpy as np
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 MIN_VALID_PIXELS = 4  # upstream silently returns a guessed pose below this
 
@@ -22,10 +22,10 @@ def _import_upstream(ctx: Context):
         ckpt = ctx.weight("fp") / run / "model_best.pth"
         if not ckpt.exists():
             raise NodeError(f"missing checkpoint {ckpt}", kind="setup",
-                            hint="run `otn-cli setup any6d`")
+                            hint="run `verdi setup any6d`")
     if not (repo / "foundationpose" / "weights").exists():
         raise NodeError(f"{repo}/foundationpose/weights link missing",
-                        kind="setup", hint="run `otn-cli setup any6d`")
+                        kind="setup", hint="run `verdi setup any6d`")
     # upstream resolves mycpp relative to foundationpose/ (cwd-style import)
     cwd = os.getcwd()
     os.chdir(repo / "foundationpose")
@@ -35,7 +35,7 @@ def _import_upstream(ctx: Context):
         os.chdir(cwd)
     if getattr(estimater, "mycpp", None) is None:
         raise NodeError("mycpp extension not importable", kind="setup",
-                        hint="re-run `otn-cli setup any6d` and check the "
+                        hint="re-run `verdi setup any6d` and check the "
                         "cmake/make output")
     return estimater
 

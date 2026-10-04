@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-spatracker"
+name = "verdi-node-spatracker"
 version = "0.1.0"
 requires-python = ">=3.11,<3.13"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "numpy<2",
@@ -32,7 +32,7 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 utils3d = { git = "https://github.com/EasternJournalist/utils3d.git", rev = "d3a577acf0a9ad7e513a1416449a07b6f47d967f" }
 
 # torch 2.8.0 on PyPI is the cu128 build (sm_120 / RTX 5090 support); no extra index needed.

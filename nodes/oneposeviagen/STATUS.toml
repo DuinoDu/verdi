@@ -1,13 +1,13 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T13:04:16+0800"
+tested_at = "2026-10-04T08:45:37+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "703f83f4f51154ea720de6d965b0a3e04cefafa4"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = "ecf41c5ba1c275556782220a16ab043f0d7e9a0f"
-env_lock = "sha256:c3289428237069ffbf184c30227f00d5903bc82c71dd8e8bd65a37837b25f219"
+env_lock = "sha256:86e8f74ec119e2ec086c4d22f3c3dfa074df39f5304b22282b45470e3c299a9a"
 untested_tasks = [
 ]
 cases = [
-  "PASS generate (41.92s): PASS mesh.textured=True {'eq': True}; PASS mesh.faces=12468 {'min': 5000}; PASS mesh.max_extent=0.9992 {'min': 0.5, 'max': 1.01}",
-  "PASS generate_amodal (42.29s): PASS mesh.textured=True {'eq': True}; PASS mesh.faces=12555 {'min': 5000}; PASS mesh.max_extent=1.0 {'min': 0.5, 'max': 1.01}",
+  "PASS generate (249.58s): PASS mesh.textured=True {'eq': True}; PASS mesh.faces=12443 {'min': 5000}; PASS mesh.max_extent=0.9989 {'min': 0.5, 'max': 1.01}",
+  "PASS generate_amodal (156.53s): PASS mesh.textured=True {'eq': True}; PASS mesh.faces=12714 {'min': 5000}; PASS mesh.max_extent=1.0001 {'min': 0.5, 'max': 1.01}",
 ]

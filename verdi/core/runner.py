@@ -13,9 +13,9 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from pdebug.core import doctor, envelope, install, paths
-from pdebug.core.manifest import Manifest
-from pdebug.types.io import VIDEO_EXT, video_to_image_seq
+from verdi.core import doctor, envelope, install, paths
+from verdi.core.manifest import Manifest
+from verdi.types.io import VIDEO_EXT, video_to_image_seq
 
 
 def _git_commit(path: Path) -> Optional[str]:
@@ -66,14 +66,14 @@ def run(
     if not_ready:
         return envelope.error_result(
             "setup", f"node {m.name}: {not_ready}",
-            hint=f"otn-cli setup {m.name}")
+            hint=f"verdi setup {m.name}")
     try:
         inputs = _prepare_inputs(task, inputs, run_dir)
         request = envelope.build_request(m, task, inputs, params, device,
                                          out_dir)
     except (envelope.RequestError, ValueError) as exc:
         return envelope.error_result(
-            "request", str(exc), hint=f"otn-cli describe {m.name}")
+            "request", str(exc), hint=f"verdi describe {m.name}")
 
     req_path, res_path = run_dir / "request.json", run_dir / "result.json"
     log_path = run_dir / "log.txt"
@@ -142,7 +142,7 @@ def run(
         "weights": rec.get("weights"), "env_lock": rec.get("env_lock"),
         "device": device, "gpu": gpus[0]["name"] if gpus else None,
         "host": socket.gethostname(), "started_at": started,
-        "duration_sec": duration, "pdebug_commit": _git_commit(
+        "duration_sec": duration, "verdi_commit": _git_commit(
             paths.REPO_ROOT),
         "run_dir": str(run_dir),
     }

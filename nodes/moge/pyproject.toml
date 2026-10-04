@@ -1,9 +1,9 @@
 [project]
-name = "pdebug-node-moge"
+name = "verdi-node-moge"
 version = "0.1.0"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-  "pdebug",
+  "verdi",
   "torch==2.8.0",
   "torchvision==0.23.0",
   "moge",
@@ -19,7 +19,7 @@ dependencies = [
 package = false
 
 [tool.uv.sources]
-pdebug = { path = "../..", editable = true }
+verdi = { path = "../..", editable = true }
 # last MoGe-2-era commit (before the MoGe-3 "V3" refactor, which adds FlexGEMM/gradio deps)
 moge = { git = "https://github.com/microsoft/MoGe.git", rev = "925b8ed835a7a9cdb7578ba15c658a0afc969030" }
 utils3d = { git = "https://github.com/EasternJournalist/utils3d.git", rev = "3fab839f0be9931dac7c8488eb0e1600c236e183" }

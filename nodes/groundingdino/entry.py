@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import re
 
-from pdebug.sdk import Context, NodeError, main
-from pdebug.types import io
+from verdi.sdk import Context, NodeError, main
+from verdi.types import io
 
 
 def normalize_text(text: str) -> tuple[str, list[str]]:

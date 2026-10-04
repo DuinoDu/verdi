@@ -31,5 +31,5 @@
 - torch 2.7.1 -> 2.8.0, torchvision 0.23.0; `{cuda_home}` / `{cuda_arch}`;
   `sm_120` in gpu.arch; uv.lock re-locked against aliyun.
 - fpsample (nerfstudio dep) builds from sdist and needs g++ (provided by
-  `~/pdebug_home/bin` on the RTX 5090 host).
+  `$VERDI_HOME/bin` on the RTX 5090 host).
 - Peak VRAM ~15 GB for splatfacto-big at 960x540 x 6 frames.

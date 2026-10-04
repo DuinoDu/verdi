@@ -1,14 +1,14 @@
-# Written by `otn-cli test`. Do not edit by hand.
+# Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-03T08:16:20+0800"
+tested_at = "2026-10-04T08:46:34+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-pdebug_commit = "ead986daf6527ecf88d1617f990d37a8ecabca8c"
+verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
 upstream_commit = ""
-env_lock = "sha256:13eb8bc035ee83221eb571ecc851f8b974c6fd4d9c92c1fdb03ff8ddbde7967f"
+env_lock = "sha256:5023d91522a4c9ebd230eb183b099c0210e45371e6debe1e294afcc24628771b"
 untested_tasks = [
 ]
 cases = [
-  "PASS text (11.69s): PASS boxes.labels=['tire', 'truck'] {'eq': ['tire', 'truck']}; PASS boxes.bbox_iou=1.0 {'min': 0.85}; PASS mask.mask_iou=1.0 {'min': 0.9}",
-  "PASS prompts (12.35s): PASS mask.instances=2 {'eq': 2}; PASS mask.mask_iou=1.0 {'min': 0.9}",
-  "PASS track (13.75s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.instances=2 {'eq': 2}; PASS masks.mask_iou=1.0 {'min': 0.85}",
+  "PASS text (26.6s): PASS boxes.labels=['tire', 'truck'] {'eq': ['tire', 'truck']}; PASS boxes.bbox_iou=1.0 {'min': 0.85}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+  "PASS prompts (13.23s): PASS mask.instances=2 {'eq': 2}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+  "PASS track (15.83s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.instances=2 {'eq': 2}; PASS masks.mask_iou=1.0 {'min': 0.85}",
 ]
