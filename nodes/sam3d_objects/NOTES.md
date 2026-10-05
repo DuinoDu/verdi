@@ -160,3 +160,6 @@ Meta SAM 3D Objects (arXiv:2511.16624). NOT the `sam3` segmentation node.
   mesh 0.0997 x 0.1957 x 0.0576 m (YCB ~0.096 x 0.191 x 0.058); FoundationPose
   on it valid, depth inlier 0.98, mask IoU 0.95, 12.9 mm from the SAM 3D
   translation, ~176 deg rotation difference (near front/back symmetry).
+
+- apex (Ubuntu 24.04, gcc/g++ 13.3, CUDA 12.8, RTX 5090): extensions build
+  and both tests pass (moge, metric_depth); compiler bound relaxed to <14.

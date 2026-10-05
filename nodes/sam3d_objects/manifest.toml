@@ -52,7 +52,7 @@ dinov2_repo = { url = "https://github.com/facebookresearch/dinov2/archive/7764ea
 [system]
 gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_90"] }
 cuda = { driver = ">=12.6", toolkit = ">=12.4" }
-compilers = { gcc = ">=9,<13", "g++" = ">=9,<13" }
+compilers = { gcc = ">=9,<14", "g++" = ">=9,<14" }  # gcc 11 (063) and 13.3 (apex, CUDA 12.8) verified
 disk_gb = 40
 
 [build.env]
