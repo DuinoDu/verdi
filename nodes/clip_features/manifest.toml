@@ -1,0 +1,152 @@
+name = "clip_features"
+version = "0.1.0"
+description = """
+OpenAI CLIP ViT-B/32 (official openai/CLIP code @ d05afc43, official
+ViT-B-32.pt, repository LICENSE MIT): L2-normalised 512-d text embeddings and
+image / ROI embeddings in the same joint space (cosine-comparable). No
+probabilities are produced (logit_scale is not applied). Runs on CPU or CUDA
+(float32 both). Model card: intended for research on robustness /
+generalisation; deployed use cases are out of scope per the card - task-level
+suitability is NOT evaluated here.
+"""
+
+[upstream]
+repo = "https://github.com/openai/CLIP.git"
+commit = "d05afc436d78f1c48dc0dbf8e5980a9d471f35f6"
+
+[weights]
+# official URL (the path contains the sha256 of the file)
+vitb32 = { url = "https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt", filename = "ViT-B-32.pt", sha256 = "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af" }
+
+[system]
+disk_gb = 2
+
+[run]
+timeout_sec = 3600
+
+[tasks.encode_text]
+description = """
+Text embeddings. `texts`: utf-8, one non-empty text per line (row i = line
+i). The official tokenizer lower-cases and cleans the text; context = 77
+tokens incl. start / end. A text longer than that is an error unless
+on_overflow = truncate (then info.texts[i].truncated = true and n_tokens is
+the untruncated count). Output rows are unit vectors.
+"""
+inputs.texts = { type = "text", description = "one text per line" }
+outputs.text_embeddings = { type = "file", description = "text_embeddings.npy float32 [T, 512], L2-normalised" }
+outputs.info = { type = "json", description = "{model, checkpoint_sha256, code, embedding_space, normalize, dtype, device, shape, texts [{index, text, n_tokens, truncated}], tokenizer, n_truncated}" }
+params.on_overflow = { type = "str", default = "error", choices = ["error", "truncate"] }
+
+[tasks.encode_regions]
+description = """
+Image / ROI embeddings. `frames`: images; `regions` (optional, same schema as
+dinov2_features.extract: {"regions": [{"region_id", "frame_index",
+"object_id"?, "bbox_xyxy"? [x0, y0, x1, y1] input px continuous x1/y1
+exclusive, "mask"? png relative to the json}]}); without regions every whole
+frame is one ROI. roi_mode = pad_square (default): the integer crop
+[floor x0, ceil x1) x [floor y0, ceil y1) is padded to a square with the CLIP
+mean colour, so the official Resize(224) + CenterCrop(224) keeps all of it;
+center_crop: the official preprocess on the raw crop, the cut-away part is
+recorded (retained_xyxy_input, retained_fraction). mask_mode = fill paints
+pixels outside the region mask with the mean colour. Optional `texts`:
+also outputs text_embeddings and similarity = raw cosine [N, T] (NOT
+probabilities).
+"""
+inputs.frames = { type = "image_seq" }
+inputs.regions = { type = "json", optional = true, description = "ROIs (schema above); default = whole frames" }
+inputs.texts = { type = "text", optional = true, description = "one text per line; adds similarity" }
+outputs.roi_embeddings = { type = "file", description = "roi_embeddings.npy float32 [N, 512] in regions order, L2-normalised" }
+outputs.text_embeddings = { type = "file", optional = true, description = "only with texts: [T, 512]" }
+outputs.similarity = { type = "json", optional = true, description = "only with texts: {note, regions, texts, cosine [N][T], argmax_text, margin_top1_top2}" }
+outputs.info = { type = "json", description = "{model, checkpoint_sha256, code, embedding_space, normalize, dtype, device, shape, regions [{index, region_id, frame_index, frame, object_id, bbox_xyxy, mask_file, crop_xyxy_int, mode, retained_xyxy_input, retained_fraction, padded_side?, pad_left_top?, cropped_away?}], preprocess, params, texts?}" }
+params.roi_mode = { type = "str", default = "pad_square", choices = ["pad_square", "center_crop"] }
+params.mask_mode = { type = "str", default = "none", choices = ["none", "fill"] }
+params.on_overflow = { type = "str", default = "error", choices = ["error", "truncate"] }
+params.batch_size = { type = "int", default = 32 }
+
+# ---- fixture: same 3 frames / regions as dinov2_features (mustard + TUM desk).
+# Checks are a regression / sanity check of the official model wiring (zero-shot
+# label of clear objects), NOT an evaluation of SceneAgent task quality.
+[[tests]]
+name = "text"
+task = "encode_text"
+timeout_sec = 600
+inputs = { texts = "tests/fixture/texts.txt" }
+[[tests.checks]]
+output = "info"
+path = "shape.1"
+eq = 512
+[[tests.checks]]
+output = "info"
+path = "n_truncated"
+eq = 0
+
+[[tests]]
+name = "text_overflow_refused"
+task = "encode_text"
+timeout_sec = 300
+inputs = { texts = "tests/fixture/texts_long.txt" }
+expect_error = "context of 77"
+
+[[tests]]
+name = "text_overflow_truncate"
+task = "encode_text"
+timeout_sec = 600
+inputs = { texts = "tests/fixture/texts_long.txt" }
+params = { on_overflow = "truncate" }
+[[tests.checks]]
+output = "info"
+path = "texts.1.truncated"
+eq = true
+
+[[tests]]
+name = "regions_pad_square"
+task = "encode_regions"
+timeout_sec = 600
+inputs = { frames = "tests/fixture/scene/frames", regions = "tests/fixture/scene/regions.json", texts = "tests/fixture/texts.txt" }
+[[tests.checks]]
+output = "similarity"
+path = "argmax_text.0"
+eq = "a photo of a mustard bottle"
+[[tests.checks]]
+output = "similarity"
+path = "argmax_text.1"
+eq = "a photo of a computer keyboard"
+[[tests.checks]]
+output = "similarity"
+path = "argmax_text.2"
+eq = "a photo of a computer monitor"
+[[tests.checks]]
+output = "info"
+path = "regions.1.retained_fraction"
+eq = 1.0
+
+[[tests]]
+name = "regions_center_crop"
+task = "encode_regions"
+timeout_sec = 600
+inputs = { frames = "tests/fixture/scene/frames", regions = "tests/fixture/scene/regions.json" }
+params = { roi_mode = "center_crop" }
+[[tests.checks]]
+output = "info"
+path = "regions.1.cropped_away"
+eq = "left/right"
+[[tests.checks]]
+output = "info"
+path = "regions.1.retained_fraction"
+max = 0.9
+
+[[tests]]
+name = "empty_line_refused"
+task = "encode_text"
+timeout_sec = 300
+inputs = { texts = "tests/fixture/texts_empty_line.txt" }
+expect_error = "empty lines"
+
+[[known_issues]]
+summary = "Licence: the openai/CLIP repository LICENSE (pinned checkout) is MIT; the ViT-B-32.pt weights are published by OpenAI via the URL in clip/clip.py of that repository (no separate weight licence file). Model card (model-card.md, separate from the licence): primary intended users = AI researchers; any deployed use case is out of scope; non-deployed constrained-domain use only with thorough in-domain testing; surveillance / facial recognition out of scope; English only"
+fix = "task-level suitability for SceneAgent is unknown (not evaluated); the consumer decides on use given the model card"
+
+[[known_issues]]
+summary = "Cosine similarities are uncalibrated (not probabilities); zero-shot labels depend on the text prompts"
+fix = "calibrate / evaluate on the consumer task"

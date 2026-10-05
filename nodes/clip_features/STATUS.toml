@@ -1,0 +1,17 @@
+# Written by `verdi test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-06T00:47:58+0800"
+gpu = ""
+verdi_commit = "30556443935aa31a7295f1f1b684442db2edb813"
+upstream_commit = "d05afc436d78f1c48dc0dbf8e5980a9d471f35f6"
+env_lock = "sha256:6bc0d0a345eb305f406a08a7f4db5fc16f2ca420da9503014203530d97c8740e"
+untested_tasks = [
+]
+cases = [
+  "PASS text (19.99s): PASS info:shape.1=512 {'eq': 512}; PASS info:n_truncated=0 {'eq': 0}",
+  "PASS text_overflow_refused (16.19s): PASS expected error containing 'context of 77': status=error 'texts [1] exceed the CLIP context of 77 tokens (n_tokens [98]) shorten them or pass on_overflow=truncate (recorded per text)'",
+  "PASS text_overflow_truncate (15.99s): PASS info:texts.1.truncated=True {'eq': True}",
+  "PASS regions_pad_square (15.97s): PASS similarity:argmax_text.0='a photo of a mustard bottle' {'eq': 'a photo of a mustard bottle'}; PASS similarity:argmax_text.1='a photo of a computer keyboard' {'eq': 'a photo of a computer keyboard'}; PASS similarity:argmax_text.2='a photo of a computer monitor' {'eq': 'a photo of a computer monitor'}; PASS info:regions.1.retained_fraction=1.0 {'eq': 1.0}",
+  "PASS regions_center_crop (15.87s): PASS info:regions.1.cropped_away='left/right' {'eq': 'left/right'}; PASS info:regions.1.retained_fraction=0.8371 {'max': 0.9}",
+  "PASS empty_line_refused (0.09s): PASS expected error containing 'empty lines': status=error 'texts has empty lines at [1]; one non-empty text per line (indices of the output rows = line numbers) '",
+]

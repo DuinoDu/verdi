@@ -1,0 +1,132 @@
+name = "dinov2_features"
+version = "0.1.0"
+description = """
+DINOv2 ViT-L/14 with 4 registers (Meta, Apache-2.0 code and weights): frozen
+pretrained image features for retrieval / matching / grouping. Per frame:
+CLS [1024], 4 register tokens [4, 1024] (kept separate) and the patch-token
+grid [h, w, 1024] (final LayerNorm, x_norm_*), plus the exact patch <->
+input-pixel map and optional region-pooled features (bbox and/or mask ->
+coverage-weighted patch mean). Runs on CPU or CUDA (float32 both). These are
+generic features: no task-level quality is implied, and the space is not
+comparable with CLIP.
+"""
+
+[weights]
+# same files (sha256 / files_sha256) as sam3d_objects' DINOv2 conditioning
+dinov2_ckpt = { url = "https://dl.fbaipublicfiles.com/dinov2/dinov2_vitl14/dinov2_vitl14_reg4_pretrain.pth", sha256 = "36e4deffbaef061a2576705b0c36f93621e2ae20bf6274694821b0b492551b51" }
+dinov2_repo = { url = "https://github.com/facebookresearch/dinov2/archive/7764ea0f912e53c92e82eb78a2a1631e92725fc8.zip", archive = "zip", files_sha256 = { "dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8/hubconf.py" = "c1f5090e78ff940b72c076d2bf9c0310d1707c946b3d10e2d6f2b0bdf56a6f64" } }
+
+[system]
+disk_gb = 4
+
+[run]
+timeout_sec = 3600
+
+[tasks.extract]
+description = """
+Frozen DINOv2 features of every frame (one resolution per call). Each frame
+is resized WITHOUT crop or padding to H x W (multiples of 14, long side ~
+max_side), so the whole image is valid; u_net = sx u_in, v_net = sy v_in
+(continuous coords, origin = top-left image corner). Patch (i, j) covers
+u_in in [14 j / sx, 14 (j+1) / sx), v_in in [14 i / sy, 14 (i+1) / sy);
+patch_centers gives its centre in input pixels. Optional `regions` json:
+{"regions": [{"region_id": str, "frame_index": int (sorted frame order),
+"object_id": any (optional, passed through), "bbox_xyxy": [x0, y0, x1, y1]
+(input px, continuous, x1/y1 exclusive; optional when mask is given), "mask":
+"rel/path.png" (optional, relative to the json, same size as the frames)}]}.
+A region feature is the coverage-weighted mean of the patch tokens whose cell
+is covered >= min_coverage by bbox ∩ mask; a region covering no cell enough
+is reported valid=false with a zero row (never dropped, never an error).
+Features are not L2-normalised unless l2_normalize = true (then CLS,
+registers, patches and region features are all unit-norm).
+"""
+inputs.frames = { type = "image_seq" }
+inputs.regions = { type = "json", optional = true, description = "regions to pool (schema above)" }
+outputs.cls = { type = "file", description = "cls.npy float32 [F, 1024]" }
+outputs.registers = { type = "file", description = "registers.npy float32 [F, 4, 1024] (register tokens, separate)" }
+outputs.patch = { type = "file", description = "patch.npy [F, h, w, 1024] (patch_dtype), row-major patch grid" }
+outputs.patch_centers = { type = "file", description = "patch_centers.npy float64 [h, w, 2] = (u, v) input-pixel centre of every patch" }
+outputs.region_features = { type = "file", optional = true, description = "only with regions: region_features.npy float32 [N, 1024] in regions order" }
+outputs.info = { type = "json", description = "{model, checkpoint_sha256, embedding_space, layer, normalize, shapes, pixel_map {stride, grid_hw, network_hw, input_hw, sx, sy, convention, patch_bounds_input, patch_center_input, valid_region, resize}, frames [{frame_index, frame}], regions [{index, region_id, frame_index, frame, object_id, bbox_xyxy, mask_file, region_area_px, n_patches, valid, reason?, patch_ij}], region_pooling, params, infer_sec}" }
+params.max_side = { type = "int", default = 518, description = "target long side of the network input (multiple of 14); both sides are rounded to multiples of 14" }
+params.l2_normalize = { type = "bool", default = false, description = "L2-normalise CLS / registers / patches / region features" }
+params.min_coverage = { type = "float", default = 0.5, description = "minimum fraction of a patch cell covered by the region to enter its pooled feature" }
+params.patch_dtype = { type = "str", default = "float32", choices = ["float32", "float16"], description = "storage dtype of patch.npy (compute is float32)" }
+params.batch_size = { type = "int", default = 4 }
+
+# ---- fixture: 3 frames 512x384 (YCB mustard resized x0.8 + 2 TUM fr1_desk frames),
+# regions from the mustard mask and hand-drawn boxes (keyboard, monitor, book).
+# Checks are regression / sanity of layout and features, NOT a quality evaluation.
+[[tests]]
+name = "frames_regions"
+task = "extract"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/scene/frames", regions = "tests/fixture/scene/regions.json" }
+[[tests.checks]]
+output = "info"
+path = "pixel_map.grid_hw.0"
+eq = 28
+[[tests.checks]]
+output = "info"
+path = "pixel_map.grid_hw.1"
+eq = 37
+[[tests.checks]]
+output = "info"
+path = "shapes.patch.3"
+eq = 1024
+[[tests.checks]]
+output = "info"
+path = "regions.0.valid"
+eq = true
+[[tests.checks]]
+output = "info"
+path = "regions.5.valid"
+eq = false
+
+[[tests]]
+name = "l2_float16"
+task = "extract"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/scene/frames" }
+params = { l2_normalize = true, patch_dtype = "float16", max_side = 224 }
+[[tests.checks]]
+output = "info"
+path = "pixel_map.grid_hw.1"
+eq = 16
+[[tests.checks]]
+output = "info"
+path = "normalize.l2_normalize"
+eq = true
+
+[[tests]]
+name = "mixed_resolution_refused"
+task = "extract"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/mixed_res" }
+expect_error = "one resolution"
+
+[[tests]]
+name = "bbox_outside_refused"
+task = "extract"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/scene/frames", regions = "tests/fixture/bad_regions_bbox.json" }
+expect_error = "outside"
+
+[[tests]]
+name = "frame_index_refused"
+task = "extract"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/scene/frames", regions = "tests/fixture/bad_regions_frame.json" }
+expect_error = "frame_index"
+
+[[known_issues]]
+summary = "Licences: DINOv2 code Apache-2.0 (facebookresearch/dinov2 @ 7764ea0f); dinov2_vitl14_reg4 weights Apache-2.0"
+fix = ""
+
+[[known_issues]]
+summary = "Generic frozen features: no task-level (SceneAgent) evaluation has been done; cosine similarities are uncalibrated"
+fix = "evaluate on the consumer task before relying on thresholds"
+
+[[known_issues]]
+summary = "No xformers: standard attention (memory grows with the patch count); CPU is slow for large max_side"
+fix = "lower max_side or run on CUDA"

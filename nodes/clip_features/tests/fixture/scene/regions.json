@@ -1,0 +1,65 @@
+{
+ "regions": [
+  {
+   "region_id": "mustard",
+   "frame_index": 0,
+   "object_id": "mustard_bottle",
+   "mask": "masks/mustard.png"
+  },
+  {
+   "region_id": "keyboard_f1",
+   "frame_index": 1,
+   "object_id": "keyboard",
+   "bbox_xyxy": [
+    72,
+    232,
+    250,
+    381
+   ]
+  },
+  {
+   "region_id": "monitor_f1",
+   "frame_index": 1,
+   "object_id": "monitor",
+   "bbox_xyxy": [
+    179,
+    8,
+    371,
+    168
+   ]
+  },
+  {
+   "region_id": "book_f2",
+   "frame_index": 2,
+   "object_id": "book",
+   "bbox_xyxy": [
+    352,
+    144,
+    504,
+    296
+   ]
+  },
+  {
+   "region_id": "keyboard_f2",
+   "frame_index": 2,
+   "object_id": "keyboard",
+   "bbox_xyxy": [
+    40,
+    8,
+    216,
+    72
+   ]
+  },
+  {
+   "region_id": "tiny_f2",
+   "frame_index": 2,
+   "object_id": null,
+   "bbox_xyxy": [
+    100.0,
+    100.0,
+    105.0,
+    105.0
+   ]
+  }
+ ]
+}

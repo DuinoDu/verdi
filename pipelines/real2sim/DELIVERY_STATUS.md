@@ -1,6 +1,6 @@
 # Verdi delivery status for real2sim / SceneAgent (three separate columns)
 
-As of main `26114eb` (2026-10-06). Columns are independent: a pass in one
+As of main `26114eb` (P0 rows) / SC rows at the SC-02 commit (2026-10-06). Columns are independent: a pass in one
 never implies the next.
 
 * **Entry**: the node/task exists in main (commit where the current behaviour landed).
@@ -50,10 +50,19 @@ execution failures; scene completeness is decided by real2sim.
 | mapanything.reconstruct | cf9215a | fixture 6 cases pass (063 21:35; apex): TUM mocap ATE 36 mm Sim3; real: 3 windows with stereo depth conditioning (table depth / stereo ratio 0.97-1.03 is NOT independent: stereo was an input) | not provided |
 | vggt.reconstruct / mast3r_slam.slam | 26114eb tree (scale sidecars bda8ba2) | fixture pass (063 21:33) | not provided; outputs relative scale |
 | cotracker.track_* | f121ef4 tree | fixture pass (2026-10-04) | n/a; quality: fixture EPE only |
-| splatfacto.train (splatfacto-big) | f121ef4 tree | fixture pass (063 21:36); distortion currently only warned (SC-03 will refuse); optimized cameras not exported | not provided; PSNR = fit only |
+| splatfacto.train (splatfacto-big) | f121ef4 tree; SC-03 contract 3055644 | fixture pass (063 21:36, BEFORE 3055644); after 3055644 only CPU: pytest scale resolution + real CPU call refusing a distorted camera (rc=1, run 20261006-003302-5a332f). **GPU regression after 3055644 not run** (W2, needs a declared slot) | not provided; PSNR = fit only; optimized cameras not exported (optimizer default off) |
 | qwen2_5_vl.structured | f121ef4 tree | fixture pass (2026-10-04) | n/a; quality: schema-valid output only, priors are not measurements |
 | partfield.segment ([F,448] features + face labels) / p3sam.segment | f121ef4 tree | fixture pass (063 21:49) | n/a; quality: part segmentation, not articulation. Licence: optional only (non-commercial / regional terms) |
 | groundingdino.detect | f121ef4 tree | fixture pass (2026-10-04) | n/a |
 
-## Planned (not delivered): SC-02 features, SC-03 minimal contracts, SC-01 SfM
-See the manager estimate (2026-10-06): all three columns are "not yet" until implemented.
+## SceneAgent SC items (SC-20261005 v2)
+
+GPU was not started for any row below. A CPU-only pass is listed as CPU, never as a GPU call.
+
+| node.task | Entry | Executed (fixture / real call) | Independent geometric validation |
+|---|---|---|---|
+| dinov2_features.extract (CLS / registers / patch grid + pixel map, region pooling) | SC-02 commit | **CPU only**: fixture 5/5 pass `--device cpu` (063 2026-10-06 00:48; STATUS.toml gpu = ""), pytest coverage vs supersampling; **GPU call not run** (W1 candidate) | n/a (features). Quality: not evaluated for the SceneAgent task; fixture cosines are sanity only (NOTES.md) |
+| clip_features.encode_text / encode_regions (official B/32, L2, cosine only) | SC-02 commit | **CPU only**: fixture 6/6 pass `--device cpu` (063 00:47; gpu = ""); overflow / empty-line refusals; **GPU call not run** (W1 candidate) | n/a. Quality: not evaluated (zero-shot fixture: 4/4 clear ROIs right, partial keyboard wrong, small margins). Licence MIT (repo LICENSE); model card out-of-scope statements registered separately in NOTES.md |
+| SC-03 input content hashes in provenance | 3055644 | pytest + real CPU call (hashes in result.json) | n/a (contract) |
+| SC-03 splatfacto distortion refusal / scale + world sidecar / frame mapping | 3055644 | CPU: pytest + real refusal call; GPU training after the change not run (W2) | n/a; scale = resolved from declared inputs (conflict / none -> unknown) |
+| SC-01 sfm (pycolmap 4.2.1 CPU, shared undistorted K) | not yet | not yet | not yet |

@@ -1,0 +1,23 @@
+[project]
+name = "verdi-node-clip-features"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+# the official `clip` package is imported from the pinned [upstream] checkout
+# (no build step); these are its runtime requirements (requirements.txt @ d05afc43)
+dependencies = [
+  "verdi",
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "numpy<2.3",
+  "pillow>=10",
+  "ftfy",
+  "regex",
+  "packaging",
+  "tqdm",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+verdi = { path = "../..", editable = true }
