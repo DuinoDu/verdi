@@ -205,7 +205,7 @@ def main(argv=None) -> int:
         H063 = HOSTS[a.host]
 
     if a.list:
-        cmd = (f"cd ~/{ROOT} 2>/dev/null || exit 0; for d in */; do d=${{d%/}}; "
+        cmd = (f"cd ~/{ROOT} 2>/dev/null || exit 0; shopt -s nullglob; for d in */; do d=${{d%/}}; "
                f"s=unmarked; [ -f $d/ACTIVE ] && s=active; [ -f $d/DONE ] && s=done; "
                f"age=$(( ($(date +%s) - $(stat -c %Y $d)) / 60 )); echo \"$d $s ${{age}}min\"; done")
         rows = [r for r in on063(cmd, 3).split("\n") if r.strip()]
