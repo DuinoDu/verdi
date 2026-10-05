@@ -67,6 +67,10 @@ def run(
         return envelope.error_result(
             "setup", f"node {m.name}: {not_ready}",
             hint=f"verdi setup {m.name}")
+    from verdi.core import hashing
+
+    input_ids = {k: {"path": str(Path(v).expanduser().resolve()), **hashing.digest(v)}
+                 for k, v in inputs.items()}
     try:
         inputs = _prepare_inputs(task, inputs, run_dir)
         request = envelope.build_request(m, task, inputs, params, device,
@@ -145,6 +149,7 @@ def run(
         "duration_sec": duration, "verdi_commit": _git_commit(
             paths.REPO_ROOT),
         "run_dir": str(run_dir),
+        "inputs": input_ids,
     }
     envelope.write_json(res_path, result)
     return result

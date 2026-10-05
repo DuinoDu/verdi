@@ -94,7 +94,7 @@ def _v_image_seq(path: Path):
 # accepted by inputs that need metres; anything else is refused there.
 METRIC_SCALE_STATES = ("metric", "metric_from_input_poses")
 SCALE_STATES = METRIC_SCALE_STATES + ("relative", "input_pose_scale",
-                                      "input_depth_scale")
+                                      "input_depth_scale", "unknown")
 
 
 def scale_sidecar(path: Path) -> Path:
@@ -411,7 +411,7 @@ def _v_pointcloud(path: Path):
 
 @_register("gaussians", "file", "3DGS ply (INRIA layout), metres")
 def _v_gaussians(path: Path):
-    return {"gaussians": _ply_vertices(path)}
+    return {"gaussians": _ply_vertices(path), **_scale_summary(path)}
 
 
 # --------------------------------------------------------------- generic

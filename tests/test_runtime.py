@@ -38,6 +38,8 @@ def test_run_ok_error_and_contract(node, tmp_path):
     out = io.read_image(res["outputs"]["image"]["path"])
     assert out.min() == 255
     assert res["provenance"]["node"] == "echo_node"
+    ii = res["provenance"]["inputs"]["image"]
+    assert ii["hash_verified"] and len(ii["content_sha256"]) == 64 and ii["kind"] == "file"
 
     res = runner.run(node, None, {"image": str(img)}, {"fail": "true"},
                      device="cpu", stream_log=False)

@@ -13,7 +13,7 @@ class RequestError(ValueError):
     """The caller passed invalid inputs or params."""
 
 
-SCALED_TYPES = ("depth", "depth_seq", "pointcloud", "mesh")
+SCALED_TYPES = ("depth", "depth_seq", "pointcloud", "mesh", "gaussians")
 
 
 def build_request(

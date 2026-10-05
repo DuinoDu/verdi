@@ -106,7 +106,11 @@ def _load_inputs(ctx: Context):
         K[0] *= sx
         K[1] *= sy
     if np.any(np.abs(cam["dist"]) > 1e-9):
-        ctx.log("warning: camera distortion is ignored (pinhole assumed)")
+        raise NodeError("camera has non-zero distortion; splatfacto trains a pinhole "
+                        "model and would silently ignore it",
+                        hint="undistort the frames first (stereo_rectify for the fisheye "
+                             "rig, or an SfM undistortion) and pass the new pinhole K "
+                             "with dist = 0")
     masks = None
     if ctx.has_input("masks"):
         mfiles = io.list_frames(ctx.input("masks"), (".png",))
@@ -122,6 +126,43 @@ def _load_inputs(ctx: Context):
                             f"{len(frames)}")
         depths = dfiles
     return frames, Ts, K, (h, w), masks, depths
+
+
+def resolve_scale(sources: dict) -> dict:
+    """Scale of the trained scene from the declared scale of its inputs.
+
+    sources: {input name: scale_status or None (undeclared)}. Declared metric
+    states agree -> that state; all undeclared -> unknown; any disagreement ->
+    unknown with conflict = true (never silently pick one input)."""
+    from verdi.types.registry import METRIC_SCALE_STATES
+
+    declared = {k: v for k, v in sources.items() if v not in (None, "unspecified")}
+    out = {"sources": sources, "conflict": False}
+    if not declared:
+        out.update(scale_status="unknown", reason="no input declares its scale")
+        return out
+    vals = set(declared.values())
+    if vals <= set(METRIC_SCALE_STATES):
+        out["scale_status"] = "metric" if vals == {"metric"} else "metric_from_input_poses"
+        return out
+    if len(vals) == 1:
+        out["scale_status"] = vals.pop()
+        return out
+    out.update(scale_status="unknown", conflict=True,
+               reason=f"inputs declare different scales: {declared}")
+    return out
+
+
+def _input_scales(ctx: Context) -> dict:
+    from verdi.types.registry import read_scale
+
+    traj = io.read_json(ctx.input("trajectory"))
+    src = {"trajectory": traj.get("scale_status")}
+    if ctx.has_input("depth"):
+        src["depth"] = read_scale(Path(ctx.input("depth")))["scale_status"]
+    if ctx.has_input("points"):
+        src["points"] = read_scale(Path(ctx.input("points")))["scale_status"]
+    return src
 
 
 def _keep_mask(masks, i: int, h: int, w: int) -> np.ndarray:
@@ -343,6 +384,22 @@ def train(ctx: Context) -> None:
                "num_gaussians": int(n), "iterations": iters,
                "method": method, "depth_loss": use_depth,
                "seed_points": 0 if xyz is None else int(len(xyz))}
+    scale = resolve_scale(_input_scales(ctx))
+    io.write_scale(out_ply, scale["scale_status"],
+                   "metres" if scale["scale_status"] == "metric" else scale["scale_status"],
+                   "splatfacto", json.dumps({"world": "world frame of the input T_world_cam "
+                                             "(OpenCV), unchanged by export",
+                                             "scale_sources": scale["sources"],
+                                             "conflict": scale["conflict"]}))
+    traj = io.read_json(ctx.input("trajectory"))
+    metrics["frames"] = [{"render_index": i, "frame": f.name,
+                          "frame_index": (traj.get("frame_index") or list(range(len(frames))))[i]}
+                         for i, f in enumerate(frames)]
+    metrics["world"] = "world frame of the input T_world_cam (OpenCV); gaussians exported unchanged"
+    metrics["scale"] = scale
+    metrics["camera_optimizer"] = ctx.param("camera_optimizer")
+    metrics["optimized_cameras_exported"] = False
+    metrics["psnr_note"] = "fit to the training views only; not a geometric accuracy measure"
     mpath = ctx.output_path("metrics", "metrics.json")
     io.write_json(mpath, metrics)
     ctx.set_output("metrics", mpath)

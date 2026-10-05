@@ -67,16 +67,16 @@ the per-frame PSNR against the inputs (a fit-quality check, not held-out).
 """
 inputs.frames = { type = "image_seq", description = "RGB frames, %06d order = trajectory order" }
 inputs.trajectory = { type = "trajectory", description = "T_world_cam per frame (OpenCV camera-to-world)" }
-inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames" }
+inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames, dist = 0 (non-zero distortion is refused: undistort first)" }
 inputs.depth = { type = "depth_seq", optional = true, description = "metric depth per frame (any resolution, resized nearest); seed points + depth loss" }
 inputs.masks = { type = "mask_seq", optional = true, description = "nonzero = ignore pixel (excluded from loss and seed)" }
 inputs.points = { type = "pointcloud", optional = true, scale = "any", description = "seed point cloud (ply xyz + optional rgb) in the trajectory world frame; overrides the depth seed" }
-outputs.gaussians = { type = "gaussians", description = "INRIA-layout 3DGS ply (ns-export gaussian-splat), input world frame" }
+outputs.gaussians = { type = "gaussians", description = "INRIA-layout 3DGS ply (ns-export gaussian-splat) in the world frame of the input T_world_cam; scale sidecar gaussians.ply.scale.json (scale_status from the inputs: metric only if all declaring inputs agree, unknown if undeclared or conflicting)" }
 outputs.renders = { type = "image_seq", description = "splat rendered at each input pose" }
-outputs.metrics = { type = "json", description = '{"psnr_mean", "psnr_min", "psnr": [per frame], "num_gaussians", "iterations", "method"}' }
+outputs.metrics = { type = "json", description = '{"psnr_mean", "psnr_min", "psnr": [per frame] (fit only, not accuracy), "num_gaussians", "iterations", "method", "frames": [{render_index, frame, frame_index}], "world", "scale" {scale_status, sources, conflict}, "camera_optimizer", "optimized_cameras_exported": false}' }
 params.method = { type = "str", default = "splatfacto-big", choices = ["splatfacto", "splatfacto-big"], description = "nerfstudio method; SimFoundry uses splatfacto-big" }
 params.max_num_iterations = { type = "int", default = 80000, description = "training steps (SimFoundry canonical 80000, nerfstudio default 30000). Training runs at 1/4 resolution until step 3000 and 1/2 until 6000, so use >= 8000 even for a quick check" }
-params.camera_optimizer = { type = "str", default = "SO3xR3", choices = ["off", "SO3xR3", "SE3"], description = "pose refinement during training (SimFoundry: SO3xR3)" }
+params.camera_optimizer = { type = "str", default = "off", choices = ["off", "SO3xR3", "SE3"], description = "pose refinement during training (SimFoundry: SO3xR3). Default off: the optimised cameras are NOT exported, so with SO3xR3/SE3 the trained scene corresponds to poses that are not traceable in the outputs" }
 params.use_depth_loss = { type = "bool", default = true, description = "L1 depth supervision when depth is given (SimFoundry patch)" }
 params.depth_loss_mult = { type = "float", default = 0.5, description = "depth loss weight (SimFoundry A/B winner 0.5)" }
 params.seed_max_points = { type = "int", default = 200000, description = "random subsample size of the depth seed cloud" }
@@ -113,3 +113,11 @@ fix = "none needed"
 [[known_issues]]
 summary = "gsplat 1.5.3 overrides nerfstudio 1.1.5's hard gsplat==1.4.0 pin (as in SimFoundry); pip-check style warnings are expected"
 fix = "splatfacto trains fine on gsplat 1.5.3 (verified by the test)"
+
+# non-zero distortion must be refused before training (no silent pinhole)
+[[tests]]
+name = "distortion_refused"
+task = "train"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/bedroom", trajectory = "tests/fixture/trajectory.json", camera = "tests/fixture/camera_distorted.json", depth = "tests/fixture/depth" }
+expect_error = "non-zero distortion"

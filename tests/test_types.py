@@ -197,3 +197,40 @@ def test_scale_sidecar_and_metric_inputs(tmp_path):
     assert req["inputs"]["depths"]["summary"]["scale_status"] == "relative"
     io.write_scale(seq, "metric", "metres", "aruco_scale.scale_align")
     envelope.build_request(m, task("metric"), {"depths": str(seq)}, {}, "cpu", tmp_path)
+
+
+def test_input_content_digest(tmp_path, monkeypatch):
+    import hashlib
+    from verdi.core import hashing
+
+    f = tmp_path / "d.npy"; f.write_bytes(b"abc")
+    (tmp_path / "d.npy.scale.json").write_text('{"scale_status": "metric"}')
+    r = hashing.digest(f)
+    assert r["content_sha256"] == hashlib.sha256(b"abc").hexdigest() and r["hash_verified"]
+    assert r["sidecars"]["d.npy.scale.json"] == hashlib.sha256(b'{"scale_status": "metric"}').hexdigest()
+    d = tmp_path / "seq"; (d / "sub").mkdir(parents=True)
+    (d / "b.txt").write_bytes(b"2"); (d / "a.txt").write_bytes(b"1"); (d / "sub" / "c.txt").write_bytes(b"33")
+    lines = "".join(f"{n}\t{len(c)}\t{hashlib.sha256(c).hexdigest()}\n" for n, c in
+                    (("a.txt", b"1"), ("b.txt", b"2"), ("sub/c.txt", b"33")))
+    r = hashing.digest(d)
+    assert r["manifest_sha256"] == hashlib.sha256(lines.encode()).hexdigest() and r["files"] == 3
+    (d / "scale.json").write_text("{}")
+    assert hashing.digest(d)["manifest_sha256"] != r["manifest_sha256"]     # sidecar in the manifest
+    monkeypatch.setenv("VERDI_HASH_MAX_BYTES", "1")
+    w = hashing.digest(d)
+    assert w["hash_verified"] is False and "manifest_sha256" not in w and "weak_fingerprint" in w
+
+
+def test_splatfacto_scale_resolution():
+    import importlib.util
+    from pathlib import Path
+    p = Path(__file__).resolve().parents[1] / "nodes" / "splatfacto" / "entry.py"
+    spec = importlib.util.spec_from_file_location("splat_entry", p); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+    r = m.resolve_scale
+    assert r({"trajectory": None, "depth": None})["scale_status"] == "unknown"
+    assert r({"trajectory": "metric", "depth": "metric"})["scale_status"] == "metric"
+    assert r({"trajectory": None, "depth": "metric"})["scale_status"] == "metric"
+    assert r({"trajectory": "relative", "depth": None})["scale_status"] == "relative"
+    c = r({"trajectory": "relative", "depth": "metric"})
+    assert c["scale_status"] == "unknown" and c["conflict"] is True
+    assert r({"trajectory": "metric_from_input_poses", "depth": "metric"})["scale_status"] == "metric_from_input_poses"
