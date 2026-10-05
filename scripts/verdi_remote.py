@@ -20,7 +20,8 @@ Configuration (environment variables, defaults = the current setup):
   VERDI_063          ssh target of 063 (jump host)  min01.du-labs@min01.du-labs@10.36.14.82@blj.horizon.cc
   VERDI_063_PORT     2222
   VERDI_063_REPO     ~/ws/pdebug   (verdi checkout on 063)
-Pick a free GPU on 063 (`--device cuda:N`; 063 is shared).
+063 is shared: --device auto (default) picks the GPU with the most free memory
+and refuses (exit 2, kind busy) below --min-free-gb.
 """
 from __future__ import annotations
 
@@ -66,7 +67,10 @@ def main(argv=None) -> int:
     ap.add_argument("-i", "--input", action="append", default=[], metavar="NAME=PATH")
     ap.add_argument("-p", "--param", action="append", default=[], metavar="KEY=VALUE")
     ap.add_argument("--out", required=True, help="local output directory")
-    ap.add_argument("--device", default="cuda:0")
+    ap.add_argument("--device", default="auto",
+                    help="cuda:N, cpu, or auto = the 063 GPU with the most free memory")
+    ap.add_argument("--min-free-gb", type=float, default=16.0,
+                    help="with --device auto: refuse if no GPU has this much free memory")
     ap.add_argument("--timeout", type=int, default=0, help="seconds (0 = node default)")
     ap.add_argument("--keep-remote", action="store_true", help="keep files on 063 / relay")
     a = ap.parse_args(argv)
@@ -76,7 +80,25 @@ def main(argv=None) -> int:
     rdir = f"~/verdi_remote/{rid}"
     out = Path(a.out).expanduser().resolve()
     out.mkdir(parents=True, exist_ok=True)
+    gpu_info = None
     try:
+        if a.device == "auto":
+            rows = on063("nvidia-smi --query-gpu=index,memory.used,memory.total,utilization.gpu "
+                         "--format=csv,noheader,nounits").strip().splitlines()
+            gpus = []
+            for r in rows:
+                i, used, tot, util = (x.strip() for x in r.split(","))
+                gpus.append({"index": int(i), "free_gb": (float(tot) - float(used)) / 1024,
+                             "util": float(util)})
+            best = max(gpus, key=lambda g: (g["free_gb"], -g["util"]))
+            gpu_info = {"chosen": best, "all": gpus}
+            if best["free_gb"] < a.min_free_gb:
+                print(json.dumps({"status": "error", "error": {
+                    "kind": "busy", "message": f"no 063 GPU has {a.min_free_gb} GB free "
+                    f"(best: cuda:{best['index']} {best['free_gb']:.1f} GB)", "gpus": gpus}}, indent=2))
+                return 2
+            a.device = f"cuda:{best['index']}"
+            print(f"[verdi_remote] 063 device {a.device} ({best['free_gb']:.1f} GB free)", file=sys.stderr)
         # ---- upload inputs (+ scale sidecars) to relay, then to 063
         relay(f"mkdir -p {stage}/in")
         remote_inputs = []
@@ -140,7 +162,7 @@ def main(argv=None) -> int:
             ref["path"] = str(out / "out") + pth[len(remote_out_prefix):]
     res.setdefault("provenance", {})["remote"] = {
         "host": "063", "run_id": rid, "remote_dir": f"~/verdi_remote/{rid}",
-        "local_log": str(out / "log.txt")}
+        "local_log": str(out / "log.txt"), "device": a.device, "gpu_check": gpu_info}
     res_file.write_text(json.dumps(res, indent=2, ensure_ascii=False))
     print(json.dumps(res, indent=2, ensure_ascii=False))
     if not a.keep_remote:
