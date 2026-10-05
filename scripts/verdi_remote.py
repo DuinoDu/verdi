@@ -6,7 +6,7 @@ ssh to the ubuntu relay), with input upload and output download.
         -p key=value ... --out LOCAL_OUT_DIR [--device auto|cuda:N]
     python3 scripts/verdi_remote.py --resume RUN_ID --out LOCAL_OUT_DIR
     python3 scripts/verdi_remote.py --list            # remote runs + state
-    python3 scripts/verdi_remote.py --gc 48           # delete FINISHED runs older than 48 h
+    python3 scripts/verdi_remote.py --delete RUN_ID   # delete ONE named, finished run of yours
 
 Route: this host --(ssh/rsync, LAN)--> ubuntu relay --(ssh/rsync via the
 jump host)--> 063. Nothing but ssh + rsync; no service to run. Inputs (files
@@ -18,10 +18,13 @@ paths rewritten to local paths. Exit code 0 = status ok, 1 = node error
 (error.kind, message, hint, log_tail as from `verdi run`), 2 = transport /
 busy failure.
 
-Safety: a run dir carries ACTIVE while the node runs and DONE when it
-finished; nothing deletes an ACTIVE dir. The remote dir is removed only
-after a complete, verified download (or by --gc for DONE dirs older than N
-hours). On any download failure it is kept and the exact --resume command
+Isolation: every call uses its own run id (timestamp + random suffix):
+~/verdi_remote/<run_id> on 063 and /tmp/verdi_remote/<run_id> on the
+relay. A call only ever reads, writes or deletes paths of its own run id;
+there is no shared / wildcard cleanup. A run dir carries ACTIVE while the
+node runs and DONE when it finished. The remote dir is removed only after a
+complete, verified download of that run (or by an explicit --delete RUN_ID,
+which refuses ACTIVE runs). On any download failure it is kept and the exact --resume command
 is printed, so no GPU work is repeated.
 
 Configuration (environment variables, defaults = the current setup):
@@ -182,26 +185,29 @@ def main(argv=None) -> int:
     ap.add_argument("--keep-remote", action="store_true", help="keep the run dir on 063")
     ap.add_argument("--resume", metavar="RUN_ID", help="download an existing remote run (no rerun)")
     ap.add_argument("--list", action="store_true", help="list remote runs and their state")
-    ap.add_argument("--gc", type=float, metavar="HOURS",
-                    help="delete DONE (never ACTIVE) remote runs older than HOURS")
+    ap.add_argument("--delete", metavar="RUN_ID",
+                    help="delete exactly this finished remote run (refuses ACTIVE)")
     a = ap.parse_args(argv)
 
-    if a.list or a.gc is not None:
+    if a.list:
         cmd = (f"cd ~/{ROOT} 2>/dev/null || exit 0; for d in */; do d=${{d%/}}; "
-               f"s=unknown; [ -f $d/ACTIVE ] && s=active; [ -f $d/DONE ] && s=done; "
-               f"age=$(( ($(date +%s) - $(stat -c %Y $d)) / 3600 )); echo \"$d $s ${{age}}h\"; done")
-        rows = on063(cmd, 3).split("\n")
-        rows = [r for r in rows if r.strip()]
-        if a.gc is not None:
-            gone = []
-            for r in rows:
-                d, s, age = r.split()
-                if s == "done" and float(age[:-1]) >= a.gc:
-                    on063(f"rm -rf ~/{ROOT}/{d}")
-                    gone.append(d)
-            print(json.dumps({"deleted": gone, "kept": [r for r in rows if r.split()[0] not in gone]}, indent=2))
-        else:
-            print("\n".join(rows) or "(no remote runs)")
+               f"s=unmarked; [ -f $d/ACTIVE ] && s=active; [ -f $d/DONE ] && s=done; "
+               f"age=$(( ($(date +%s) - $(stat -c %Y $d)) / 60 )); echo \"$d $s ${{age}}min\"; done")
+        rows = [r for r in on063(cmd, 3).split("\n") if r.strip()]
+        print("\n".join(rows) or "(no remote runs)")
+        return 0
+    if a.delete:
+        import re
+
+        if not re.fullmatch(r"\d{8}-\d{6}-[0-9a-f]{6}", a.delete):
+            ap.error("--delete takes one exact run id (YYYYMMDD-HHMMSS-xxxxxx)")
+        st = on063(f"cd ~/{ROOT}/{a.delete} 2>/dev/null && ls -A || echo __NO_DIR__", 3).split()
+        if "__NO_DIR__" in st:
+            print(f"run {a.delete} does not exist"); return 2
+        if "ACTIVE" in st or "DONE" not in st:
+            print(f"refused: run {a.delete} is not marked DONE (active or made by an old runner)"); return 2
+        on063(f"rm -rf ~/{ROOT}/{a.delete}")
+        print(f"deleted ~/{ROOT}/{a.delete}")
         return 0
     if not a.out:
         ap.error("--out is required")
@@ -213,7 +219,7 @@ def main(argv=None) -> int:
             return transport_error(exc, a.resume, out)
         return finish(a.resume, out, None, None, a.keep_remote)
     if not (a.node and a.task):
-        ap.error("node and --task are required (or --resume / --list / --gc)")
+        ap.error("node and --task are required (or --resume / --list / --delete)")
 
     rid = time.strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6]
     stage = f"/tmp/verdi_remote/{rid}"
