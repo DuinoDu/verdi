@@ -61,3 +61,42 @@
   motion in the overlap the Sim(3) scale is poorly constrained, so the
   chunk test only uses loose depth bounds. Real chunking (220/40 frames)
   has far more baseline.
+
+## 2026-10 real2sim round (models, conditioning, scale semantics)
+
+- reconstruct: model nested | giant (DA3-GIANT-1.1) | large (DA3-LARGE-1.1),
+  use_ray_pose, pose conditioning (poses + camera/cameras), output info /
+  confidence, reference_poses -> pose_eval (evaluation only).
+- Upstream facts (api.py / da3.py at the pinned version):
+  * extrinsics in/out are world-to-camera; we invert to T_world_cam.
+  * K is only used through the camera token, which exists only when
+    extrinsics are given -> K without poses is refused (would be ignored).
+  * Nested: metric branch depth * mean(fx, fy)_network / 300 with the
+    PREDICTED focal, then least-squares aligned to the any-view depth.
+  * Conditioning: align_poses_umeyama(pred, input) gives s (pred per input);
+    align_to_input_ext_scale=True -> extrinsics = input, depth /= s (input
+    pose units); False -> input poses mapped into the prediction frame.
+    We record s via a wrapper (chunks.*.input_pose_alignment_scale...).
+- estimate_depth model=metric: DA3METRIC-LARGE, metres = focal * out / 300,
+  focal = mean(fx, fy) of the GIVEN K at network resolution (FAQ).
+- Fixtures with independent truth (make_fixture.py): tum_desk (26 TUM fr1
+  desk frames, undistorted, mocap GT poses) and mustard (RGB-D sensor depth).
+- Weights giant / large / metric: fetched from hf-mirror resolve URLs and
+  checked against the HF LFS sha256 (hf-mirror API rate limits).
+
+- Known-K metric scaling for nested (estimate_depth / reconstruct with camera,
+  no poses): NestedDepthAnything3Net._apply_metric_scaling is wrapped so the
+  metric branch uses mean(fx, fy) of the GIVEN K at network resolution
+  instead of the predicted focal (info.focal logs both).
+- Measured on real data (063, RTX 5090):
+  * TUM fr1 desk mocap, 26 frames, visual: ATE 13 mm after Sim(3), 52 mm
+    rigid, scale 1.06, rotation 1.0 deg mean (ray head: 13 mm / 57 mm).
+    giant 14 mm, large 21 mm (Sim(3), relative scale).
+  * TUM Kinect depth (tum_depth, 3 frames): nested single image with the
+    predicted focal (893 px vs true 517 px) is 2.06x too far; with the known
+    K 1.20x (abs-rel 0.30); DA3METRIC + K abs-rel 0.024 (ratio 0.997);
+    reconstruct 3 frames: 1.8x too far predicted-focal, 0.98-1.03x (abs-rel
+    0.10) with the known K. On 26 frames the predicted focal was already
+    close (383 vs 362 px net) and known K gave 97 mm rigid ATE vs 52 mm.
+  * mustard (FoundationPose demo RGB-D, anisotropic K): nested abs-rel 0.20,
+    DA3METRIC + K 0.057.

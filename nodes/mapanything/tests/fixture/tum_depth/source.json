@@ -1,0 +1,23 @@
+{
+ "dataset": "TUM RGB-D fr1_desk",
+ "frames": [
+  {
+   "index": 0,
+   "rgb": "rgb/1305031470.559677.png",
+   "depth": "depth/1305031470.556484.png",
+   "dt_ms": -3.19
+  },
+  {
+   "index": 1,
+   "rgb": "rgb/1305031471.559671.png",
+   "depth": "depth/1305031471.556561.png",
+   "dt_ms": -3.11
+  },
+  {
+   "index": 2,
+   "rgb": "rgb/1305031472.363577.png",
+   "depth": "depth/1305031472.360912.png",
+   "dt_ms": -2.66
+  }
+ ]
+}

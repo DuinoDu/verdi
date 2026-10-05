@@ -6,35 +6,56 @@ depth and camera poses. DA3NESTED-GIANT-LARGE-1.1 (any-view giant model
 + metric model) gives METRIC depth in metres for one image, and for a
 frame sequence also per-frame cameras (pose + intrinsics), with long
 sequences split into overlapping chunks and merged with Sim(3) like
-SimFoundry. DA3MONO-LARGE gives RELATIVE depth for one image (returned as
-disparity, not metres). Separate from the `depth_anything` node (V2 /
-Video-Depth-Anything). No camera input is needed or used.
+SimFoundry. reconstruct can also run the any-view DA3-GIANT-1.1 /
+DA3-LARGE-1.1 (RELATIVE scale), use the ray head for poses
+(use_ray_pose) and be CONDITIONED on known intrinsics + poses (output then
+in the input-pose scale and marked so). DA3METRIC-LARGE (canonical depth,
+metres = focal * output / 300) needs a known K. DA3MONO-LARGE gives
+RELATIVE depth (returned as disparity). Every output states its
+scale_status (metric | relative | input_pose_scale) and pose_source.
+Separate from the `depth_anything` node (V2 / Video-Depth-Anything).
 """
 
 [weights]
 nested = { hf = "depth-anything/DA3NESTED-GIANT-LARGE-1.1", revision = "b2359bdf726fb44ef62acca04d629dcf158053e7", files = ["config.json", "model.safetensors"] }
 mono = { hf = "depth-anything/DA3MONO-LARGE", revision = "f465978e618db8cc79c83b8bbf24964857db1875", files = ["config.json", "model.safetensors"] }
+giant = { hf = "depth-anything/DA3-GIANT-1.1", revision = "72ee9f89ce4e50d704e9d55ee9c646ec8dc25a19", files = ["config.json", "model.safetensors"] }
+large = { hf = "depth-anything/DA3-LARGE-1.1", revision = "0e109ae307c5982f319a67cf6f9f99ccdc0ec97c", files = ["config.json", "model.safetensors"] }
+metric = { hf = "depth-anything/DA3METRIC-LARGE", revision = "4010e39f3634a45bc60553321fb49fb760bd594e", files = ["config.json", "model.safetensors"] }
 
 [system]
 gpu = { min_vram_gb = 24, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
 cuda = { driver = ">=12.6" }
-disk_gb = 20
+disk_gb = 40
 
 [run]
 timeout_sec = 3600
 
 [tasks.estimate_depth]
 description = """
-Metric depth (metres) for one image with DA3NESTED-GIANT-LARGE-1.1 (the
-SimFoundry `infer_depth` recipe: long side resized to process_res, output
-resized back to the input size). The model also predicts the camera
-intrinsics, returned as `camera`. Sky pixels are 0 (invalid) unless
-sky_invalid=false (then they hold the upstream filler: the 99th
-percentile of non-sky depth, max 200 m).
+Metric z-depth (metres) for one image. model=nested (default):
+DA3NESTED-GIANT-LARGE-1.1, output already in metres (its metric branch is
+scaled with the PREDICTED focal internally); the predicted intrinsics are
+returned as `camera`. With an optional known `camera` the nested metric
+branch is scaled with the KNOWN focal instead of the predicted one (same
+focal * output / 300 formula; info.focal shows predicted vs known): the
+nested metric scale is only as good as its focal estimate (TUM fr1 desk:
+predicted fx 893 px vs true 517 px -> depth 2.06x too far; with the known K
+1.20x). model=metric: DA3METRIC-LARGE
+(Apache-2.0) with a REQUIRED known `camera`: its output is canonical depth
+and is converted with metres = focal * output / 300, focal = mean(fx, fy)
+of the given K rescaled to the network resolution (upstream FAQ);
+`camera` is echoed. SimFoundry `infer_depth` recipe: long side resized to
+process_res, output resized back to the input size. Sky pixels are 0
+(invalid) unless sky_invalid=false (then they hold the upstream filler).
+`info` states model, conversion and intrinsics source.
 """
 inputs.image = { type = "image" }
-outputs.depth = { type = "depth", description = "metric depth in metres, input HxW, 0 = sky/invalid" }
-outputs.camera = { type = "camera", description = "intrinsics predicted by DA3, scaled to the input resolution" }
+inputs.camera = { type = "camera", optional = true, description = "known pinhole K of the image, dist = 0: required for model=metric; for nested it replaces the predicted focal in the metric scaling" }
+outputs.depth = { type = "depth", description = "metric z-depth in metres, input HxW, 0 = sky/invalid" }
+outputs.camera = { type = "camera", description = "the input camera when given, else the intrinsics predicted by DA3NESTED at the input resolution" }
+outputs.info = { type = "json", description = "{model, scale_status (metric), conversion, intrinsics_source, network_resolution, input_resolution, nested_metric_scale_factor, focal {predicted_focal_net, used: predicted|known, known_focal_net, predicted_fx_input_res}, sky_ratio, convention}" }
+params.model = { type = "str", default = "nested", choices = ["nested", "metric"], description = "nested = DA3NESTED-GIANT-LARGE-1.1 (CC-BY-NC); metric = DA3METRIC-LARGE (Apache-2.0, needs camera)" }
 params.process_res = { type = "int", default = 504, description = "network long side, multiple of 14 (504 = upstream and SimFoundry default)" }
 params.sky_invalid = { type = "bool", default = true, description = "write 0 on sky pixels instead of the upstream filler depth" }
 
@@ -51,27 +72,57 @@ params.process_res = { type = "int", default = 504, description = "network long 
 
 [tasks.reconstruct]
 description = """
-Metric multi-view reconstruction of a static scene from a frame sequence
-(ordered video frames or a photo set; video input is split into frames
-automatically; all frames must share one resolution) with
-DA3NESTED-GIANT-LARGE-1.1, as in SimFoundry stage s2_da. One forward pass
-per chunk predicts per-frame metric depth, camera pose and intrinsics.
-Sequences longer than chunk_size are split into chunks of chunk_size
-frames overlapping by `overlap` frames; each later chunk is aligned to the
-first with a Sim(3) fitted on the overlap camera centres (Umeyama) and its
-depth is multiplied by the fitted scale (SimFoundry depth_backends). World
-frame = DA3 world of the first chunk (OpenCV camera axes); units metres.
+Multi-view reconstruction of a static scene from a frame sequence (ordered
+video frames or a photo set; video input is split into frames; all frames
+share one resolution): per-frame z-depth, T_world_cam and intrinsics in
+one forward pass per chunk, as in SimFoundry stage s2_da. Sequences longer
+than chunk_size are split into chunks overlapping by `overlap` frames.
+
+Visual mode (no poses): poses and K are PREDICTED from the images (camera
+decoder, or ray head with use_ray_pose=true - slower, upstream reports it
+more accurate). Later chunks are Sim(3)-aligned to the first on the overlap
+camera centres (Umeyama) and their depth multiplied by the fitted scale.
+World = DA3 world of chunk 0. model=nested -> metres (scale_status
+metric); giant / large -> arbitrary normalised scale (scale_status
+relative, NOT metres). Optional `reference_poses` (e.g. robot FK or mocap)
+are NEVER given to the model: they are only used afterwards to compute
+`pose_eval` (Sim(3) and, for nested, rigid SE(3) ATE, rotation errors,
+step-length ratio) = an independent check of those poses.
+
+Conditioned mode (poses + camera/cameras): the known world-to-camera
+extrinsics (inverted from T_world_cam) and K are fed to the DA3 camera
+encoder. align_to_input_ext_scale=true (upstream default): output
+T_world_cam = the input poses exactly, depth divided by the upstream
+pose-alignment Sim(3) scale -> depth in the INPUT pose units
+(scale_status input_pose_scale; the scale comes from the input poses, not
+from vision). false: input poses Sim(3)-mapped into the prediction frame,
+depth keeps the model scale (one chunk only). In both cases pose_source
+says the poses are the input ones: such a run cannot validate them. Known
+K WITHOUT poses (model=nested only): poses stay visual, the K
+replaces the predicted focal in the nested metric scaling (info.metric_focal
+= known; TUM 3-frame clip: depth 1.8x too far with the predicted focal,
+0.98-1.03x with the known K); giant / large refuse K without poses
+(upstream would ignore it).
 """
 inputs.frames = { type = "image_seq" }
-outputs.depth = { type = "depth_seq", description = "per-frame metric z-depth (%06d.npy, input resolution, 0 = sky/invalid)" }
-outputs.trajectory = { type = "trajectory", description = "T_world_cam (camera-to-world) per frame, metres" }
-outputs.cameras = { type = "camera_seq", description = "per-frame intrinsics predicted by DA3 at the input resolution" }
+inputs.poses = { type = "trajectory", optional = true, description = "known T_world_cam per frame (same count/order as frames) for conditioning" }
+inputs.camera = { type = "camera", optional = true, description = "shared pinhole K of all frames (dist = 0): with poses -> conditioning; without poses (nested) -> metric scale from the known focal" }
+inputs.cameras = { type = "camera_seq", optional = true, description = "per-frame pinhole K (dist = 0), same semantics as camera" }
+inputs.reference_poses = { type = "trajectory", optional = true, description = "visual mode only: poses to EVALUATE the prediction against (never used for inference)" }
+outputs.depth = { type = "depth_seq", description = "per-frame z-depth (%06d.npy, input resolution, 0 = sky/invalid); units per info.scale_status" }
+outputs.confidence = { type = "dir", description = "per-frame DA3 depth confidence %06d.npy (network output, uncalibrated, higher = more confident)" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam (camera-to-world, OpenCV axes) per frame + frame_index, frames, units, scale_status, pose_source, world" }
+outputs.cameras = { type = "camera_seq", description = "per-frame intrinsics at the input resolution (predicted, or the input ones when conditioned)" }
+outputs.info = { type = "json", description = "{model, weights_key, scale_status, units, pose_source, intrinsics_source, world, conditioned_on_poses, metric_focal (known|predicted), align_to_input_ext_scale, use_ray_pose, ref_view_strategy, process_res, network_resolution, input_resolution, chunks [{start, size, sec, nested_metric_scale_factor, focal {predicted_focal_net, used, known_focal_net}, sim3_scale, overlap_residual_*, input_pose_alignment_scale_pred_per_input}], confidence, convention, frames, path_length}" }
+outputs.pose_eval = { type = "json", optional = true, description = "only with reference_poses: {frames, sim3_scale_ref_per_pred, ate_rmse_after_sim3, ate_max_after_sim3, rotation_err_deg_after_sim3, ate_rmse_after_se3 (metric models), step_length_ratio_pred_over_ref, per_frame_*}" }
+params.model = { type = "str", default = "nested", choices = ["nested", "giant", "large"], description = "nested = DA3NESTED-GIANT-LARGE-1.1 (metric), giant = DA3-GIANT-1.1, large = DA3-LARGE-1.1 (relative scale)" }
+params.use_ray_pose = { type = "bool", default = false, description = "derive poses from the ray head instead of the camera decoder (upstream: slower, more accurate)" }
+params.align_to_input_ext_scale = { type = "bool", default = true, description = "conditioned mode: true = output in the input-pose scale/frame; false = prediction scale/frame (one chunk)" }
 params.process_res = { type = "int", default = 448, description = "network long side, multiple of 14 (448 = SimFoundry s2_da.resolution)" }
 params.chunk_size = { type = "int", default = 220, description = "max frames per forward pass (SimFoundry 220); longer sequences are chunked" }
 params.overlap = { type = "int", default = 40, description = "frames shared by consecutive chunks for the Sim(3) merge (>= 3; SimFoundry 40)" }
 params.ref_view_strategy = { type = "str", default = "saddle_balanced", choices = ["saddle_balanced", "saddle_sim_range", "first", "middle"], description = "upstream reference-view selection inside a chunk" }
 params.sky_invalid = { type = "bool", default = true, description = "write 0 on sky pixels instead of the upstream filler depth" }
-
 
 [[tests]]
 name = "image_metric"
@@ -154,8 +205,219 @@ metric = "trajectory_ate"
 expected = "tests/expected/unitree_trajectory.json"
 max = 0.03
 
+
+# ---- real ground truth: mustard (RGB-D sensor depth, known K)
+[[tests]]
+name = "mustard_nested"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/mustard/rgb.jpg" }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/mustard/depth.npy"
+max = 0.25
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "metric"
+
+[[tests]]
+name = "mustard_metric_large"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/mustard/rgb.jpg", camera = "tests/fixture/mustard/camera.json" }
+params = { model = "metric" }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/mustard/depth.npy"
+max = 0.25
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 319.5
+max = 319.7
+
+[[tests]]
+name = "metric_needs_camera"
+task = "estimate_depth"
+timeout_sec = 300
+inputs = { image = "tests/fixture/mustard/rgb.jpg" }
+params = { model = "metric" }
+expect_error = "needs `camera`"
+
+# ---- real ground truth: TUM fr1_desk mocap poses (metres)
+[[tests]]
+name = "tum_visual_vs_mocap"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", reference_poses = "tests/fixture/tum_desk_gt.json" }
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "metric"
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.05
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_se3"
+max = 0.15
+[[tests.checks]]
+output = "pose_eval"
+path = "sim3_scale_ref_per_pred"
+min = 0.7
+max = 1.4
+
+[[tests]]
+name = "tum_visual_ray_pose"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", reference_poses = "tests/fixture/tum_desk_gt.json" }
+params = { use_ray_pose = true }
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.05
+[[tests.checks]]
+output = "info"
+path = "use_ray_pose"
+eq = true
+
+[[tests]]
+name = "tum_giant_relative"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", reference_poses = "tests/fixture/tum_desk_gt.json" }
+params = { model = "giant" }
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "relative"
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.05
+
+[[tests]]
+name = "tum_large_relative"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", reference_poses = "tests/fixture/tum_desk_gt.json" }
+params = { model = "large" }
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "relative"
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.08
+
+# conditioned on mocap poses x2: output must be in the INPUT pose scale
+[[tests]]
+name = "tum_conditioned_x2"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", poses = "tests/fixture/tum_desk_gt_x2.json", camera = "tests/fixture/tum_desk_camera.json" }
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "input_pose_scale"
+[[tests.checks]]
+output = "trajectory"
+metric = "trajectory_ate"
+expected = "tests/fixture/tum_desk_gt_x2.json"
+max = 0.001
+[[tests.checks]]
+output = "info"
+path = "chunks.0.input_pose_alignment_scale_pred_per_input"
+min = 0.35
+max = 0.7
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 1.4
+max = 4.0
+
+[[tests]]
+name = "tum_conditioned_noalign"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", poses = "tests/fixture/tum_desk_gt_x2.json", camera = "tests/fixture/tum_desk_camera.json" }
+params = { align_to_input_ext_scale = false }
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "metric"
+[[tests.checks]]
+output = "depth"
+field = "median"
+min = 0.7
+max = 2.0
+
+[[tests]]
+name = "camera_without_poses_refused_giant"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/tum_desk", camera = "tests/fixture/tum_desk_camera.json" }
+params = { model = "giant" }
+expect_error = "only together with known poses"
+
+# ---- real ground truth: TUM fr1_desk Kinect depth (registered, undistorted), standard K
+[[tests]]
+name = "tum_depth_metric_K"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/tum_depth/rgb/000000.png", camera = "tests/fixture/tum_depth/camera.json" }
+params = { model = "metric" }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/tum_depth/depth/000000.npy"
+max = 0.05
+
+[[tests]]
+name = "tum_depth_nested_known_K"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { image = "tests/fixture/tum_depth/rgb/000000.png", camera = "tests/fixture/tum_depth/camera.json" }
+[[tests.checks]]
+output = "info"
+path = "focal.used"
+eq = "known"
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/tum_depth/depth/000000.npy"
+max = 0.4
+
+[[tests]]
+name = "tum_depth_reconstruct_known_K"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_depth/rgb", camera = "tests/fixture/tum_depth/camera.json" }
+[[tests.checks]]
+output = "info"
+path = "metric_focal"
+eq = "known (input K)"
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/tum_depth/depth"
+max = 0.15
+
+[[tests]]
+name = "conditioned_eval_refused"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/tum_desk", poses = "tests/fixture/tum_desk_gt.json", camera = "tests/fixture/tum_desk_camera.json", reference_poses = "tests/fixture/tum_desk_gt.json" }
+expect_error = "meaningless"
+
 [[known_issues]]
-summary = "DA3NESTED-GIANT-LARGE-1.1 weights are CC-BY-NC-4.0 (non-commercial); DA3MONO-LARGE weights and the DA3 code are Apache-2.0"
+summary = "DA3NESTED-GIANT-LARGE-1.1 and DA3-GIANT-1.1 weights are CC-BY-NC-4.0 (non-commercial); DA3-LARGE-1.1 is listed CC BY-NC 4.0 in the upstream README (its HF card says apache-2.0); DA3METRIC-LARGE, DA3MONO-LARGE and the DA3 code are Apache-2.0"
 fix = "non-commercial use only for estimate_depth / reconstruct (SimFoundry THIRD_PARTY_LICENSES row 6 covers the code only)"
 
 [[known_issues]]
@@ -165,3 +427,15 @@ fix = "lower chunk_size (keep overlap >= 3, ideally >= 20) or process_res on sma
 [[known_issues]]
 summary = "Chunk merge needs camera motion inside the overlap; a static camera cannot be Sim(3)-aligned"
 fix = "the node raises; raise chunk_size so the clip runs in one pass"
+
+[[known_issues]]
+summary = "Conditioned runs (poses input) return the input poses and their scale; they say nothing about the accuracy of those poses"
+fix = "validate poses with a visual run + reference_poses (pose_eval); info.pose_source / trajectory.pose_source state which run is which"
+
+[[known_issues]]
+summary = "Network confidence is not calibrated; there is no per-pixel metric error estimate"
+fix = "use confidence only to rank pixels within a run; check geometry against independent measurements (stereo, markers)"
+
+[[known_issues]]
+summary = "DA3NESTED's metres depend on its PREDICTED focal; on close-range indoor views it can be far off (TUM fr1 desk: fx 893 predicted vs 517 true -> depth ~2x too far; MapAnything 1.2-1.35x)"
+fix = "pass the calibrated camera: model=metric (single image, abs-rel 0.024 on TUM) or nested + camera (known-focal metric scale; 3-frame reconstruct 0.98-1.03x); always check scale against an independent measurement (stereo, markers)"

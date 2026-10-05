@@ -1,0 +1,193 @@
+name = "mapanything"
+version = "0.1.0"
+description = """
+MapAnything (Meta + CMU, 2025): universal feed-forward METRIC multi-view
+3D reconstruction. From N images, optionally with known pinhole
+intrinsics, camera poses and/or metric depth per view, one forward pass
+predicts per-view metric z-depth, camera intrinsics, T_world_cam
+(OpenCV cam2world, world = view 0 or the input-pose world), a validity
+mask and a learned confidence, plus a fused metric point cloud. Default
+checkpoint facebook/map-anything-apache (Apache-2.0); model=nc selects
+the CC-BY-NC facebook/map-anything (research only; fetched on first use).
+Every output states scale_status and pose_source; reference_poses are
+only evaluated against, never fed to the model.
+"""
+
+[weights]
+apache = { hf = "facebook/map-anything-apache", revision = "00f9c245bbcb60522d1ed7f9e9d88462c6e3f38a", files = ["config.json", "model.safetensors"] }
+# optional CC-BY-NC checkpoint: downloaded on first use of model=nc (pinned revision) into HF_HOME
+nc = { hf = "facebook/map-anything", revision = "a1d87e9086706fb9974f3be5a3e3a0ca5401c5aa", lazy = true }
+# DINOv2 code for uniception's torch.hub.load (offline, pretrained=False:
+# the MapAnything checkpoint contains the encoder weights)
+dinov2_repo = { url = "https://github.com/facebookresearch/dinov2/archive/7764ea0f912e53c92e82eb78a2a1631e92725fc8.zip", archive = "zip", files_sha256 = { "dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8/hubconf.py" = "c1f5090e78ff940b72c076d2bf9c0310d1707c946b3d10e2d6f2b0bdf56a6f64" } }
+
+[system]
+gpu = { min_vram_gb = 16, arch = ["sm_120", "sm_80", "sm_86", "sm_89", "sm_90"] }
+cuda = { driver = ">=12.6" }
+disk_gb = 30
+
+[run]
+timeout_sec = 3600
+
+[tasks.reconstruct]
+description = """
+Metric multi-view reconstruction (one forward pass over all frames, all
+frames one resolution; video files are split into frames). Inputs beyond
+`frames` are optional and combinable: camera (shared K) or cameras (per
+frame) - pinhole, dist = 0 (rectify fisheye first); poses (T_world_cam per
+frame, OpenCV cam2world); depths (metric z-depth per frame, needs K).
+Without poses, poses are PREDICTED (world = camera of view 0). With poses
+the model is conditioned on them (pose_source says so): such a run is NOT
+a check of those poses - use reference_poses on a run without poses for
+that (pose_eval: Sim(3) / SE(3) ATE, rotation error). The network sees a
+resized + centre-cropped copy of every frame (resolution_set 518 table,
+e.g. 518x294 for 16:9); output_resolution=input (default) resamples depth
+/ confidence / valid back to the input grid (0 outside the crop) and maps
+K back exactly (info.crop: u_net = sx u_in + ox); output_resolution=network
+keeps the network grid and K. Depth is z-depth, metres (scale_status
+metric) unless the conditioning inputs were declared non-metric
+(poses_metric / depths_metric = false -> input_pose_scale /
+input_depth_scale). Confidence is the learned per-pixel confidence
+(uncalibrated); valid = MapAnything non-ambiguous mask x edge mask.
+"""
+inputs.frames = { type = "image_seq" }
+inputs.camera = { type = "camera", optional = true, description = "shared pinhole K (dist = 0) at the frame resolution" }
+inputs.cameras = { type = "camera_seq", optional = true, description = "per-frame pinhole K (dist = 0)" }
+inputs.poses = { type = "trajectory", optional = true, description = "known T_world_cam per frame (conditioning)" }
+inputs.depths = { type = "depth_seq", optional = true, description = "known z-depth per frame (%06d.npy, metres, 0 = invalid; needs camera/cameras)" }
+inputs.reference_poses = { type = "trajectory", optional = true, description = "only without `poses`: poses to EVALUATE the prediction against (never used for inference)" }
+outputs.depth = { type = "depth_seq", description = "per-frame z-depth %06d.npy (see scale_status), 0 = invalid" }
+outputs.confidence = { type = "dir", description = "per-frame learned confidence %06d.npy (uncalibrated)" }
+outputs.valid = { type = "mask_seq", description = "per-frame validity (1 = depth valid)" }
+outputs.cameras = { type = "camera_seq", description = "per-frame pinhole K at the output resolution" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam per frame + frame_index, frames, units, scale_status, pose_source, world" }
+outputs.pointcloud = { type = "pointcloud", description = "fused world-frame points of all valid pixels (network resolution), rgb, subsampled to max_points" }
+outputs.info = { type = "json", description = "{model, scale_status, pose_source, world, inputs_used, intrinsics_source, metric_scaling_factor [per view], network_resolution, input_resolution, output_resolution, crop {map, per_frame [{sx, sy, ox, oy}]}, convention, params, infer_sec, peak_vram_gib, frames}" }
+outputs.pose_eval = { type = "json", optional = true, description = "only with reference_poses: {frames, ate_rmse_after_sim3, sim3_scale_ref_per_pred, rotation_err_deg_after_sim3, ate_rmse_after_se3, per_frame_translation_err}" }
+params.model = { type = "str", default = "apache", choices = ["apache", "nc"], description = "apache = facebook/map-anything-apache (Apache-2.0), nc = facebook/map-anything (CC-BY-NC-4.0)" }
+params.poses_metric = { type = "bool", default = true, description = "input poses are in metres (is_metric_scale); false = arbitrary scale" }
+params.depths_metric = { type = "bool", default = true, description = "input depths are in metres; false = arbitrary scale" }
+params.resolution_set = { type = "int", default = 518, description = "upstream aspect-ratio resolution table (518 or 512)" }
+params.output_resolution = { type = "str", default = "input", choices = ["input", "network"], description = "grid of depth / confidence / valid / K" }
+params.mask_edges = { type = "bool", default = true, description = "upstream edge mask (normals + depth discontinuities)" }
+params.apply_confidence_mask = { type = "bool", default = false, description = "also drop the lowest confidence_percentile % pixels" }
+params.confidence_percentile = { type = "float", default = 10.0, description = "with apply_confidence_mask" }
+params.multiview_confidence = { type = "bool", default = false, description = "replace the learned confidence by upstream multi-view depth consistency" }
+params.memory_efficient = { type = "bool", default = true, description = "upstream memory-efficient dense heads (more views per GPU)" }
+params.max_points = { type = "int", default = 1000000, description = "random subsample of the fused point cloud" }
+
+# ---- real ground truth: TUM fr1_desk mocap poses (metres), 26 undistorted frames
+[[tests]]
+name = "tum_images_only"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", reference_poses = "tests/fixture/tum_desk_gt.json" }
+[[tests.checks]]
+output = "info"
+path = "scale_status"
+eq = "metric"
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.05
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_se3"
+max = 0.15
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 26
+
+[[tests]]
+name = "tum_with_K"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", camera = "tests/fixture/tum_desk_camera.json", reference_poses = "tests/fixture/tum_desk_gt.json" }
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.05
+[[tests.checks]]
+output = "cameras"
+field = "fx"
+min = 400
+max = 428
+
+[[tests]]
+name = "tum_conditioned_poses"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_desk", camera = "tests/fixture/tum_desk_camera.json", poses = "tests/fixture/tum_desk_gt.json" }
+[[tests.checks]]
+output = "trajectory"
+metric = "trajectory_ate"
+expected = "tests/fixture/tum_desk_gt.json"
+max = 0.02
+[[tests.checks]]
+output = "trajectory"
+path = "pose_source"
+contains = "NOT an independent"
+
+[[tests]]
+name = "conditioned_eval_refused"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/tum_desk", camera = "tests/fixture/tum_desk_camera.json", poses = "tests/fixture/tum_desk_gt.json", reference_poses = "tests/fixture/tum_desk_gt.json" }
+expect_error = "meaningless"
+
+# ---- real ground truth: mustard RGB-D (sensor depth, known K), single view
+# ---- real ground truth: TUM fr1_desk Kinect depth (registered, undistorted)
+[[tests]]
+name = "tum_depth_mono_K"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_depth/rgb", camera = "tests/fixture/tum_depth/camera.json" }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/tum_depth/depth"
+max = 0.4
+[[tests.checks]]
+output = "cameras"
+field = "fx"
+min = 500
+max = 535
+
+[[tests]]
+name = "tum_depth_conditioned"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/tum_depth/rgb", camera = "tests/fixture/tum_depth/camera.json", depths = "tests/fixture/tum_depth/depth" }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/tum_depth/depth"
+max = 0.1
+
+[[tests]]
+name = "mustard_depth_conditioned"
+task = "reconstruct"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/mustard/rgb", camera = "tests/fixture/mustard/camera.json", depths = "tests/fixture/mustard/depth" }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/mustard/depth"
+max = 0.1
+
+[[known_issues]]
+summary = "Licences: MapAnything code Apache-2.0; facebook/map-anything-apache weights Apache-2.0; facebook/map-anything weights CC-BY-NC-4.0; DINOv2 code Apache-2.0"
+fix = "use model=apache (default) for commercial use"
+
+[[known_issues]]
+summary = "Pose-conditioned runs re-estimate the given poses; they cannot validate them"
+fix = "validate poses with a run without `poses` + reference_poses (pose_eval)"
+
+[[known_issues]]
+summary = "Pinhole inputs only; the network crops frames to its aspect-ratio table (border pixels get no prediction)"
+fix = "rectify fisheye frames first (stereo_rectify); info.crop gives the exact pixel map, invalid = 0"
+
+[[known_issues]]
+summary = "Monocular metric scale is approximate: TUM fr1 desk depth 1.15-1.35x too far (abs-rel 0.19 without K, 0.30 with K); a strongly anisotropic K (fx 320 / fy 417, FoundationPose mustard demo) is not followed (output fx ~ fy ~ 496, depth ~2x)"
+fix = "condition on metric depth (stereo / sensor; TUM abs-rel <= 0.1) or poses with known scale; verify scale against independent measurements"

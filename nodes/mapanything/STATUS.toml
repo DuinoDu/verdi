@@ -1,0 +1,18 @@
+# Written by `verdi test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-05T21:12:52+0800"
+gpu = "NVIDIA GeForce RTX 5090"
+verdi_commit = "6584419d90958c8e059c8f6861e465789357c83c"
+upstream_commit = ""
+env_lock = "sha256:35be750f4a5d553f5512b2edbc85d5d8f3b686a9a45afa1112cb13812dd4f012"
+untested_tasks = [
+]
+cases = [
+  "PASS tum_images_only (25.57s): PASS info:scale_status='metric' {'eq': 'metric'}; PASS pose_eval:ate_rmse_after_sim3=0.0358 {'max': 0.05}; PASS pose_eval:ate_rmse_after_se3=0.0495 {'max': 0.15}; PASS depth.count=26 {'eq': 26}",
+  "PASS tum_with_K (48.38s): PASS pose_eval:ate_rmse_after_sim3=0.0345 {'max': 0.05}; PASS cameras.fx=413.9279 {'min': 400, 'max': 428}",
+  "PASS tum_conditioned_poses (43.0s): PASS trajectory.trajectory_ate=0.0069 {'max': 0.02}; PASS trajectory:pose_source=\"INPUT poses used as conditioning; outputs are the model's re-estimate in the input-pose world, NOT an independent check\" {'contains': 'NOT an independent'}",
+  "PASS conditioned_eval_refused (1.42s): PASS expected error containing 'meaningless': status=error 'reference_poses evaluates VISUAL poses; it is meaningless when the same run is conditioned on poses '",
+  "PASS tum_depth_mono_K (24.43s): PASS depth.depth_abs_rel=0.3186 {'max': 0.4}; PASS cameras.fx=517.5275 {'min': 500, 'max': 535}",
+  "PASS tum_depth_conditioned (33.77s): PASS depth.depth_abs_rel=0.0309 {'max': 0.1}",
+  "PASS mustard_depth_conditioned (35.75s): PASS depth.depth_abs_rel=0.0657 {'max': 0.1}",
+]
