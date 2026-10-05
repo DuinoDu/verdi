@@ -17,6 +17,31 @@ to another model or fabricates output.
 | **apex** (RTX 5090 32 GB, same machine as real2sim) | primary: local CLI | `source ~/verdi_env.sh` then `verdi run ...` with local paths (no upload / download) |
 | 063 (8x RTX 5090, offline) | development / reference host, all nodes set up | not reachable from apex directly; only for verdi maintainers |
 
+Set up and tested on apex (2026-10-05, commit cf9215a, all fixture tests
+pass): stereo_rectify, sam3, foundation_stereo, foundationpose,
+depth_anything_3, mapanything. Measured on apex (one-shot `verdi run`,
+model load included, RTX 5090):
+
+| run | time | peak VRAM |
+|---|---|---|
+| sam3 segment_text (1 image) | 9.5 s | 5.8 GiB |
+| sam3 track_prompts (6 frames 960x540) | 10.5 s | 6.5 GiB |
+| foundation_stereo estimate_depth_seq (2 pairs 640x360, lr_check) | 9.3 s | 3.5 GiB |
+| foundation_stereo at 1280x720 (063) | 1.4 s/frame (2.1 with lr_check) | 7.2 GiB |
+| foundationpose track (3 frames 640x480) | 8.5 s | 4.9 GiB |
+| depth_anything_3 reconstruct (26 frames 512x384, nested, known K) | 11.7 s | 14.9 GiB |
+| mapanything reconstruct (26 frames, apache, K) | 17.2 s | 20.3 GiB |
+
+Runnable end-to-end example (synthetic fisheye rig with analytic truth;
+set SBS / CALIB / GT to run it on your own clip):
+
+```bash
+source ~/verdi_env.sh && cd ~/ws/verdi
+bash pipelines/real2sim/example_stereo.sh /tmp/verdi_example cuda:0
+# rectified: baseline_rect_m=0.0605, epipolar median |dy| 0.054 px
+# 000000.npy: valid 0.970, abs-rel 0.0042, median |err| 1.78 mm
+```
+
 ```bash
 source ~/verdi_env.sh            # VERDI_HOME=~/verdi_home, PATH += ~/ws/verdi/.venv/bin
 verdi list                       # nodes, setup state, last test status
