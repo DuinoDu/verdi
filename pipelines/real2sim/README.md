@@ -223,6 +223,47 @@ verdi run foundationpose --task estimate -i image=IMG -i depth=D.npy -i mask=S/m
 Object proposals / relations: reuse `qwen2_5_vl` / `moondream` (verdi
 describe them); AACR, relation graphs and scene compilation stay in real2sim.
 
+### 7. SAM 3 prompt recovery (object missed by track_text)
+
+`track_text` only creates tracks for phrases detected on `prompt_frame` and
+later frames; a phrase that is never detected gets no id
+(`metadata.ids_per_phrase[phrase] == []`, `phrases_without_detection`). That
+is "never initialised", not "tracked then lost". Recover with
+`track_prompts` (SAM 3 tracker of the same checkpoint; no SAM 2) seeded on a
+frame where the object is visible:
+
+prompt_set schema (one obj_id per object; all prompts of one obj_id on ONE frame):
+
+```json
+{"points": [{"xy": [u, v], "positive": true,  "obj_id": 101, "frame": 9, "label": "green pepper", "source": "<who/what placed it>"},
+            {"xy": [u, v], "positive": false, "obj_id": 101, "frame": 9, "label": "green pepper", "source": "..."}],
+ "boxes":  [{"xyxy": [x0, y0, x1, y1], "obj_id": 101, "frame": 9, "label": "green pepper", "source": "..."}]}
+```
+
+* `xy` / `xyxy`: pixels of the frames passed as `frames` (e.g. the rectified
+  left frames); coordinates come from the consumer, verdi never invents them.
+* `frame`: 0-based index into the sorted input frames (`rect/left/000009.png`
+  = 9 = source frame of that file per `rectification.json frames[9].source`).
+* Propagation runs forward to the last frame AND backward to frame 0 from the
+  earliest prompted frame.
+* Use obj_ids that do not collide with the `track_text` ids you merge with
+  (e.g. 101+); the output id = obj_id.
+
+```bash
+verdi run sam3 --task track_prompts -i frames=$RUN/rect/left -i prompts=$RUN/pepper_prompts.json \
+  --out $RUN/segment_pepper --device cuda:0 -q
+```
+
+Traceability: `tracks.json` gives per id `label` (from the prompt),
+`prompt_frames` {obj_id: frame}, per-frame `visible` / `score` / area / bbox;
+the prompt file itself (including `source` fields) is recorded by path in
+the run's `request.json` (hash it in the caller, as real2sim's bridge does).
+Semantics: `visible=false` only means "no SAM 3 mask on this frame" (it does
+not distinguish occluded / out of view / lost); for point/box-prompted ids
+SAM 3 fixes `score` to 1.0, which is NOT a calibrated confidence. An empty
+result (no mask on any frame) is a normal output; whether the scene is
+incomplete is decided by the consumer.
+
 ## Sample data we need from real2sim (train split only)
 
 Please put on apex, e.g. under `~/verdi_inputs/real2sim_train/<clip_id>/`:
