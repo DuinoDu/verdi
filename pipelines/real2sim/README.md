@@ -245,7 +245,12 @@ prompt_set schema (one obj_id per object; all prompts of one obj_id on ONE frame
 * `frame`: 0-based index into the sorted input frames (`rect/left/000009.png`
   = 9 = source frame of that file per `rectification.json frames[9].source`).
 * Propagation runs forward to the last frame AND backward to frame 0 from the
-  earliest prompted frame.
+  earliest prompted frame (automatic; there is no direction parameter).
+* Extra keys such as `source`, `source_frame`, `t_s` are accepted and kept in the
+  prompt file as consumer provenance; the node does not interpret them. Store new
+  human / VLM prompt files with their own request/result: a track_prompts recovery is
+  never reported as a text-prompt success. Zero tracks over all frames after
+  track_text means "never initialised", not "occluded everywhere".
 * Use obj_ids that do not collide with the `track_text` ids you merge with
   (e.g. 101+); the output id = obj_id.
 
