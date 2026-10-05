@@ -51,7 +51,7 @@ Hosts:
 
 | node.task | Entry | Executed (fixture / real call) | Independent validation |
 |---|---|---|---|
-| foundation_stereo.estimate_depth[_seq] (valid, info, doffs, lr_check) | 6584419 | fixture 5/5 (063; apex): synthetic analytic depth abs-rel 0.27 %, chain 0.42-0.52 %; distortion refused. Real: 3 windows `estimate_depth_seq` | not provided; fixture-only: synthetic analytic depth |
+| foundation_stereo.estimate_depth[_seq] (valid, info, doffs, lr_check). Input contract: the CALLER supplies a rectified stereo pair with its K and baseline (distorted camera refused); model-native resize / crop / pad, pixel map and disparity -> z-depth (metres) conversion stay in Verdi | 6584419 | fixture 5/5 (063; apex): synthetic analytic depth abs-rel 0.27 %, chain 0.42-0.52 %; distortion refused. Real: 3 windows `estimate_depth_seq` | not provided; fixture-only: synthetic analytic depth |
 | sam3.segment_text / segment_prompts / track_text / track_prompts | 6584419 | fixture 5/5 (063; apex): track_prompts IoU 0.978, occluded frames visible=false. Real: 3 windows | n/a. `visible=false` = no mask; prompted score 1.0 is not a confidence. Prompt choice = consumer |
 | depth_anything_3.reconstruct / estimate_depth | cf9215a, bda8ba2 | fixture 15 cases (063; apex): TUM visual ATE 13 mm Sim3; conditioned -> input_pose_scale; refusals. Real: 3 windows | not provided; fixture-only: TUM mocap / Kinect |
 | foundationpose.estimate / track (diagnostics, `valid`) | 6584419, 5b7019c | fixture 5/5 (063; apex). Real: pepper ok `valid=true`; basket ok `valid=false` (delivered as computed) | not provided; `valid` = visible-depth / mask agreement, not pose accuracy, not a business verdict |
@@ -62,7 +62,6 @@ Hosts:
 | groundingdino.detect | f121ef4 tree | fixture pass | n/a |
 | qwen2_5_vl.structured (caller prompt / schema) | f121ef4 tree | fixture pass | n/a; schema-valid output only; field system / prompts / quality = consumer |
 | partfield.segment / p3sam.segment (model outputs: features + labels) | f121ef4 tree | fixture pass (063) | n/a; licence: optional only |
-| stereo_rectify.rectify (FS input preparation: rectified pinhole pair + maps back) | 7e6a9cf, 01e587c | fixture 7/7 (063; apex). Real: 3 windows `supplied` | not provided. **Classification to confirm**: kept here as FoundationStereo's required input preparation; if the manager files it under "camera registration / undistortion", it moves to C unchanged |
 
 Generic contracts and run capability (completed):
 
@@ -107,7 +106,7 @@ acceptance of them belong to real2sim; Verdi does not commit to further developm
 | RGB -> SfM -> 3DGS chain | sfm outputs -> splatfacto inputs | the two calls above | CPU contract check only: splatfacto `_load_inputs` accepts sfm outputs, scale -> relative. Training on sfm outputs never run |
 | optimized-camera export; per-frame K; render_depth / business render checks | `pipelines/real2sim/render_depth_contract.md` (plan only) | — | not implemented |
 | R2S-DIAG basket analysis (attribution, residual / support statistics, size comparison) | apex `~/verdi_reports/r2s_diag_20261005/`: `report.md` (v2), `report_v1.md`, `evidence.json`, `support_all_frames.json`, `render_depth_{sam3d_initial,foundationpose}.npy`, `residual_*.jpg`, `basket_ev.py`, `basket_ev2.py`, `basket_frames.py` | `python3 basket_ev.py`, then `basket_ev2.py` / `basket_frames.py` (paths hard-coded to real2sim `outputs/verdi/train_pilot_v2/runs/ep003_place` and the report dir; read-only, CPU) | v2 report delivered; follow-up analysis = real2sim |
-| calibration / depth support and epipolar studies (multi-frame dy vs disparity) | stereo_rectify `epipolar_check_sequence` outputs (model-agnostic diagnostics kept in the node) + earlier ad-hoc scripts | `verdi run stereo_rectify ...` (README §rectify) | refit / sync decisions = real2sim |
+| stereo_rectify, legacy (geometric rectification + calibration / epipolar diagnostics, incl. multi-frame dy vs disparity, supplied / k_rect projections) | `nodes/stereo_rectify` @ 7e6a9cf, 01e587c (fixture 7/7 on 063 / apex / 018, CPU node); `pipelines/real2sim/README.md` §rectify; `example_stereo.sh` | `verdi run stereo_rectify --task rectify -i stereo=SBS -i calib=calib.json [-p ...] --out OUT --device cpu` (unchanged) | 已移交 real2sim (manager ruling 2026-10-06): rectification parameters / mapping choice, undistortion, extrinsic fitting, epipolar diagnostics and workflow = real2sim; tool kept unchanged for reuse |
 | SAM3 prompt recovery notes (ep003) | apex `~/verdi_reports/r2s_diag_20261005/sam3_prompt_recovery_ep003.md`; `pipelines/real2sim/README.md` §7 | `verdi run sam3 --task track_prompts ...` | usage notes of the generic node; prompt policy = consumer |
 | business quality, renderer / render checks, codebook, physics / physical priors, joints / articulation, independent ground truth | real2sim (see C.1) | — | 已移交 real2sim; never a Verdi item |
 | runner evidence for the lost-run incident | apex `.../runner_evidence.md`; `scripts/verdi_remote_ACCEPTANCE.md` | — | runner itself stays in A |
@@ -118,7 +117,7 @@ acceptance of them belong to real2sim; Verdi does not commit to further developm
 |---|---|
 | P0 SAM3 / FS / DA3 / FP / cross-machine calls | A (done) |
 | P1 MapAnything / VGGT / MASt3R scale / CoTracker / SAM3D notes | A (done) |
-| fisheye supplied rectification (stereo_rectify) | A, classification to confirm |
+| fisheye supplied rectification (stereo_rectify, legacy) | 已移交 real2sim (C); FS rectified-input contract stays in A |
 | SC-02 DINOv2 / CLIP features | B (CPU done, GPU call pending) |
 | SC-03 input content hash; infer output contracts (scale / coords / generation statement) | A (done) |
 | SC-03 splatfacto training extensions, optimized-camera export, render_depth | 已移交 real2sim (C) |
