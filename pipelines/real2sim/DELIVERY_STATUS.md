@@ -82,20 +82,34 @@ Generic contracts and run capability (completed):
 | sam3d_objects.reconstruct after 3055644 (evidence field only) | 3055644 | CPU / pytest | GPU fixture re-run (infer regression; existing resource arrangement) |
 | 018 / 017 as extra infer hosts | scope commit | 018: toolchain + repo from the bucket bundle, pytest 29/29, `verdi doctor` OK; stereo_rectify / sfm / dinov2_features / clip_features fixtures pass on CPU | GPU fixture regression on 018 (only in a declared slot); 017 not bootstrapped (all 8 GPUs partly used by others) |
 
-## C. Handed over to the consumer (not Verdi development debt, not model unavailability)
+## C. 已移交 real2sim (handed over; not Verdi development debt, not model unavailability, not a Verdi acceptance gate)
 
-The code and evidence stay in the repo as they are and may be reused. Verdi does not
-commit to further business development or acceptance on them.
+The code and evidence stay in the repo as they are and may be reused. `nodes/sfm` and
+`nodes/splatfacto` are kept as **legacy** nodes for real2sim to reuse. Business maintenance and
+acceptance of them belong to real2sim; Verdi does not commit to further development on them.
+
+### C.1 Handover record (SceneAgent requester ffa6354a)
+
+| item | value |
+|---|---|
+| business code | real2sim branch `task/sceneagent-ffa6354a`, commit `edfba3cac19388f90a811d2db066d4f72bae64ec` |
+| state | **not merged**; awaiting team review (not reviewed or merged by Verdi) |
+| responsibility entry | apex `/mnt/data1/min.du/ws/real2sim_wt/sceneagent_ffa6354a/pipeline/sceneagent/README.md` |
+| scope on their side (per the requester's report) | DINO patch clustering / CLIP label candidates, VLM business prompt / schema / physical-prior checks, same-camera partitioned depth residuals, SfM -> 3DGS orchestration / explicit scale anchor |
+| their tests | 25 synthetic CPU tests + JSON Schema validation (requester's report; no install / model inference / GPU / heldout / real-geometry acceptance) |
+| NOT recorded by Verdi | those 25 tests are business tests: not a Verdi model-call pass, not a SceneAgent end-to-end reproduction, not real physical-property or basket-geometry acceptance |
+
 
 | item | where (commit / path) | how to call (existing) | state at handover |
 |---|---|---|---|
-| SC-01 SfM (pycolmap 4.2.1 CPU; one shared undistorted K; relative scale; registration flags) | `nodes/sfm` @ 19ff1cb; NOTES.md | `verdi run sfm --task reconstruct -i frames=DIR [-i camera=cam.json] [-i reference_poses=traj.json] --out OUT --device cpu` | fixture 6/6 CPU (TUM ATE 0.0146 m on the public fixture only) |
-| splatfacto training (+ SC-03 training extensions: distortion refusal, optimizer default off, gaussian scale / world sidecar, frame mapping) | `nodes/splatfacto` @ f121ef4 + 3055644 | `verdi run splatfacto --task train -i frames=OUT/frames -i camera=OUT/camera.json -i trajectory=OUT/trajectory.json [-i points=OUT/points.ply] -p max_num_iterations=N --out OUT2 --device cuda:K` | GPU fixture passed before 3055644; not re-run after it (window cancelled) |
+| SC-01 SfM, legacy (pycolmap 4.2.1 CPU; one shared undistorted K; relative scale; registration flags) | `nodes/sfm` @ 19ff1cb; NOTES.md | `verdi run sfm --task reconstruct -i frames=DIR [-i camera=cam.json] [-i reference_poses=traj.json] --out OUT --device cpu` | fixture 6/6 CPU (TUM ATE 0.0146 m on the public fixture only) |
+| splatfacto training, legacy (+ SC-03 training extensions: distortion refusal, optimizer default off, gaussian scale / world sidecar, frame mapping) | `nodes/splatfacto` @ f121ef4 + 3055644 | `verdi run splatfacto --task train -i frames=OUT/frames -i camera=OUT/camera.json -i trajectory=OUT/trajectory.json [-i points=OUT/points.ply] -p max_num_iterations=N --out OUT2 --device cuda:K` | GPU fixture passed before 3055644; not re-run after it (window cancelled) |
 | RGB -> SfM -> 3DGS chain | sfm outputs -> splatfacto inputs | the two calls above | CPU contract check only: splatfacto `_load_inputs` accepts sfm outputs, scale -> relative. Training on sfm outputs never run |
 | optimized-camera export; per-frame K; render_depth / business render checks | `pipelines/real2sim/render_depth_contract.md` (plan only) | — | not implemented |
 | R2S-DIAG basket analysis (attribution, residual / support statistics, size comparison) | apex `~/verdi_reports/r2s_diag_20261005/`: `report.md` (v2), `report_v1.md`, `evidence.json`, `support_all_frames.json`, `render_depth_{sam3d_initial,foundationpose}.npy`, `residual_*.jpg`, `basket_ev.py`, `basket_ev2.py`, `basket_frames.py` | `python3 basket_ev.py`, then `basket_ev2.py` / `basket_frames.py` (paths hard-coded to real2sim `outputs/verdi/train_pilot_v2/runs/ep003_place` and the report dir; read-only, CPU) | v2 report delivered; follow-up analysis = real2sim |
 | calibration / depth support and epipolar studies (multi-frame dy vs disparity) | stereo_rectify `epipolar_check_sequence` outputs (model-agnostic diagnostics kept in the node) + earlier ad-hoc scripts | `verdi run stereo_rectify ...` (README §rectify) | refit / sync decisions = real2sim |
 | SAM3 prompt recovery notes (ep003) | apex `~/verdi_reports/r2s_diag_20261005/sam3_prompt_recovery_ep003.md`; `pipelines/real2sim/README.md` §7 | `verdi run sam3 --task track_prompts ...` | usage notes of the generic node; prompt policy = consumer |
+| business quality, renderer / render checks, codebook, physics / physical priors, joints / articulation, independent ground truth | real2sim (see C.1) | — | 已移交 real2sim; never a Verdi item |
 | runner evidence for the lost-run incident | apex `.../runner_evidence.md`; `scripts/verdi_remote_ACCEPTANCE.md` | — | runner itself stays in A |
 
 ## Requirement ledger (status after VD-SCOPE-20261005)
@@ -107,7 +121,8 @@ commit to further business development or acceptance on them.
 | fisheye supplied rectification (stereo_rectify) | A, classification to confirm |
 | SC-02 DINOv2 / CLIP features | B (CPU done, GPU call pending) |
 | SC-03 input content hash; infer output contracts (scale / coords / generation statement) | A (done) |
-| SC-03 splatfacto training extensions, optimized-camera export, render_depth | C (handed over) |
-| SC-01 SfM | C (handed over; node kept) |
-| R2S-DIAG v1 / v2 reports | delivered; follow-up = C |
+| SC-03 splatfacto training extensions, optimized-camera export, render_depth | 已移交 real2sim (C) |
+| SC-01 SfM / SfM -> 3DGS orchestration | 已移交 real2sim (C; legacy node kept) |
+| R2S-DIAG v1 / v2 reports | delivered; follow-up 已移交 real2sim (geometry_audit_v1 is theirs) |
+| SceneAgent business (clustering, labels, VLM prompts / schema / priors, partitioned residuals, codebook, physics, joints) | 已移交 real2sim, C.1 (`edfba3c`, unmerged) |
 | runner fix / resume / isolation; extra hosts 017 / 018 | A; 018 GPU regression in B |
