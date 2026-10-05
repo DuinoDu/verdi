@@ -33,6 +33,9 @@ Configuration (environment variables, defaults = the current setup):
   VERDI_063          ssh target of 063 (jump host)  min01.du-labs@min01.du-labs@10.36.14.82@blj.horizon.cc
   VERDI_063_PORT     2222
   VERDI_063_REPO     ~/ws/pdebug   (verdi checkout on 063)
+--host 063|017|018 (default 063) selects the GPU host; homes are separate per host,
+so --resume / --list / --delete need the same --host as the run (run ids are per host).
+An explicit VERDI_063 overrides --host.
 063 is shared: --device auto (default) picks the GPU with the most free memory
 and refuses (exit 2, kind busy) below --min-free-gb.
 """
@@ -50,7 +53,13 @@ from pathlib import Path
 
 RELAY = os.environ.get("VERDI_RELAY", "duino@10.103.75.12")
 KEY = os.environ.get("VERDI_RELAY_KEY", "~/code/scripts/envrc/ssh_keys/id_rsa_ubuntu")
-H063 = os.environ.get("VERDI_063", "min01.du-labs@min01.du-labs@10.36.14.82@blj.horizon.cc")
+HOSTS = {  # blj GPU hosts with the same account / key / layout (~/ws/pdebug, ~/verdi_env.sh)
+    "063": "min01.du-labs@min01.du-labs@10.36.14.82@blj.horizon.cc",
+    "017": "min01.du-labs@min01.du-labs@10.36.14.20@blj.horizon.cc",
+    "018": "min01.du-labs@min01.du-labs@10.36.14.21@blj.horizon.cc",
+}
+HOST = "063"
+H063 = os.environ.get("VERDI_063", HOSTS["063"])
 PORT = os.environ.get("VERDI_063_PORT", "2222")
 REPO = os.environ.get("VERDI_063_REPO", "~/ws/pdebug")
 SSH_OPTS = "-o BatchMode=yes -o StrictHostKeyChecking=no -o ServerAliveInterval=30"
@@ -108,7 +117,7 @@ def download(rid: str, out: Path) -> dict:
     if "__NO_DIR__" in state:
         raise Transport(f"remote run dir {rdir} does not exist on 063 (deleted?)")
     if "ACTIVE" in state and "DONE" not in state:
-        raise Transport(f"remote run {rid} is still ACTIVE; wait and --resume {rid}")
+        raise Transport(f"remote run {rid} is still ACTIVE; wait and --host {HOST} --resume {rid}")
     relay(f"mkdir -p {stage}", 3)
     report = {}
     for item in ("result.json", "log.txt", "stderr.txt", "out"):
@@ -143,7 +152,7 @@ def finish(rid: str, out: Path, device, gpu_info, keep: bool) -> int:
         err = (out / "stderr.txt").read_text()[-3000:] if (out / "stderr.txt").exists() else ""
         print(json.dumps({"status": "error", "error": {
             "kind": "transport", "message": "remote run produced no result.json",
-            "hint": f"remote stderr tail: {err}" if err else f"see 063 ~/{ROOT}/{rid}/stderr.txt",
+            "hint": f"remote stderr tail: {err}" if err else f"see {HOST} ~/{ROOT}/{rid}/stderr.txt",
             "run_id": rid}}, indent=2))
         return 2
     res = json.loads(text)
@@ -165,8 +174,8 @@ def finish(rid: str, out: Path, device, gpu_info, keep: bool) -> int:
 def transport_error(exc: Exception, rid: str, out: Path) -> int:
     print(json.dumps({"status": "error", "error": {
         "kind": "transport", "message": str(exc)[-4000:], "run_id": rid,
-        "hint": f"nothing was deleted on 063 (~/{ROOT}/{rid}); recover without rerunning: "
-                f"python3 scripts/verdi_remote.py --resume {rid} --out {out}"}}, indent=2))
+        "hint": f"nothing was deleted on {HOST} (~/{ROOT}/{rid}); recover without rerunning: "
+                f"python3 scripts/verdi_remote.py --host {HOST} --resume {rid} --out {out}"}}, indent=2))
     return 2
 
 
@@ -187,7 +196,13 @@ def main(argv=None) -> int:
     ap.add_argument("--list", action="store_true", help="list remote runs and their state")
     ap.add_argument("--delete", metavar="RUN_ID",
                     help="delete exactly this finished remote run (refuses ACTIVE)")
+    ap.add_argument("--host", default="063", choices=sorted(HOSTS),
+                    help="GPU host (same layout on each); run ids are per host")
     a = ap.parse_args(argv)
+    global H063, HOST
+    HOST = a.host
+    if "VERDI_063" not in os.environ:
+        H063 = HOSTS[a.host]
 
     if a.list:
         cmd = (f"cd ~/{ROOT} 2>/dev/null || exit 0; for d in */; do d=${{d%/}}; "

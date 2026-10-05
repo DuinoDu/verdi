@@ -1,5 +1,8 @@
 # sfm — registration notes (SC-01)
 
+> **Scope (VD-SCOPE-20261005):** SfM is handed over to the consumer. This node is kept as is for reuse; it is not a Verdi deliverable or acceptance item, and no further business development is committed.
+
+
 ## Source (pinned)
 | item | value |
 |---|---|
