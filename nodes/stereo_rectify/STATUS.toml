@@ -1,17 +1,18 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-05T23:14:15+0800"
+tested_at = "2026-10-05T23:30:33+0800"
 gpu = ""
-verdi_commit = "202d506917ffc62f36f60bad0e39813959117fdd"
+verdi_commit = "a016825024819a41728c440a7bf21f566d8ae5d0"
 upstream_commit = ""
 env_lock = "sha256:f2660a3b4128949aa03bd8b88f66ab907401b763b54ef6ab5b915f65cd0b273f"
 untested_tasks = [
 ]
 cases = [
-  "PASS fisheye_sbs (0.49s): PASS left.count=2 {'eq': 2}; PASS rectification:baseline_m=0.0605 {'min': 0.0604, 'max': 0.0606}; PASS rectification:epipolar_check_frame0.median_abs_dy_px=0.0541 {'max': 0.3}; PASS camera.fx=166.6966 {'min': 50, 'max': 400}; PASS left.image_psnr=37.1882 {'min': 26}; PASS right.image_psnr=37.0656 {'min': 26}",
+  "PASS fisheye_sbs (0.5s): PASS left.count=2 {'eq': 2}; PASS rectification:baseline_m=0.0605 {'min': 0.0604, 'max': 0.0606}; PASS rectification:epipolar_check_frame0.median_abs_dy_px=0.0541 {'max': 0.3}; PASS camera.fx=166.6966 {'min': 50, 'max': 400}; PASS left.image_psnr=37.1882 {'min': 26}; PASS right.image_psnr=37.0656 {'min': 26}",
+  "PASS fisheye_sbs_all_frames (0.58s): PASS rectification:epipolar_check_sequence.frames_checked=2 {'eq': 2}; PASS rectification:epipolar_check_sequence.pooled_median_abs_dy_px=0.0555 {'max': 0.3}",
   "PASS wrong_calib_fails (0.5s): PASS expected error containing 'median |dy|': status=error 'rectified pair has median |dy| = 6.42 px > 1.0 px on frame 0: calibration does not match the images check left/right order, the R/T convention and the intrinsics; set max_epipolar_dy_px=0 to skip this'",
   "PASS supplied_rectification (0.48s): PASS rectification:projection.mode='supplied' {'eq': 'supplied'}; PASS rectification:projection.checks.rectified_relative_rotation_deg=0.0 {'max': 0.001}; PASS rectification:projection.checks.Q_max_rel_err=0.0 {'max': 0.001}; PASS rectification:epipolar_check_frame0.median_abs_dy_px=0.0541 {'max': 0.3}; PASS left.image_psnr=37.1882 {'min': 26}",
-  "PASS k_rect (0.5s): PASS rectification:projection.mode='k_rect' {'eq': 'k_rect'}; PASS camera.fx=166.6966 {'min': 166.6, 'max': 166.8}; PASS right.image_psnr=37.0656 {'min': 26}",
+  "PASS k_rect (0.47s): PASS rectification:projection.mode='k_rect' {'eq': 'k_rect'}; PASS camera.fx=166.6966 {'min': 166.6, 'max': 166.8}; PASS right.image_psnr=37.0656 {'min': 26}",
   "PASS inconsistent_rectification_refused (0.11s): PASS expected error containing 'inconsistent with calib': status=error 'rectification inconsistent with calib R/T: R2 R R1^T is 0.5000 deg from identity (> 0.01) R1/R2 were computed from other extrinsics; recompute them from the same R/T (e.g. cv2.stereoRectify with zero '",
-  "PASS degenerate_auto_projection_refused (0.11s): PASS expected error containing 'degenerate rectified projection': status=error 'degenerate rectified projection: fx=0.000641873, fy=0.000641873 px vs input focal ~204.9 px (allowed 0.05x..20x) cv2.fisheye.stereoRectify degenerates on very wide (~190 deg) lenses: supply calib.rect'",
+  "PASS degenerate_auto_projection_refused (0.1s): PASS expected error containing 'degenerate rectified projection': status=error 'degenerate rectified projection: fx=0.000641873, fy=0.000641873 px vs input focal ~204.9 px (allowed 0.05x..20x) cv2.fisheye.stereoRectify degenerates on very wide (~190 deg) lenses: supply calib.rect'",
 ]

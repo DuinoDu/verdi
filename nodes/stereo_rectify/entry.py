@@ -310,7 +310,29 @@ def epipolar_check(L: np.ndarray, R: np.ndarray, max_feat: int = 4000) -> Dict:
             "median_dy_px": float(np.median(dyi)),
             "median_abs_dy_px": float(np.median(np.abs(dyi))),
             "p90_abs_dy_px": float(np.percentile(np.abs(dyi), 90)),
-            "negative_dx_ratio": float((dx[inl] < -0.5).mean())}
+            "negative_dx_ratio": float((dx[inl] < -0.5).mean()),
+            "_dy": dyi, "_dx": dx[inl]}
+
+
+def dy_vs_disparity(dy: np.ndarray, dx: np.ndarray, f: float, B: float) -> Dict:
+    """Robust fit dy = a + e * disparity. For a rectified pair whose
+    rectification is off: a constant a ~ relative pitch (a / f rad); a slope
+    e ~ vertical offset of the right camera centre in the rectified frame
+    (e * B metres, + = right camera lower). Far-only matches cannot separate
+    the two (degenerate), so the disparity range is reported."""
+    if len(dy) < 30 or np.ptp(np.percentile(dx, [10, 90])) < 20:
+        return {"note": "too few matches or too little disparity range to separate pitch / vertical baseline"}
+    A = np.c_[np.ones(len(dy)), dx]
+    w = np.ones(len(dy))
+    for _ in range(15):
+        c = np.linalg.lstsq(A * w[:, None], dy * w, rcond=None)[0]
+        r = dy - A @ c
+        sd = 1.4826 * np.median(np.abs(r)) + 1e-9
+        w = 1 / np.maximum(1, np.abs(r) / (1.5 * sd))
+    return {"dy_at_zero_disparity_px": float(c[0]), "dy_per_100px_disparity": float(100 * c[1]),
+            "pitch_mrad_equiv": float(1000 * c[0] / f), "vertical_baseline_mm_equiv": float(1000 * c[1] * B),
+            "disparity_p10_p90_px": [float(v) for v in np.percentile(dx, [10, 90])],
+            "residual_mad_px": float(sd), "n": int(len(dy))}
 
 
 # ------------------------------------------------------------------- task
@@ -349,6 +371,8 @@ def rectify(ctx: Context) -> None:
     out_r = ctx.output_path("right")
     frames = []
     first = None
+    n_epi = int(ctx.param("epipolar_frames", 1))
+    epi = []
     for i, (kind, a, b) in enumerate(pairs):
         L, R = _load_pair(kind, a, b, W, H, left_first)
         rl = cv2.remap(L, m1[0], m1[1], interp, borderMode=cv2.BORDER_CONSTANT)
@@ -359,6 +383,9 @@ def rectify(ctx: Context) -> None:
                        [str(a), str(b)]})
         if first is None:
             first = (rl, rr)
+        if ctx.param("epipolar_check", True) and (n_epi <= 0 or i < n_epi):
+            c = epipolar_check(rl, rr)
+            epi.append(c)
     ctx.set_output("left", out_l)
     ctx.set_output("right", out_r)
 
@@ -378,7 +405,21 @@ def rectify(ctx: Context) -> None:
     io.write_mask(vpath, valid_l.astype(np.uint16))
     ctx.set_output("valid", vpath)
 
-    check = epipolar_check(*first) if ctx.param("epipolar_check", True) else None
+    check = None
+    seq = None
+    if epi:
+        check = {k: v for k, v in epi[0].items() if not k.startswith("_")}
+        dys = [c["_dy"] for c in epi if "_dy" in c]
+        dxs = [c["_dx"] for c in epi if "_dx" in c]
+        if dys:
+            dy_all, dx_all = np.concatenate(dys), np.concatenate(dxs)
+            seq = {"frames_checked": len(epi),
+                   "median_abs_dy_px_per_frame": [round(c["median_abs_dy_px"], 3) if "median_abs_dy_px" in c
+                                                  else None for c in epi],
+                   "pooled_median_abs_dy_px": float(np.median(np.abs(dy_all))),
+                   "pooled_p90_abs_dy_px": float(np.percentile(np.abs(dy_all), 90)),
+                   "dy_vs_disparity": dy_vs_disparity(dy_all, dx_all, float(K[0, 0]),
+                                                      float(baseline_rect))}
     T_left_rect = np.eye(4)
     T_left_rect[:3, :3] = R1.T
     T_right_rect = np.eye(4)
@@ -406,6 +447,7 @@ def rectify(ctx: Context) -> None:
         "valid_ratio_left": float(valid_l.mean()),
         "valid_ratio_right": float(valid_r.mean()),
         "epipolar_check_frame0": check,
+        "epipolar_check_sequence": seq,
         "frames": frames,
     }
     rpath = ctx.output_path("rectification", "rectification.json")

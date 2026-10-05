@@ -60,7 +60,7 @@ outputs.left = { type = "image_seq", description = "rectified left frames %06d.p
 outputs.right = { type = "image_seq", description = "rectified right frames %06d.png" }
 outputs.camera = { type = "camera", description = "rectified LEFT pinhole K at the output size, dist = 0 (feed to foundation_stereo)" }
 outputs.valid = { type = "mask", description = "1 = rectified-left pixel maps inside the source left image, 0 = black border" }
-outputs.rectification = { type = "json", description = "{convention, projection {mode, source, checks {rectified_relative_rotation_deg, rectified_t_m, fx, fy, input_focal_mean, baseline_rect_m, baseline_calib_m, doffs_px, Q_max_rel_err}, pixel_map}, model, input_size, output_size, K_left_input, D_left_input, K_right_input, D_right_input, R, T, baseline_m (|T|), baseline_rect_m (-P2[0,3]/P2[0,0]), K_rect, doffs_px (cx_r - cx_l, 0), R1, R2, P1, P2, Q, T_left_rect, T_right_rect (4x4 rectified -> original camera), params, valid_ratio_left/right, epipolar_check_frame0 {matches, inliers, median_dy_px, median_abs_dy_px, p90_abs_dy_px, negative_dx_ratio}, frames [{index, source}]}" }
+outputs.rectification = { type = "json", description = "{convention, projection {mode, source, checks {rectified_relative_rotation_deg, rectified_t_m, fx, fy, input_focal_mean, baseline_rect_m, baseline_calib_m, doffs_px, Q_max_rel_err}, pixel_map}, model, input_size, output_size, K_left_input, D_left_input, K_right_input, D_right_input, R, T, baseline_m (|T|), baseline_rect_m (-P2[0,3]/P2[0,0]), K_rect, doffs_px (cx_r - cx_l, 0), R1, R2, P1, P2, Q, T_left_rect, T_right_rect (4x4 rectified -> original camera), params, valid_ratio_left/right, epipolar_check_frame0 {matches, inliers, median_dy_px, median_abs_dy_px, p90_abs_dy_px, negative_dx_ratio}, epipolar_check_sequence {frames_checked, median_abs_dy_px_per_frame, pooled_median_abs_dy_px, pooled_p90_abs_dy_px, dy_vs_disparity {dy_at_zero_disparity_px, dy_per_100px_disparity, pitch_mrad_equiv, vertical_baseline_mm_equiv (+ = right camera lower), disparity_p10_p90_px, residual_mad_px, n}}, frames [{index, source}]}" }
 params.projection = { type = "str", default = "auto", choices = ["auto", "supplied", "k_rect", "opencv"], description = "where P1/P2 (and R1/R2) come from; auto = supplied > k_rect > opencv" }
 params.consistency_tol_deg = { type = "float", default = 0.01, description = "max angle of R2 R R1^T from identity" }
 params.consistency_tol_rel = { type = "float", default = 0.005, description = "relative tolerance for R2 T = [-B,0,0], P2 baseline and Q" }
@@ -73,6 +73,7 @@ params.out_height = { type = "int", default = 0, description = "rectified height
 params.sbs_left_first = { type = "bool", default = true, description = "SBS input: left eye is the LEFT half" }
 params.interpolation = { type = "str", default = "linear", choices = ["linear", "cubic", "lanczos"], description = "cv2.remap interpolation" }
 params.epipolar_check = { type = "bool", default = true, description = "SIFT-match frame 0 and report the vertical residual of the rectified pair" }
+params.epipolar_frames = { type = "int", default = 1, description = "frames used for the epipolar diagnostics (0 = all); epipolar_check_sequence pools them and fits dy = a + e*disparity" }
 params.max_epipolar_dy_px = { type = "float", default = 1.0, description = "fail if the median |dy| of the epipolar check exceeds this (0 = report only)" }
 
 [[tests]]
@@ -108,6 +109,21 @@ output = "right"
 metric = "image_psnr"
 expected = "tests/expected/rect_right"
 min = 26
+
+[[tests]]
+name = "fisheye_sbs_all_frames"
+task = "rectify"
+timeout_sec = 600
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib.json" }
+params = { epipolar_frames = 0 }
+[[tests.checks]]
+output = "rectification"
+path = "epipolar_check_sequence.frames_checked"
+eq = 2
+[[tests.checks]]
+output = "rectification"
+path = "epipolar_check_sequence.pooled_median_abs_dy_px"
+max = 0.3
 
 [[tests]]
 name = "wrong_calib_fails"
