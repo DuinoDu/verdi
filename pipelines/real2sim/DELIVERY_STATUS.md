@@ -87,17 +87,19 @@ The code and evidence stay in the repo as they are and may be reused. `nodes/sfm
 `nodes/splatfacto` are kept as **legacy** nodes for real2sim to reuse. Business maintenance and
 acceptance of them belong to real2sim; Verdi does not commit to further development on them.
 
-### C.1 Handover record (SceneAgent requester ffa6354a)
+### C.1 Handover record (SceneAgent requester ffa6354a; as reported by the requester / Lead, not re-verified by Verdi)
+
+real2sim commit ids below are **real2sim repository** commits, registered separately from Verdi main commits.
 
 | item | value |
 |---|---|
-| business code | real2sim branch `task/sceneagent-ffa6354a`, commit `edfba3cac19388f90a811d2db066d4f72bae64ec` |
-| state | **not merged**; awaiting team review (not reviewed or merged by Verdi) |
-| responsibility entry | apex `/mnt/data1/min.du/ws/real2sim_wt/sceneagent_ffa6354a/pipeline/sceneagent/README.md` |
-| scope on their side (per the requester's report) | DINO patch clustering / CLIP label candidates, VLM business prompt / schema / physical-prior checks, same-camera partitioned depth residuals, SfM -> 3DGS orchestration / explicit scale anchor |
-| their tests | 25 synthetic CPU tests + JSON Schema validation (requester's report; no install / model inference / GPU / heldout / real-geometry acceptance) |
-| NOT recorded by Verdi | those 25 tests are business tests: not a Verdi model-call pass, not a SceneAgent end-to-end reproduction, not real physical-property or basket-geometry acceptance |
-
+| status | business first batch **reviewed and merged by the Lead** into real2sim main; main synthetic CPU regression 46/46 pass (requester's report). Supersedes the earlier edfba3c record (pre-merge status, outdated) |
+| business commit | real2sim `7afb380213e461869363fcb3e2a57678a9f998ad`; Lead read-only re-review pass message `3f18fc78-88b0-4604-af6b-a76fd002e109`; merged into real2sim main `056c4df` |
+| README risk addendum | real2sim `dba54e7f033365120367cb2bde26fbb12908c73b`; Lead review / merge message `534cd0c0-60ac-4233-b97e-42a77a95bebb`; real2sim main currently `dba54e7` (requester's report) |
+| responsibility entry | apex `/mnt/data1/min.du/ws/real2sim/pipeline/sceneagent/README.md` (moved from the former worktree) |
+| business CPU evidence (relative to the real2sim root) | `pipeline/sceneagent/.checks/main_merge_7afb380/summary.json`, `cpu_tests.log`, `source_policy_negatives/result.json`, `synthetic_evidence/negative_geometry_evidence.json` |
+| scope on their side | DINO patch clustering / CLIP label candidates, VLM business prompt / schema / physical-prior checks, same-camera partitioned depth residuals, SfM -> 3DGS orchestration / explicit scale anchor |
+| NOT recorded by Verdi | these are the requester's / Lead's business code and synthetic CPU evidence: not a Verdi model-call pass, not real geometry / physical-property acceptance, not a complete SceneAgent reproduction. Verdi did not review, merge or re-check their geometry; legacy items (stereo_rectify / SfM / splatfacto) stay with real2sim; their original outputs and contamination / not-accepted marks are untouched |
 
 | item | where (commit / path) | how to call (existing) | state at handover |
 |---|---|---|---|
@@ -123,5 +125,5 @@ acceptance of them belong to real2sim; Verdi does not commit to further developm
 | SC-03 splatfacto training extensions, optimized-camera export, render_depth | 已移交 real2sim (C) |
 | SC-01 SfM / SfM -> 3DGS orchestration | 已移交 real2sim (C; legacy node kept) |
 | R2S-DIAG v1 / v2 reports | delivered; follow-up 已移交 real2sim (geometry_audit_v1 is theirs) |
-| SceneAgent business (clustering, labels, VLM prompts / schema / priors, partitioned residuals, codebook, physics, joints) | 已移交 real2sim, C.1 (`edfba3c`, unmerged) |
+| SceneAgent business (clustering, labels, VLM prompts / schema / priors, partitioned residuals, codebook, physics, joints) | 已移交 real2sim, C.1 (real2sim `7afb380` merged into real2sim main `056c4df`, README `dba54e7`; Lead-reviewed per requester) |
 | runner fix / resume / isolation; extra hosts 017 / 018 | A; 018 GPU regression in B |
