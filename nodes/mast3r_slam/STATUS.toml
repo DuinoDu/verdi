@@ -1,13 +1,13 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-05T20:43:21+0800"
+tested_at = "2026-10-05T21:33:57+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "f121ef470dd74dc894d27c4d28bc6c22a5180f27"
+verdi_commit = "35b4ae7c843b216695cca37a6da52b830e5d9014"
 upstream_commit = "e6f4e3d474fad0e11f561482012be864ba8c3f17"
 env_lock = "sha256:a2e3c888ad84d50c0bbaad9d5f39751acd418d91171c845d9ff38149fbe88e0e"
 untested_tasks = [
 ]
 cases = [
-  "PASS fr1_desk_uncalibrated (52.36s): PASS trajectory.count=204 {'min': 195}; PASS trajectory.trajectory_ate=0.0685 {'max': 0.12}; PASS keyframes.count=16 {'min': 8, 'max': 30}; PASS depth.count=16 {'min': 8}; PASS pointcloud.points=2000000 {'min': 1500000}",
-  "PASS fr1_desk_calibrated (25.22s): PASS trajectory.count=205 {'eq': 205}; PASS trajectory.trajectory_ate=0.0213 {'max': 0.04}; PASS keyframes.count=14 {'min': 8, 'max': 30}; PASS pointcloud.points=2000000 {'min': 1000000}",
+  "PASS fr1_desk_uncalibrated (47.6s): PASS trajectory.count=204 {'min': 195}; PASS trajectory.trajectory_ate=0.0685 {'max': 0.12}; PASS keyframes.count=16 {'min': 8, 'max': 30}; PASS depth.count=16 {'min': 8}; PASS pointcloud.points=2000000 {'min': 1500000}",
+  "PASS fr1_desk_calibrated (23.07s): PASS trajectory.count=205 {'eq': 205}; PASS trajectory.trajectory_ate=0.0213 {'max': 0.04}; PASS keyframes.count=14 {'min': 8, 'max': 30}; PASS pointcloud.points=2000000 {'min': 1000000}",
 ]

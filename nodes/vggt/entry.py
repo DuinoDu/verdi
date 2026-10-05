@@ -158,6 +158,9 @@ def reconstruct(ctx: Context) -> None:
     ctx.set_output("intrinsics", intr_path)
     ctx.set_output("depth", depth_dir)
     ctx.set_output("pointcloud", ply)
+    for p in (depth_dir, ply):
+        io.write_scale(p, "relative", "arbitrary (VGGT normalised scene scale, same as trajectory)",
+                       "vggt", "rescale with aruco_scale scale_align before metric use")
     ctx.metadata.update({
         "network_resolution": [W, H],
         "fx_per_frame": [round(float(K[0, 0]), 2) for K in Ks],

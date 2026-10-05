@@ -369,8 +369,11 @@ def slam(ctx: Context) -> None:
     ctx.set_output("trajectory", traj)
     ctx.set_output("keyframes", kfj)
     ctx.set_output("pointcloud", ply)
+    io.write_scale(ply, "relative", "arbitrary (monocular SLAM, same as trajectory)",
+                   "mast3r_slam", "rescale with aruco_scale scale_align before metric use")
     if save_depth:
         ctx.set_output("depth", depth_dir)
+        io.write_scale(depth_dir, "relative", "arbitrary (monocular SLAM)", "mast3r_slam")
     peak = torch.cuda.max_memory_allocated() / 2**30
     ctx.metadata.update({
         "mode": "calibrated" if use_calib else "uncalibrated",

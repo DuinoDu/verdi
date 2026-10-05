@@ -9,7 +9,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import numpy as np
 
-from verdi.types.registry import IMAGE_EXT
+from verdi.types.registry import IMAGE_EXT, SCALE_STATES, scale_sidecar
 
 VIDEO_EXT = (".mp4", ".mov", ".avi", ".mkv", ".webm")
 
@@ -147,3 +147,16 @@ def write_camera(path: Path, K: np.ndarray, width: int, height: int,
     return write_json(path, {
         "K": np.asarray(K, dtype=float).tolist(), "width": int(width),
         "height": int(height), "dist": list(dist or [0, 0, 0, 0, 0])})
+
+
+def write_scale(path: Path, scale_status: str, units: str, source: str,
+                note: str = "") -> Path:
+    """Declare the scale of a depth / depth_seq / pointcloud output.
+
+    metric | metric_from_input_poses are accepted by inputs that need metres;
+    relative | input_pose_scale | input_depth_scale are refused there."""
+    if scale_status not in SCALE_STATES:
+        raise ValueError(f"scale_status {scale_status!r} not in {SCALE_STATES}")
+    return write_json(scale_sidecar(Path(path)), {
+        "scale_status": scale_status, "units": units, "source": source,
+        "note": note})

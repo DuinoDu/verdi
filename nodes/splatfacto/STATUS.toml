@@ -1,12 +1,12 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:49:01+0800"
+tested_at = "2026-10-05T21:36:35+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "35b4ae7c843b216695cca37a6da52b830e5d9014"
 upstream_commit = ""
 env_lock = "sha256:40d45851e98796304cb78784bd24478d999e4f37202f4f651b047736b9e4d10b"
 untested_tasks = [
 ]
 cases = [
-  "PASS bedroom (198.4s): PASS metrics:psnr_min=20.5395 {'min': 19.5}; PASS metrics:psnr_mean=21.7332 {'min': 20.5}; PASS gaussians.gaussians=672152 {'min': 300000}",
+  "PASS bedroom (222.96s): PASS metrics:psnr_min=20.5435 {'min': 19.5}; PASS metrics:psnr_mean=21.6838 {'min': 20.5}; PASS gaussians.gaussians=667055 {'min': 300000}",
 ]

@@ -88,6 +88,40 @@ def _v_image_seq(path: Path):
 
 
 # ----------------------------------------------------------------- depth
+# Scale contract: a producer that knows the scale of a depth / depth_seq /
+# pointcloud output writes a sidecar (<file>.scale.json, or scale.json inside
+# a directory) {"scale_status", "units", "source", "note"}. Metric states are
+# accepted by inputs that need metres; anything else is refused there.
+METRIC_SCALE_STATES = ("metric", "metric_from_input_poses")
+SCALE_STATES = METRIC_SCALE_STATES + ("relative", "input_pose_scale",
+                                      "input_depth_scale")
+
+
+def scale_sidecar(path: Path) -> Path:
+    path = Path(path)
+    return path / "scale.json" if path.is_dir() else \
+        path.with_name(path.name + ".scale.json")
+
+
+def read_scale(path: Path) -> Dict[str, Any]:
+    """Declared scale of a geometry output; 'unspecified' without sidecar."""
+    side = scale_sidecar(path)
+    if not side.exists():
+        return {"scale_status": "unspecified"}
+    data = _load_json(side)
+    _need(data.get("scale_status") in SCALE_STATES,
+          f"{side}: scale_status must be one of {SCALE_STATES}")
+    return data
+
+
+def _scale_summary(path: Path) -> Dict[str, Any]:
+    d = read_scale(path)
+    out = {"scale_status": d["scale_status"]}
+    if d.get("source"):
+        out["scale_source"] = d["source"]
+    return out
+
+
 def _depth_stats(arr: np.ndarray, where: str):
     _need(arr.ndim == 2, f"{where}: depth must be HxW, got {arr.shape}")
     valid = arr[np.isfinite(arr) & (arr > 0)]
@@ -98,17 +132,21 @@ def _depth_stats(arr: np.ndarray, where: str):
             "median": float(np.median(valid)) if valid.size else 0.0}
 
 
-@_register("depth", "file", ".npy float32 HxW, metres, 0 = invalid")
+@_register("depth", "file", ".npy float32 HxW z-depth, metres, 0 = invalid; "
+           "optional sidecar <file>.scale.json declares a non-metric scale "
+           "(summary.scale_status)")
 def _v_depth(path: Path):
     _need(path.suffix == ".npy", f"{path}: depth must be .npy")
-    return _depth_stats(np.load(path), str(path))
+    return {**_depth_stats(np.load(path), str(path)), **_scale_summary(path)}
 
 
-@_register("depth_seq", "dir", "dir of %06d.npy float32 HxW, metres")
+@_register("depth_seq", "dir", "dir of %06d.npy float32 HxW z-depth, metres; "
+           "optional scale.json declares a non-metric scale "
+           "(summary.scale_status)")
 def _v_depth_seq(path: Path):
     files = _frames(path, (".npy",))
     first = _depth_stats(np.load(files[0]), str(files[0]))
-    return {"count": len(files), **first}
+    return {"count": len(files), **first, **_scale_summary(path)}
 
 
 @_register("pointmap", "file",
@@ -365,9 +403,9 @@ def _v_mesh(path: Path):
     return out
 
 
-@_register("pointcloud", "file", "ply, metres, optional rgb")
+@_register("pointcloud", "file", "ply, metres, optional rgb; optional sidecar <file>.scale.json declares a non-metric scale")
 def _v_pointcloud(path: Path):
-    return {"points": _ply_vertices(path)}
+    return {"points": _ply_vertices(path), **_scale_summary(path)}
 
 
 @_register("gaussians", "file", "3DGS ply (INRIA layout), metres")

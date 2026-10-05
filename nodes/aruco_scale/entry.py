@@ -591,11 +591,13 @@ def scale_align(ctx: Context) -> None:
         n = _transform_ply(ctx.input("pointcloud"), ppath, S, s)
         ctx.log(f"transformed {n} points")
         ctx.set_output("pointcloud", ppath)
+        io.write_scale(ppath, "metric", "metres (ArUco board scale)", "aruco_scale.scale_align")
     if ctx.has_input("depth"):
         ddir = ctx.output_path("depth")
         for f in io.list_frames(ctx.input("depth"), (".npy",)):
             io.write_depth(ddir / f.name, np.load(f).astype(np.float32) * s)
         ctx.set_output("depth", ddir)
+        io.write_scale(ddir, "metric", "metres (ArUco board scale)", "aruco_scale.scale_align")
     ctx.metadata.update({"scale": s, "rmse_m": info["rmse_m"],
                          "n_shared": len(pairs), "method": used})
 

@@ -15,7 +15,7 @@ to another model or fabricates output.
 | host | role | how |
 |---|---|---|
 | **apex** (RTX 5090 32 GB, same machine as real2sim) | primary: local CLI | `source ~/verdi_env.sh` then `verdi run ...` with local paths (no upload / download) |
-| 063 (8x RTX 5090, offline) | development / reference host, all nodes set up | not reachable from apex directly; only for verdi maintainers |
+| 063 (8x RTX 5090, offline) | reference host, all 38 nodes set up | `scripts/verdi_remote.py` from apex (ssh/rsync via the ubuntu relay) |
 
 Set up and tested on apex (2026-10-05, commit cf9215a, all fixture tests
 pass): stereo_rectify, sam3, foundation_stereo, foundationpose,
@@ -41,6 +41,25 @@ bash pipelines/real2sim/example_stereo.sh /tmp/verdi_example cuda:0
 # rectified: baseline_rect_m=0.0605, epipolar median |dy| 0.054 px
 # 000000.npy: valid 0.970, abs-rel 0.0042, median |err| 1.78 mm
 ```
+
+Remote runs on 063 from apex (when apex's GPU is busy or for nodes not set
+up on apex): `scripts/verdi_remote.py` = same CLI + result contract, inputs
+uploaded and outputs downloaded via ssh/rsync over the ubuntu relay
+(apex -LAN-> ubuntu -> jump host -> 063; ~30 s overhead per call, 063 is
+shared: pick a free GPU):
+
+```bash
+python3 scripts/verdi_remote.py foundation_stereo --task estimate_depth \
+  -i left=L.png -i right=R.png -i camera=K.json -p baseline=0.0605 \
+  --out /abs/out --device cuda:1        # exit 0 ok / 1 node error / 2 transport
+# outputs in /abs/out/out/, result.json (paths rewritten to local), log.txt
+```
+
+Depth scale contract: every depth / depth_seq / pointcloud summary carries
+`scale_status`; producers that are not metric write a sidecar
+(`depth.npy.scale.json`, `<dir>/scale.json`, `cloud.ply.scale.json`), and
+metric inputs (foundationpose, sam3d_objects, plane_layout, ...) refuse
+`relative` / `input_pose_scale` data with a request error.
 
 ```bash
 source ~/verdi_env.sh            # VERDI_HOME=~/verdi_home, PATH += ~/ws/verdi/.venv/bin

@@ -13,6 +13,9 @@ class RequestError(ValueError):
     """The caller passed invalid inputs or params."""
 
 
+SCALED_TYPES = ("depth", "depth_seq", "pointcloud")
+
+
 def build_request(
     manifest: Manifest,
     task: Task,
@@ -42,6 +45,15 @@ def build_request(
             summary = types.validate(port.type, path)
         except Exception as exc:  # noqa: BLE001
             raise RequestError(f"input {name}: {exc}") from exc
+        if port.type in SCALED_TYPES and port.scale == "metric":
+            st = summary.get("scale_status", "unspecified")
+            if st not in types.registry.METRIC_SCALE_STATES + ("unspecified",):
+                raise RequestError(
+                    f"input {name}: {path} is declared scale_status={st!r}"
+                    f" (source {summary.get('scale_source', '?')}); this input "
+                    "needs metric data. Align it first (e.g. aruco_scale "
+                    "scale_align) or use a metric producer; see the "
+                    "<file>.scale.json / scale.json sidecar")
         req_inputs[name] = {"type": port.type, "path": str(path),
                             "summary": summary}
     unknown = set(params) - set(task.params)

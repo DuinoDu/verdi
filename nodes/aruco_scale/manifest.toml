@@ -75,8 +75,8 @@ position).
 """
 inputs.trajectory = { type = "trajectory", description = "source trajectory, camera-to-world, arbitrary scale and world frame" }
 inputs.reference = { type = "trajectory", description = "metric reference (detect_board trajectory output)" }
-inputs.pointcloud = { type = "pointcloud", optional = true, description = "ply in the source world frame/unit (e.g. vggt pointcloud); transformed to metres in the board frame (normals rotated)" }
-inputs.depth = { type = "depth_seq", optional = true, description = "source-unit depth maps (e.g. vggt depth); multiplied by scale" }
+inputs.pointcloud = { type = "pointcloud", optional = true, scale = "any", description = "ply in the source world frame/unit (e.g. vggt pointcloud); transformed to metres in the board frame (normals rotated)" }
+inputs.depth = { type = "depth_seq", optional = true, scale = "any", description = "source-unit depth maps (e.g. vggt depth); multiplied by scale" }
 outputs.trajectory = { type = "trajectory", description = "every source frame in the metric board frame (other fields such as frames / frame_index copied)" }
 outputs.alignment = { type = "json", description = "{scale, R 3x3, t [3], T_ref_src 4x4 (scale*R | t), convention, method (umeyama|orientation), shared_frames, n_shared, rmse_m, median_err_m, max_err_m (camera-centre residuals in metres), rot_err_deg_mean/max (orientation residuals after alignment), src_spread, src_singular_ratios, per_frame [{frame, err_m, rot_err_deg}]}" }
 outputs.pointcloud = { type = "pointcloud", optional = true, description = "only with the pointcloud input: aligned ply (metres, board frame)" }

@@ -30,6 +30,8 @@ class Port:
     type: str
     optional: bool = False
     description: str = ""
+    # inputs of geometry types need metric data unless scale = "any"
+    scale: str = "metric"
 
     @classmethod
     def parse(cls, name: str, spec: Any, where: str) -> "Port":
@@ -42,8 +44,11 @@ class Port:
                 f"{where}.{name}: unknown type {spec['type']!r}; "
                 f"known: {sorted(TYPES)}"
             )
+        scale = spec.get("scale", "metric")
+        if scale not in ("metric", "any"):
+            raise ManifestError(f"{where}.{name}: scale must be metric | any")
         return cls(name, spec["type"], bool(spec.get("optional", False)),
-                   spec.get("description", ""))
+                   spec.get("description", ""), scale)
 
 
 @dataclass

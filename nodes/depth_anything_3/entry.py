@@ -328,6 +328,8 @@ def estimate_depth(ctx: Context) -> None:
     io.write_camera(cam, K, w, h)
     ctx.set_output("depth", out)
     ctx.set_output("camera", cam)
+    io.write_scale(out, "metric", "metres", f"depth_anything_3 {MODELS[key][0]}",
+                   "metric scale depends on the focal (predicted unless camera given)")
     info = {"model": MODELS[key][0], "scale_status": "metric",
             "conversion": conversion, "intrinsics_source": k_source,
             "network_resolution": [Wp, Hp], "input_resolution": [w, h],
@@ -550,7 +552,8 @@ def reconstruct(ctx: Context) -> None:
                        "still predicted from the images; not pose conditioning)"
         world = "DA3 world of chunk 0 (first-chunk reference view), Sim(3)-merged chunks"
     elif align_scale:
-        scale_status = "input_pose_scale"
+        scale_status = "metric_from_input_poses" if bool(ctx.param("poses_metric", False)) \
+            else "input_pose_scale"
         units = "units of the INPUT poses (metres only if the input poses are metric); " \
                 "depth was divided by the pose-alignment scale"
         pose_source = "INPUT poses passed through unchanged (conditioning); NOT an " \
@@ -573,6 +576,8 @@ def reconstruct(ctx: Context) -> None:
                          "pose_source": pose_source, "world": world})
     ctx.set_output("depth", depth_dir)
     ctx.set_output("confidence", conf_dir)
+    io.write_scale(depth_dir, scale_status, units, f"depth_anything_3 {MODELS[key][0]}",
+                   pose_source)
     ctx.set_output("cameras", cams)
     ctx.set_output("trajectory", traj)
 

@@ -59,7 +59,13 @@ and paths live in `$VERDI_HOME/config.toml` (see `verdi/core/config.py`).
 - Pose = 4x4 `T_cam_obj` (object to camera); trajectories are
   `T_world_cam`. Boxes = pixel `xyxy`.
 - Masks = single-channel png, 0 background, 1..N instance ids.
-- Depth = `.npy` float32 metres, 0 = invalid.
+- Depth = `.npy` float32 metres, 0 = invalid. Producers that cannot give
+  metres (vggt, mast3r_slam, DA3 giant/large, pose-conditioned runs) write a
+  scale sidecar (`<file>.scale.json`, or `scale.json` in a depth_seq dir /
+  next to a ply) and the summary shows `scale_status`; inputs that need
+  metres refuse anything but `metric` / `metric_from_input_poses` /
+  `unspecified` (no sidecar = your own data, your responsibility).
+  Rescale first (aruco_scale scale_align writes metric).
 - Full list with formats: `verdi types`.
 - Geometry outputs state their scale and provenance: `scale_status`
   (`metric` | `relative` | `input_pose_scale` | ...) and `pose_source`

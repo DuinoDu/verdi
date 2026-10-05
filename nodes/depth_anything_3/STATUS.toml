@@ -1,29 +1,29 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-05T21:18:06+0800"
+tested_at = "2026-10-05T21:37:00+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "6584419d90958c8e059c8f6861e465789357c83c"
+verdi_commit = "35b4ae7c843b216695cca37a6da52b830e5d9014"
 upstream_commit = ""
 env_lock = "sha256:248778f22d27de94550de434aa70a997f01fd11bd876691d025c88594b5d9dc0"
 untested_tasks = [
 ]
 cases = [
-  "PASS image_metric (30.92s): PASS depth.median=2.6251 {'min': 2.3, 'max': 2.9}; PASS camera.fx=899.7754 {'min': 750, 'max': 1050}; PASS depth.depth_abs_rel=0.0002 {'max': 0.03}",
-  "PASS image_relative (24.49s): PASS disparity.width=960 {'eq': 960}; PASS disparity.disparity_rel=0.0 {'max': 0.03}",
-  "PASS reconstruct (31.55s): PASS depth.count=15 {'eq': 15}; PASS depth.median=4.9148 {'min': 4.3, 'max': 5.4}; PASS cameras.count=15 {'eq': 15}; PASS trajectory.trajectory_ate=0.0 {'max': 0.01}",
-  "PASS reconstruct_chunked (25.33s): PASS depth.count=15 {'eq': 15}; PASS depth.median=4.8896 {'min': 3.5, 'max': 5.5}; PASS trajectory.trajectory_ate=0.0111 {'max': 0.03}",
-  "PASS mustard_nested (22.13s): PASS depth.depth_abs_rel=0.1965 {'max': 0.25}; PASS info:scale_status='metric' {'eq': 'metric'}",
-  "PASS mustard_metric_large (21.56s): PASS depth.depth_abs_rel=0.0568 {'max': 0.25}; PASS camera.fx=319.582 {'min': 319.5, 'max': 319.7}",
-  "PASS metric_needs_camera (0.11s): PASS expected error containing 'needs `camera`': status=error 'model=metric (DA3METRIC-LARGE) needs `camera`: its output is canonical depth, metres = focal * output / 300 pass the pinhole K of the image, or use model=nested (metric without K)'",
-  "PASS tum_visual_vs_mocap (30.95s): PASS info:scale_status='metric' {'eq': 'metric'}; PASS pose_eval:ate_rmse_after_sim3=0.0132 {'max': 0.05}; PASS pose_eval:ate_rmse_after_se3=0.0517 {'max': 0.15}; PASS pose_eval:sim3_scale_ref_per_pred=1.0604 {'min': 0.7, 'max': 1.4}",
-  "PASS tum_visual_ray_pose (32.54s): PASS pose_eval:ate_rmse_after_sim3=0.0129 {'max': 0.05}; PASS info:use_ray_pose=True {'eq': True}",
-  "PASS tum_giant_relative (30.1s): PASS info:scale_status='relative' {'eq': 'relative'}; PASS pose_eval:ate_rmse_after_sim3=0.0142 {'max': 0.05}",
-  "PASS tum_large_relative (24.28s): PASS info:scale_status='relative' {'eq': 'relative'}; PASS pose_eval:ate_rmse_after_sim3=0.0205 {'max': 0.08}",
-  "PASS tum_conditioned_x2 (32.17s): PASS info:scale_status='input_pose_scale' {'eq': 'input_pose_scale'}; PASS trajectory.trajectory_ate=0.0 {'max': 0.001}; PASS info:chunks.0.input_pose_alignment_scale_pred_per_input=0.4515 {'min': 0.35, 'max': 0.7}; PASS depth.median=1.8819 {'min': 1.4, 'max': 4.0}",
-  "PASS tum_conditioned_noalign (32.17s): PASS info:scale_status='metric' {'eq': 'metric'}; PASS depth.median=0.8497 {'min': 0.7, 'max': 2.0}",
+  "PASS image_metric (26.82s): PASS depth.median=2.6251 {'min': 2.3, 'max': 2.9}; PASS camera.fx=899.7754 {'min': 750, 'max': 1050}; PASS depth.depth_abs_rel=0.0002 {'max': 0.03}",
+  "PASS image_relative (11.04s): PASS disparity.width=960 {'eq': 960}; PASS disparity.disparity_rel=0.0 {'max': 0.03}",
+  "PASS reconstruct (16.01s): PASS depth.count=15 {'eq': 15}; PASS depth.median=4.9149 {'min': 4.3, 'max': 5.4}; PASS cameras.count=15 {'eq': 15}; PASS trajectory.trajectory_ate=0.0 {'max': 0.01}",
+  "PASS reconstruct_chunked (16.37s): PASS depth.count=15 {'eq': 15}; PASS depth.median=4.8897 {'min': 3.5, 'max': 5.5}; PASS trajectory.trajectory_ate=0.0111 {'max': 0.03}",
+  "PASS mustard_nested (14.95s): PASS depth.depth_abs_rel=0.1966 {'max': 0.25}; PASS info:scale_status='metric' {'eq': 'metric'}",
+  "PASS mustard_metric_large (6.97s): PASS depth.depth_abs_rel=0.0568 {'max': 0.25}; PASS camera.fx=319.582 {'min': 319.5, 'max': 319.7}",
+  "PASS metric_needs_camera (0.15s): PASS expected error containing 'needs `camera`': status=error 'model=metric (DA3METRIC-LARGE) needs `camera`: its output is canonical depth, metres = focal * output / 300 pass the pinhole K of the image, or use model=nested (metric without K)'",
+  "PASS tum_visual_vs_mocap (15.58s): PASS info:scale_status='metric' {'eq': 'metric'}; PASS pose_eval:ate_rmse_after_sim3=0.0132 {'max': 0.05}; PASS pose_eval:ate_rmse_after_se3=0.0518 {'max': 0.15}; PASS pose_eval:sim3_scale_ref_per_pred=1.0604 {'min': 0.7, 'max': 1.4}",
+  "PASS tum_visual_ray_pose (17.81s): PASS pose_eval:ate_rmse_after_sim3=0.0129 {'max': 0.05}; PASS info:use_ray_pose=True {'eq': True}",
+  "PASS tum_giant_relative (13.85s): PASS info:scale_status='relative' {'eq': 'relative'}; PASS pose_eval:ate_rmse_after_sim3=0.0142 {'max': 0.05}",
+  "PASS tum_large_relative (8.25s): PASS info:scale_status='relative' {'eq': 'relative'}; PASS pose_eval:ate_rmse_after_sim3=0.0205 {'max': 0.08}",
+  "PASS tum_conditioned_x2 (16.13s): PASS info:scale_status='input_pose_scale' {'eq': 'input_pose_scale'}; PASS trajectory.trajectory_ate=0.0 {'max': 0.001}; PASS info:chunks.0.input_pose_alignment_scale_pred_per_input=0.4515 {'min': 0.35, 'max': 0.7}; PASS depth.median=1.8819 {'min': 1.4, 'max': 4.0}",
+  "PASS tum_conditioned_noalign (18.64s): PASS info:scale_status='metric' {'eq': 'metric'}; PASS depth.median=0.8497 {'min': 0.7, 'max': 2.0}",
   "PASS camera_without_poses_refused_giant (0.2s): PASS expected error containing 'only together with known poses': status=error 'DA3 uses known intrinsics only together with known poses (camera token = f(extrinsics, intrinsics)); K alone would be silently ignored by upstream for giant / large also pass poses, use model=nested ('",
-  "PASS tum_depth_metric_K (23.42s): PASS depth.depth_abs_rel=0.0242 {'max': 0.05}",
-  "PASS tum_depth_nested_known_K (31.12s): PASS info:focal.used='known' {'eq': 'known'}; PASS depth.depth_abs_rel=0.3017 {'max': 0.4}",
-  "PASS tum_depth_reconstruct_known_K (31.17s): PASS info:metric_focal='known (input K)' {'eq': 'known (input K)'}; PASS depth.depth_abs_rel=0.0998 {'max': 0.15}",
+  "PASS tum_depth_metric_K (6.96s): PASS depth.depth_abs_rel=0.0242 {'max': 0.05}",
+  "PASS tum_depth_nested_known_K (19.37s): PASS info:focal.used='known' {'eq': 'known'}; PASS depth.depth_abs_rel=0.3017 {'max': 0.4}",
+  "PASS tum_depth_reconstruct_known_K (29.32s): PASS info:metric_focal='known (input K)' {'eq': 'known (input K)'}; PASS depth.depth_abs_rel=0.0997 {'max': 0.15}",
   "PASS conditioned_eval_refused (0.2s): PASS expected error containing 'meaningless': status=error 'reference_poses evaluates the VISUAL poses; it is meaningless when the same run is conditioned on poses run once without poses (+ reference_poses) to test the poses, and separately with poses for geom'",
 ]

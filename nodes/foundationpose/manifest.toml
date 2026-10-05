@@ -165,3 +165,11 @@ inputs = { image = "tests/fixture/mustard/rgb/000000.jpg", depth = "tests/fixtur
 output = "poses"
 path = "poses.0.valid"
 eq = false
+
+# depth declared non-metric (scale sidecar, as vggt / mast3r_slam write) must be refused
+[[tests]]
+name = "relative_depth_refused"
+task = "estimate"
+timeout_sec = 300
+inputs = { image = "tests/fixture/mustard/rgb/000000.jpg", depth = "tests/fixture/relative_depth/depth.npy", mask = "tests/fixture/mustard/mask_000000.png", camera = "tests/fixture/mustard/camera.json", mesh = "tests/fixture/mustard/mesh.glb" }
+expect_error = "needs metric data"

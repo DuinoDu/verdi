@@ -59,6 +59,13 @@ nodes/<name>/
    Prefer checks against INDEPENDENT ground truth (sensor depth, mocap
    poses, analytic synthetic scenes) over self-recorded reference outputs.
 
+8b. **Scale contract**: a node whose depth / depth_seq / pointcloud output
+   is not metric must call `io.write_scale(path, status, units, source)`
+   (status relative | input_pose_scale | input_depth_scale; metric
+   producers should declare `metric`). Geometry inputs require metric data
+   by default; declare `scale = "any"` on ports that legitimately take
+   other scales (e.g. the input of a scale alignment).
+
 9. **Algorithm nodes** (no model, e.g. marker calibration, plane fitting)
    are allowed when deterministic and typed with the unified types; omit
    `[system].gpu` and `[weights]`, keep the same manifest/test rules.

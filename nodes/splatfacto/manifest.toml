@@ -70,7 +70,7 @@ inputs.trajectory = { type = "trajectory", description = "T_world_cam per frame 
 inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames" }
 inputs.depth = { type = "depth_seq", optional = true, description = "metric depth per frame (any resolution, resized nearest); seed points + depth loss" }
 inputs.masks = { type = "mask_seq", optional = true, description = "nonzero = ignore pixel (excluded from loss and seed)" }
-inputs.points = { type = "pointcloud", optional = true, description = "seed point cloud (ply xyz + optional rgb) in the trajectory world frame; overrides the depth seed" }
+inputs.points = { type = "pointcloud", optional = true, scale = "any", description = "seed point cloud (ply xyz + optional rgb) in the trajectory world frame; overrides the depth seed" }
 outputs.gaussians = { type = "gaussians", description = "INRIA-layout 3DGS ply (ns-export gaussian-splat), input world frame" }
 outputs.renders = { type = "image_seq", description = "splat rendered at each input pose" }
 outputs.metrics = { type = "json", description = '{"psnr_mean", "psnr_min", "psnr": [per frame], "num_gaussians", "iterations", "method"}' }

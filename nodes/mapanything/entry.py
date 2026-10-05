@@ -314,6 +314,14 @@ def reconstruct(ctx: Context) -> None:
         pose_source = "INPUT poses used as conditioning; outputs are the model's " \
                       "re-estimate in the input-pose world, NOT an independent check"
         world = "world frame of the input poses"
+    if depths is not None:
+        from verdi.types.registry import METRIC_SCALE_STATES, read_scale
+
+        st = read_scale(ctx.input("depths"))["scale_status"]
+        if depth_metric and st not in METRIC_SCALE_STATES + ("unspecified",):
+            raise NodeError(f"depths are declared scale_status={st!r} but "
+                            "depths_metric=true", hint="pass depths_metric=false "
+                            "or metric depths")
     if poses is not None and not pose_metric:
         scale_status = "input_pose_scale"
     elif depths is not None and not depth_metric and poses is None:
@@ -342,6 +350,9 @@ def reconstruct(ctx: Context) -> None:
     ply = ctx.output_path("pointcloud", "pointcloud.ply")
     _write_ply(ply, pts, col)
     ctx.set_output("pointcloud", ply)
+    for p in (d_dir, ply):
+        io.write_scale(p, scale_status, "metres" if scale_status == "metric" else scale_status,
+                       f"mapanything {MODELS[key]}", pose_source)
 
     if ctx.has_input("reference_poses"):
         ev = _pose_eval(T_out, _traj(ctx.input("reference_poses"), n, "reference_poses"))

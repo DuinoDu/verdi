@@ -50,7 +50,7 @@ into the output unchanged.
 """
 inputs.image = { type = "image" }
 inputs.prior = { type = "depth", description = "metric prior in metres, 0 = unknown; image size (sparse / holes) or a smaller low-res map" }
-inputs.geometric = { type = "depth", optional = true, description = "optional dense depth of the same image (any scale) used instead of the built-in relative model" }
+inputs.geometric = { type = "depth", optional = true, scale = "any", description = "optional dense depth of the same image (any scale) used instead of the built-in relative model" }
 outputs.depth = { type = "depth", description = "completed metric depth in metres, image HxW" }
 params.version = { type = "str", default = "1.0", choices = ["1.0", "1.1"], description = "1.0 = error-map condition (SimFoundry); 1.1 = sparse-mask condition (upstream default, better on dense priors)" }
 params.K = { type = "int", default = 5, description = "neighbours for KNN alignment (SimFoundry pda_K = 5); prior needs >= K valid pixels" }

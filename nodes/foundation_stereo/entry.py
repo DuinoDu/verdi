@@ -244,6 +244,7 @@ def estimate_depth(ctx: Context) -> None:
     dpath = ctx.output_path("depth", "depth.npy")
     io.write_depth(dpath, depth)
     ctx.set_output("depth", dpath)
+    io.write_scale(dpath, "metric", "metres (fx * baseline / disparity)", "foundation_stereo")
     ppath = ctx.output_path("disparity_px", "disparity_px.npy")
     np.save(ppath, disp)
     ctx.set_output("disparity_px", ppath)
@@ -305,6 +306,7 @@ def estimate_depth_seq(ctx: Context) -> None:
         ctx.log(f"[fs] frame {i + 1}/{len(fl)} valid {valid.mean():.3f}")
     infer_sec = time.time() - t0
     ctx.set_output("depth", d_dir)
+    io.write_scale(d_dir, "metric", "metres (fx * baseline / disparity)", "foundation_stereo")
     ctx.set_output("disparity_px", p_dir)
     ctx.set_output("valid", v_dir)
     if l_dir is not None:

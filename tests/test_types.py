@@ -168,3 +168,32 @@ def test_pointmap_type(tmp_path):
     np.save(tmp_path / "p.npy", pm)
     s = types.validate("pointmap", tmp_path / "p.npy")
     assert s["median_z"] == 2.0 and s["valid_ratio"] == 1.0
+
+
+def test_scale_sidecar_and_metric_inputs(tmp_path):
+    from types import SimpleNamespace
+
+    from verdi.core import envelope
+    from verdi.core.manifest import Port
+
+    d = io.write_depth(tmp_path / "d.npy", np.ones((4, 5)))
+    assert types.validate("depth", d)["scale_status"] == "unspecified"
+    seq = tmp_path / "seq"
+    seq.mkdir()
+    io.write_depth(seq / "000000.npy", np.ones((4, 5)))
+    io.write_scale(seq, "relative", "arbitrary", "vggt")
+    s = types.validate("depth_seq", seq)
+    assert s["scale_status"] == "relative" and s["scale_source"] == "vggt"
+    with pytest.raises(ValueError):
+        io.write_scale(d, "metres?", "m", "x")
+
+    def task(scale):
+        return SimpleNamespace(name="t", inputs={"depths": Port("depths", "depth_seq", scale=scale)},
+                               params={}, outputs={})
+    m = SimpleNamespace(name="n")
+    with pytest.raises(envelope.RequestError, match="needs metric data"):
+        envelope.build_request(m, task("metric"), {"depths": str(seq)}, {}, "cpu", tmp_path)
+    req = envelope.build_request(m, task("any"), {"depths": str(seq)}, {}, "cpu", tmp_path)
+    assert req["inputs"]["depths"]["summary"]["scale_status"] == "relative"
+    io.write_scale(seq, "metric", "metres", "aruco_scale.scale_align")
+    envelope.build_request(m, task("metric"), {"depths": str(seq)}, {}, "cpu", tmp_path)

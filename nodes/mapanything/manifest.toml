@@ -54,7 +54,7 @@ inputs.frames = { type = "image_seq" }
 inputs.camera = { type = "camera", optional = true, description = "shared pinhole K (dist = 0) at the frame resolution" }
 inputs.cameras = { type = "camera_seq", optional = true, description = "per-frame pinhole K (dist = 0)" }
 inputs.poses = { type = "trajectory", optional = true, description = "known T_world_cam per frame (conditioning)" }
-inputs.depths = { type = "depth_seq", optional = true, description = "known z-depth per frame (%06d.npy, metres, 0 = invalid; needs camera/cameras)" }
+inputs.depths = { type = "depth_seq", optional = true, scale = "any", description = "known z-depth per frame (%06d.npy, metres, 0 = invalid; needs camera/cameras)" }
 inputs.reference_poses = { type = "trajectory", optional = true, description = "only without `poses`: poses to EVALUATE the prediction against (never used for inference)" }
 outputs.depth = { type = "depth_seq", description = "per-frame z-depth %06d.npy (see scale_status), 0 = invalid" }
 outputs.confidence = { type = "dir", description = "per-frame learned confidence %06d.npy (uncalibrated)" }

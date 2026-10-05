@@ -1,13 +1,13 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:45:42+0800"
+tested_at = "2026-10-05T21:33:20+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "35b4ae7c843b216695cca37a6da52b830e5d9014"
 upstream_commit = "8c029cbca669443fe0bbf8dcefb5f91ad531084d"
 env_lock = "sha256:89899cc730f8164494646b95757e022dd9e245aaaef934785f3ed5c597cad319"
 untested_tasks = [
 ]
 cases = [
-  "PASS sparse_405_points (35.35s): PASS depth.valid_ratio=1.0 {'min': 0.99}; PASS depth.median=1.8273 {'min': 1.75, 'max': 1.9}; PASS depth.depth_abs_rel=0.0193 {'max': 0.03}",
-  "PASS inpaint_hole_with_geometric (9.55s): PASS depth.valid_ratio=1.0 {'min': 0.99}; PASS depth.depth_abs_rel=0.0107 {'max': 0.02}",
+  "PASS sparse_405_points (23.37s): PASS depth.valid_ratio=1.0 {'min': 0.99}; PASS depth.median=1.8273 {'min': 1.75, 'max': 1.9}; PASS depth.depth_abs_rel=0.0193 {'max': 0.03}",
+  "PASS inpaint_hole_with_geometric (9.46s): PASS depth.valid_ratio=1.0 {'min': 0.99}; PASS depth.depth_abs_rel=0.0107 {'max': 0.02}",
 ]
