@@ -1,0 +1,17 @@
+# Written by `verdi test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-06T00:58:33+0800"
+gpu = ""
+verdi_commit = "48cabe2818df80a66d6713a7addbd12d120f5ee7"
+upstream_commit = ""
+env_lock = "sha256:fdea499f8aec0cebc286822ea6b9b3973a9014ed03bb4f370b6836f1612564f4"
+untested_tasks = [
+]
+cases = [
+  "PASS tum_pinhole_known_K (2.23s): PASS registration:num_registered=24 {'min': 22}; PASS pose_eval:ate_rmse_after_sim3=0.0146 {'max': 0.03}; PASS trajectory:scale_status='relative' {'eq': 'relative'}; PASS info:camera_in.model='PINHOLE' {'eq': 'PINHOLE'}",
+  "PASS tum_fisheye_synthetic (1.61s): PASS info:camera_in.model='OPENCV_FISHEYE' {'eq': 'OPENCV_FISHEYE'}; PASS registration:num_registered=24 {'min': 18}; PASS pose_eval:ate_rmse_after_sim3=0.0219 {'max': 0.04}; PASS camera.fx=331.072 {'min': 100}",
+  "PASS black_frames_refused (0.21s): PASS expected error containing 'no SIFT features': status=error 'no SIFT features in any frame (blank / constant / unreadable images) check the frames; nothing to reconstruct'",
+  "PASS mixed_resolution_refused (0.16s): PASS expected error containing 'resolutions': status=error 'frames have 2 resolutions [(240, 320), (384, 512)]; one shared camera (one K) per call split per camera / resolution'",
+  "PASS k3_refused (0.24s): PASS expected error containing 'k3': status=error 'distortion [0.01, 0.0, 0.0, 0.0, 0.002] has k3 / rational terms; only OPENCV (k1, k2, p1, p2) or fisheye (k1..k4) are supported FULL_OPENCV is not in scope; pass k3 = 0 or a fisheye model'",
+  "PASS per_frame_K_refused (0.25s): PASS expected error containing 'ONE shared camera': status=error 'cameras has 2 different intrinsics; this node supports ONE shared camera (per-frame K is not in scope) pass `camera` (shared) or split the call per camera'",
+]

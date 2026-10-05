@@ -1,0 +1,160 @@
+name = "sfm"
+version = "0.1.0"
+description = """
+CPU Structure-from-Motion with pycolmap 4.2.1 (COLMAP SIFT features,
+exhaustive / sequential matching, incremental mapping, undistortion). One
+shared camera for all frames (PINHOLE, OPENCV or OPENCV_FISHEYE; given or
+estimated) -> undistorted frames with ONE shared pinhole K (dist = 0),
+T_world_cam for every REGISTERED frame and a sparse point cloud, ready for
+splatfacto.train (frames / camera / trajectory / points). Scale is
+relative (arbitrary SfM gauge); unregistered frames get no pose (nothing is
+interpolated). No GPU (the PyPI wheel has no CUDA).
+"""
+
+[system]
+disk_gb = 4
+
+[run]
+timeout_sec = 7200
+
+[tasks.reconstruct]
+description = """
+Reconstruct one image sequence taken by ONE camera (one resolution). Camera
+(optional, `camera`: {"K", "width", "height", "dist", "model"?}): model
+"pinhole" / "opencv" (default; dist = 0 -> PINHOLE, [k1, k2, p1, p2(, k3 = 0)]
+-> OPENCV; k3 != 0 / rational is refused) or "fisheye" (dist = [k1..k4],
+cv2.fisheye / Kannala-Brandt -> OPENCV_FISHEYE). Given intrinsics are kept
+fixed unless refine_intrinsics = "true"; without a camera COLMAP estimates
+`camera_model` (shared). `cameras` (per frame) is accepted only when all
+entries are identical (per-frame K is not supported). Outputs, all in the
+gauge of the largest COLMAP model: `frames` = undistorted REGISTERED frames
+(original file names, input order), `camera` = their single pinhole K at the
+undistorted size, `trajectory` = T_world_cam (inverse of COLMAP
+cam_from_world, OpenCV axes) + frame_index / frames (input order), units
+relative, scale_status relative; `points` = sparse cloud (scale sidecar
+relative); `registration` = per input frame registered flag, feature count,
+reason when not registered; `sparse` = the COLMAP model (distorted camera).
+Optional `reference_poses` (T_world_cam per input frame, or with
+frame_index) adds pose_eval: Sim3 (Umeyama) alignment of camera centres - a
+metric against that external trajectory only. Errors (non-zero exit): < 3
+frames, mixed resolutions, no features, no model, < 3 registered,
+registered ratio < min_registered_ratio, more than one camera.
+"""
+inputs.frames = { type = "image_seq" }
+inputs.camera = { type = "camera", optional = true, description = "shared intrinsics (+ model pinhole/opencv/fisheye) at the frame resolution" }
+inputs.cameras = { type = "camera_seq", optional = true, description = "accepted only if all entries are identical" }
+inputs.reference_poses = { type = "trajectory", optional = true, description = "external T_world_cam to evaluate against (never used for reconstruction)" }
+outputs.frames = { type = "image_seq", description = "undistorted registered frames (original names, input order)" }
+outputs.camera = { type = "camera", description = "the one shared pinhole K of `frames`, dist = 0" }
+outputs.trajectory = { type = "trajectory", description = "T_world_cam per output frame + frame_index, frames, units, scale_status relative, world, pose_source, convention" }
+outputs.points = { type = "pointcloud", description = "sparse SfM points (xyz rgb), scale sidecar relative" }
+outputs.registration = { type = "json", description = "{frames [{frame_index, frame, registered, n_features, n_points3D | reason}], num_registered, num_frames, registered_ratio, partial}" }
+outputs.sparse = { type = "dir", description = "COLMAP model (cameras / images / points3D .bin) with the distorted camera" }
+outputs.info = { type = "json", description = "{pycolmap, wheel_sha256, device, scale_status, world, camera_in {model, source, params, refined_params, refine_intrinsics}, camera_out {K, width, height}, camera_mode, matcher, models, selected_model, num_points3D, mean_reprojection_error_px, mean_track_length, params, timing_sec, not_provided}" }
+outputs.pose_eval = { type = "json", optional = true, description = "only with reference_poses: {note, frames, ate_rmse_after_sim3, ate_max_after_sim3, sim3_scale_ref_per_pred, rotation_err_deg_after_sim3_median / _max, per_frame_translation_err}" }
+params.camera_model = { type = "str", default = "OPENCV", choices = ["PINHOLE", "SIMPLE_RADIAL", "OPENCV", "OPENCV_FISHEYE"], description = "model estimated when no camera is given" }
+params.refine_intrinsics = { type = "str", default = "auto", choices = ["auto", "true", "false"], description = "auto: false with a given camera, true without (false without a camera is refused)" }
+params.matcher = { type = "str", default = "exhaustive", choices = ["exhaustive", "sequential"] }
+params.sequential_overlap = { type = "int", default = 10 }
+params.max_image_size = { type = "int", default = 3200 }
+params.max_num_features = { type = "int", default = 8192 }
+params.min_registered_ratio = { type = "float", default = 0.0, description = "error when fewer frames register (partial registration is otherwise reported, not an error)" }
+params.undistort_blank_pixels = { type = "float", default = 0.0, description = "COLMAP undistortion: 0 = crop to valid pixels, 1 = keep all (black borders)" }
+params.num_threads = { type = "int", default = 0, description = "COLMAP worker threads; 0 = min(cpu_count, 16). BLAS is pinned to 1 thread (bundled OpenBLAS overflows otherwise)" }
+params.guided_matching = { type = "bool", default = true, description = "COLMAP guided matching (TUM fixture: 24/26 registered vs 18/26 without)" }
+params.sift_dsp = { type = "bool", default = false, description = "SIFT domain-size pooling + affine shape (slower; more registrations on blurry frames)" }
+params.seed = { type = "int", default = 0 }
+params.keep_work = { type = "bool", default = false, description = "keep database / undistortion scratch under the run dir" }
+
+# ---- real data: TUM fr1_desk, 26 undistorted frames (512x384) + mocap poses.
+# pose_eval is an alignment metric against that external trajectory only.
+[[tests]]
+name = "tum_pinhole_known_K"
+task = "reconstruct"
+timeout_sec = 1800
+inputs = { frames = "tests/fixture/tum_desk", camera = "tests/fixture/tum_desk_camera.json", reference_poses = "tests/fixture/tum_desk_gt.json" }
+[[tests.checks]]
+output = "registration"
+path = "num_registered"
+min = 22
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.03
+[[tests.checks]]
+output = "trajectory"
+path = "scale_status"
+eq = "relative"
+[[tests.checks]]
+output = "info"
+path = "camera_in.model"
+eq = "PINHOLE"
+
+# ---- synthetic conversion regression: the same frames re-rendered through a
+# known OPENCV_FISHEYE camera (tests/fixture/make_fixture.py); the node must
+# take the fisheye model, undistort to one pinhole K and keep the poses.
+[[tests]]
+name = "tum_fisheye_synthetic"
+task = "reconstruct"
+timeout_sec = 1800
+inputs = { frames = "tests/fixture/tum_fisheye/frames", camera = "tests/fixture/tum_fisheye/camera.json", reference_poses = "tests/fixture/tum_desk_gt.json" }
+[[tests.checks]]
+output = "info"
+path = "camera_in.model"
+eq = "OPENCV_FISHEYE"
+[[tests.checks]]
+output = "registration"
+path = "num_registered"
+min = 18
+[[tests.checks]]
+output = "pose_eval"
+path = "ate_rmse_after_sim3"
+max = 0.04
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 100
+
+[[tests]]
+name = "black_frames_refused"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/black" }
+expect_error = "no SIFT features"
+
+[[tests]]
+name = "mixed_resolution_refused"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/mixed_res" }
+expect_error = "resolutions"
+
+[[tests]]
+name = "k3_refused"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/tum_desk", camera = "tests/fixture/camera_k3.json" }
+expect_error = "k3"
+
+[[tests]]
+name = "per_frame_K_refused"
+task = "reconstruct"
+timeout_sec = 300
+inputs = { frames = "tests/fixture/tum_desk", cameras = "tests/fixture/cameras_differ.json" }
+expect_error = "ONE shared camera"
+
+[[known_issues]]
+summary = "Licences: pycolmap / COLMAP BSD-3-Clause (wheel bundles third-party libraries; see the wheel's licence files)"
+fix = ""
+
+[[known_issues]]
+summary = "Relative scale only; the world is the arbitrary COLMAP gauge. One shared camera per call; per-frame K is not supported"
+fix = "scale / align with an external metric reference before metric use"
+
+[[known_issues]]
+summary = "CPU only: SIFT extraction + exhaustive matching grow fast with frame count / resolution"
+fix = "use matcher=sequential and max_image_size for long sequences"
+
+[[known_issues]]
+summary = "Fisheye undistortion to one pinhole K cannot keep more than ~180 deg; COLMAP crops to valid pixels by default (blank_pixels = 0)"
+fix = "for the ~190 deg rig use stereo_rectify (supplied rectification) and pass the rectified pinhole frames + K"

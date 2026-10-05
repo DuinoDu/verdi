@@ -50,8 +50,8 @@ Train a Gaussian splat on an image sequence with known cameras and export it.
 Inputs follow verdi conventions: `trajectory` is T_world_cam (camera-to-world,
 OpenCV camera axes x right / y down / z forward), one pose per frame in frame
 order; `camera` is the pinhole K of the frames (rescaled automatically if the
-frames have a different resolution than camera width/height; distortion is
-ignored). Internally poses are converted to nerfstudio's OpenGL camera axes
+frames have a different resolution than camera width/height; dist must be 0,
+non-zero distortion is refused). Internally poses are converted to nerfstudio's OpenGL camera axes
 (T_world_cam @ diag(1,-1,-1,1)) and loaded with the nerfstudio-data parser
 with orientation/centering/auto-scaling disabled and scale 1, so the output
 splat is in the same world frame as the input trajectory.
