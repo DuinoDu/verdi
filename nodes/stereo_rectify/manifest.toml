@@ -30,7 +30,21 @@ sbs_left_first=false if the right eye is on the left) OR `left` + `right`
 refers to), "left": {"K": 3x3, "D": [...]}, "right": {"K", "D"}, "R": 3x3,
 "T": [3] (X_right = R @ X_left + T, cv2.stereoCalibrate convention, i.e.
 T ~ [-baseline, 0, 0]) or "T_right_left": 4x4, "units": "m" (default) |
-"mm"}. Rectification uses CALIB_ZERO_DISPARITY (cx equal in both eyes,
+"mm", optional "rectification": {"R1", "R2": 3x3, "P1", "P2": 3x4, "Q":
+4x4 (optional), "size": [W, H] (optional, default width/height), "source":
+str}, optional "K_rect": 3x3}. Projection (param projection, auto = the
+first available of supplied > k_rect > opencv): supplied = R1/R2/P1/P2 from
+the calib; k_rect = R1/R2 from cv2.stereoRectify(K, zero dist, R, T) (the
+rectifying rotations depend only on R, T) and P1/P2 from K_rect with
+P2[0,3] = fx (R2 T)_x; opencv = cv2.fisheye.stereoRectify /
+cv2.stereoRectify. Every projection is validated against THIS R/T before
+use: R1/R2 rotations, R2 R R1^T = I (consistency_tol_deg), R2 T =
+[-B, 0, 0], P1/P2 pinhole with shared fx/fy/cy, P2[0,3]/fx = (R2 T)_x
+(metres), 0.05x..20x the input focal (cv2.fisheye.stereoRectify returns
+fx ~ 0.0026 px on ~190 deg lenses: refused), principal point inside the
+output, Q (if given) = Q(P1, P2); rectified images must be at least
+min_valid_ratio non-black. rectification.projection records mode,
+source, the check values and the pixel mapping. Rectification uses CALIB_ZERO_DISPARITY (cx equal in both eyes,
 doffs = 0). The rectified left frame is ROTATED w.r.t. the original left
 camera by R1: depth/points computed on the rectified images are in the
 rectified-left frame; T_left_rect (4x4, rectified -> original left camera,
@@ -46,7 +60,11 @@ outputs.left = { type = "image_seq", description = "rectified left frames %06d.p
 outputs.right = { type = "image_seq", description = "rectified right frames %06d.png" }
 outputs.camera = { type = "camera", description = "rectified LEFT pinhole K at the output size, dist = 0 (feed to foundation_stereo)" }
 outputs.valid = { type = "mask", description = "1 = rectified-left pixel maps inside the source left image, 0 = black border" }
-outputs.rectification = { type = "json", description = "{convention, model, input_size, output_size, K_left_input, D_left_input, K_right_input, D_right_input, R, T, baseline_m (|T|), baseline_rect_m (-P2[0,3]/P2[0,0]), K_rect, doffs_px (cx_r - cx_l, 0), R1, R2, P1, P2, Q, T_left_rect, T_right_rect (4x4 rectified -> original camera), params, valid_ratio_left/right, epipolar_check_frame0 {matches, inliers, median_dy_px, median_abs_dy_px, p90_abs_dy_px, negative_dx_ratio}, frames [{index, source}]}" }
+outputs.rectification = { type = "json", description = "{convention, projection {mode, source, checks {rectified_relative_rotation_deg, rectified_t_m, fx, fy, input_focal_mean, baseline_rect_m, baseline_calib_m, doffs_px, Q_max_rel_err}, pixel_map}, model, input_size, output_size, K_left_input, D_left_input, K_right_input, D_right_input, R, T, baseline_m (|T|), baseline_rect_m (-P2[0,3]/P2[0,0]), K_rect, doffs_px (cx_r - cx_l, 0), R1, R2, P1, P2, Q, T_left_rect, T_right_rect (4x4 rectified -> original camera), params, valid_ratio_left/right, epipolar_check_frame0 {matches, inliers, median_dy_px, median_abs_dy_px, p90_abs_dy_px, negative_dx_ratio}, frames [{index, source}]}" }
+params.projection = { type = "str", default = "auto", choices = ["auto", "supplied", "k_rect", "opencv"], description = "where P1/P2 (and R1/R2) come from; auto = supplied > k_rect > opencv" }
+params.consistency_tol_deg = { type = "float", default = 0.01, description = "max angle of R2 R R1^T from identity" }
+params.consistency_tol_rel = { type = "float", default = 0.005, description = "relative tolerance for R2 T = [-B,0,0], P2 baseline and Q" }
+params.min_valid_ratio = { type = "float", default = 0.2, description = "fail if less than this fraction of either rectified image maps inside the source" }
 params.balance = { type = "float", default = 0.0, description = "fisheye only: 0 = crop to valid pixels (no black border, narrower FOV), 1 = keep the whole FOV (borders)" }
 params.fov_scale = { type = "float", default = 1.0, description = "fisheye only: divisor of the new focal length (> 1 widens the FOV)" }
 params.alpha = { type = "float", default = 0.0, description = "pinhole only: cv2.stereoRectify alpha (0 = valid pixels only, 1 = all source pixels)" }
@@ -105,3 +123,69 @@ fix = "raise balance / fov_scale for more FOV (more black border, lower pixel de
 [[known_issues]]
 summary = "Quality depends entirely on the calibration; the node does not refine it"
 fix = "check rectification.epipolar_check_frame0 (median |dy| should be < 0.5 px on real data); recalibrate if it fails"
+
+# explicit rectification (projection source = calib), same rig: must match the ideal render
+[[tests]]
+name = "supplied_rectification"
+task = "rectify"
+timeout_sec = 600
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib_supplied.json" }
+[[tests.checks]]
+output = "rectification"
+path = "projection.mode"
+eq = "supplied"
+[[tests.checks]]
+output = "rectification"
+path = "projection.checks.rectified_relative_rotation_deg"
+max = 0.001
+[[tests.checks]]
+output = "rectification"
+path = "projection.checks.Q_max_rel_err"
+max = 0.001
+[[tests.checks]]
+output = "rectification"
+path = "epipolar_check_frame0.median_abs_dy_px"
+max = 0.3
+[[tests.checks]]
+output = "left"
+metric = "image_psnr"
+expected = "tests/expected/rect_left"
+min = 26
+
+[[tests]]
+name = "k_rect"
+task = "rectify"
+timeout_sec = 600
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib_k_rect.json" }
+[[tests.checks]]
+output = "rectification"
+path = "projection.mode"
+eq = "k_rect"
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 166.6
+max = 166.8
+[[tests.checks]]
+output = "right"
+metric = "image_psnr"
+expected = "tests/expected/rect_right"
+min = 26
+
+[[tests]]
+name = "inconsistent_rectification_refused"
+task = "rectify"
+timeout_sec = 300
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib_supplied_inconsistent.json" }
+expect_error = "inconsistent with calib"
+
+[[tests]]
+name = "degenerate_auto_projection_refused"
+task = "rectify"
+timeout_sec = 300
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib_degenerate.json" }
+expect_error = "degenerate rectified projection"
+
+[[known_issues]]
+summary = "cv2.fisheye.stereoRectify degenerates on very wide (~190 deg) fisheye lenses (rectified fx ~ 1e-3 px)"
+fix = "the node refuses it; pass calib.rectification {R1,R2,P1,P2,Q} or calib.K_rect (R1/R2 then come from the pinhole cv2.stereoRectify of the same R/T)"

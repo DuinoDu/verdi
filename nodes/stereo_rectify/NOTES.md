@@ -14,3 +14,13 @@
   R perturbed by 1.7 deg -> |dy| 6.4 px -> refused (negative test).
 - Not done here: calibration itself, temporal sync, other camera models
   (omnidirectional / double-sphere): convert to OpenCV fisheye first.
+
+## 2026-10 explicit projection (real2sim head camera, ~190 deg fisheye)
+- cv2.fisheye.stereoRectify returns fx = 0.0026 px on the real head
+  calibration (and 6.4e-4 on the synthetic negative-k1 analogue
+  calib_degenerate.json): now refused. The real2sim calibration stores R1/R2
+  = cv2.stereoRectify(K, 0, R, T) (verified identical) and P1/P2/Q built from
+  the factory rectified focal/centre; the node accepts that as
+  calib.rectification (or K_rect) after checking it against R/T.
+- make_rect_variants.py builds calib_supplied / calib_k_rect /
+  calib_supplied_inconsistent / calib_degenerate from calib.json.
