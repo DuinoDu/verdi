@@ -51,3 +51,16 @@ def test_fixture_test(node):
     st = testing.run_test(node, device="cpu")
     assert st["status"] == "pass", st
     assert testing.read_status(node.node_dir)["status"] == "pass"
+
+
+def test_expect_error_case(node):
+    base = {"name": "neg", "task": "invert",
+            "inputs": {"image": "tests/in.png"}}
+    ok = testing.run_case(node, {**base, "params": {"fail": True},
+                                 "expect_error": "asked to fail"}, "cpu")
+    assert ok["passed"], ok
+    wrong = testing.run_case(node, {**base, "params": {"fail": True},
+                                    "expect_error": "other text"}, "cpu")
+    assert not wrong["passed"]
+    no_fail = testing.run_case(node, {**base, "expect_error": "asked"}, "cpu")
+    assert not no_fail["passed"]

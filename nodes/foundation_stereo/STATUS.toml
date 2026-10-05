@@ -1,13 +1,16 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:39:18+0800"
+tested_at = "2026-10-05T19:57:51+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "f121ef470dd74dc894d27c4d28bc6c22a5180f27"
 upstream_commit = "6e8806816b533e4d13ddbb95ffa907b797060a62"
 env_lock = "sha256:e08bcb452c3265d192ab6fa8a1838c387017c16e7cde1ca4166f0afbd3d5ebe7"
 untested_tasks = [
 ]
 cases = [
-  "PASS demo_pair (38.97s): PASS depth.valid_ratio=0.9065 {'min': 0.88, 'max': 0.93}; PASS depth.median=0.507 {'min': 0.48, 'max': 0.53}; PASS depth.depth_abs_rel=0.0 {'max': 0.01}; PASS disparity_px.depth_abs_rel=0.0 {'max': 0.01}",
-  "PASS demo_pair_half_scale (14.11s): PASS depth.width=960 {'eq': 960}; PASS depth.depth_abs_rel=0.006 {'max': 0.02}",
+  "PASS demo_pair (32.52s): PASS depth.valid_ratio=0.9065 {'min': 0.88, 'max': 0.93}; PASS depth.median=0.507 {'min': 0.48, 'max': 0.53}; PASS depth.depth_abs_rel=0.0 {'max': 0.01}; PASS disparity_px.depth_abs_rel=0.0 {'max': 0.01}",
+  "PASS demo_pair_half_scale (12.36s): PASS depth.width=960 {'eq': 960}; PASS info:inference_size.0=480 {'eq': 480}; PASS depth.depth_abs_rel=0.006 {'max': 0.02}",
+  "PASS synthetic_metric_lr (14.02s): PASS depth.depth_abs_rel=0.0027 {'max': 0.05}; PASS info:valid_ratio=0.9703 {'min': 0.8}; PASS lr_error_px.bytes=921728 {'min': 1}",
+  "PASS synthetic_seq (15.3s): PASS depth.count=2 {'eq': 2}; PASS depth.depth_abs_rel=0.0018 {'max': 0.05}; PASS valid.count=2 {'eq': 2}",
+  "PASS distorted_camera_refused (0.15s): PASS expected error containing 'distortion': status=error 'camera has distortion; FoundationStereo needs rectified, undistorted images rectify first (verdi run stereo_rectify) and pass its rectified K with zero distortion'",
 ]

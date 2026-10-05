@@ -310,13 +310,19 @@ def slam(ctx: Context) -> None:
         "T_world_cam": [T.tolist() for T in Ts],
         "frame_index": order, "timestamps": order,
         "frames": [all_frames[i].name for i in order],
-        "scale": "arbitrary (monocular SLAM), not metres"})
+        "scale": "arbitrary (monocular SLAM), not metres",
+        "scale_status": "relative",
+        "pose_source": "MASt3R-SLAM visual tracking + backend optimisation",
+        "world": "camera frame of the first keyframe"})
     kfj = ctx.output_path("keyframes", "keyframes.json")
     io.write_json(kfj, {
         "T_world_cam": [mat(T).tolist() for T in kf_T],
         "frame_index": kf_src, "timestamps": kf_src,
         "frames": [all_frames[i].name for i in kf_src],
-        "scale": "arbitrary (monocular SLAM), not metres"})
+        "scale": "arbitrary (monocular SLAM), not metres",
+        "scale_status": "relative",
+        "pose_source": "MASt3R-SLAM visual tracking + backend optimisation",
+        "world": "camera frame of the first keyframe"})
 
     # ---- fused point cloud (upstream evaluate.save_reconstruction) + depth
     c_thr = float(ctx.param("conf_threshold", 1.5))

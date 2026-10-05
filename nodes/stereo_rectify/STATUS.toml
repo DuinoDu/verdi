@@ -1,0 +1,13 @@
+# Written by `verdi test`. Do not edit by hand.
+status = "pass"
+tested_at = "2026-10-05T19:56:33+0800"
+gpu = ""
+verdi_commit = "f121ef470dd74dc894d27c4d28bc6c22a5180f27"
+upstream_commit = ""
+env_lock = "sha256:f2660a3b4128949aa03bd8b88f66ab907401b763b54ef6ab5b915f65cd0b273f"
+untested_tasks = [
+]
+cases = [
+  "PASS fisheye_sbs (0.59s): PASS left.count=2 {'eq': 2}; PASS rectification:baseline_m=0.0605 {'min': 0.0604, 'max': 0.0606}; PASS rectification:epipolar_check_frame0.median_abs_dy_px=0.0541 {'max': 0.3}; PASS camera.fx=166.6966 {'min': 50, 'max': 400}; PASS left.image_psnr=37.1882 {'min': 26}; PASS right.image_psnr=37.0656 {'min': 26}",
+  "PASS wrong_calib_fails (0.51s): PASS expected error containing 'median |dy|': status=error 'rectified pair has median |dy| = 6.42 px > 1.0 px on frame 0: calibration does not match the images check left/right order, the R/T convention and the intrinsics; set max_epipolar_dy_px=0 to skip this'",
+]

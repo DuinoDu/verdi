@@ -69,3 +69,18 @@ saved under `tests/expected/`.
   box -> rear tire; track: both children, consistent ids over 6 frames);
   the the RTX 5090 host outputs are the references in `tests/expected/`
   (truck_text_*, truck_prompts_mask.png, bedroom_child/).
+
+## 2026-10 real2sim round (video prompts, visibility)
+
+- New task `track_prompts`: point / box prompts per obj_id on one frame each,
+  run through the SAM 3 tracker inside the SAM 3 checkpoint (no SAM 2).
+  SAM 3's instance-interactivity path only runs a *partial* (tracker)
+  propagation when no text/visual prompt exists and then needs an explicit
+  `start_frame_index` (else "No prompts are received on any frames").
+  Boxes are sent as the SAM corner pair (labels 2/3) with relative coords.
+- `tracks` output for track_text and track_prompts: ids, per-frame visible
+  (non-empty mask after SAM 3's own filtering), score, area, bbox.
+  For prompted objects SAM 3 fixes the score to 1.0: not a confidence.
+- Fixture `bedroom_occluded/` (make_occluded.py): left child hidden behind a
+  grey box on frames 2-3; observed visible = F on 2-3 and re-acquired on 4-5
+  (overlay checked visually). track_prompts vs bedroom_child mask IoU 0.978.

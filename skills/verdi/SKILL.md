@@ -61,6 +61,15 @@ and paths live in `$VERDI_HOME/config.toml` (see `verdi/core/config.py`).
 - Masks = single-channel png, 0 background, 1..N instance ids.
 - Depth = `.npy` float32 metres, 0 = invalid.
 - Full list with formats: `verdi types`.
+- Geometry outputs state their scale and provenance: `scale_status`
+  (`metric` | `relative` | `input_pose_scale` | ...) and `pose_source`
+  (predicted from images vs. passed-through input poses) in the
+  trajectory json / `info` output. A run conditioned on known poses
+  can never validate those poses; use `reference_poses` (evaluation
+  only) on a visual run instead.
+- Fisheye / distorted stereo: `stereo_rectify` first, then
+  `foundation_stereo` (refuses distorted cameras). Example pipeline:
+  `pipelines/real2sim/README.md`.
 
 ## Maintaining nodes
 

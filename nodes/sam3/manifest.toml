@@ -4,7 +4,9 @@ description = """
 Meta SAM 3 (Segment Anything with Concepts): open-vocabulary, text-prompted
 instance segmentation of images ("find every <noun phrase>") and concept
 tracking through frame sequences, plus SAM-style point/box prompting of
-single objects. One model checkpoint (sam3.pt, ~3.4 GB) serves all tasks.
+single objects and point/box-prompted instance tracking in video (SAM 3
+tracker). Never falls back to SAM 2 or colour thresholds: a phrase with
+no detection gives an empty result. One model checkpoint (sam3.pt, ~3.4 GB) serves all tasks.
 """
 
 [weights]
@@ -43,8 +45,9 @@ params.confidence_threshold = { type = "float", default = 0.5, description = "ke
 description = """
 SAM-style interactive segmentation of one image from point/box prompts
 (SAM 3 instance-interactivity head, `predict_inst`). Each obj_id in the
-prompt set (points and/or one box, frame fields ignored) becomes one
-instance id in the mask; one mask per object, no concept search.
+prompt set (positive and negative points and/or one box, frame fields
+ignored) becomes one instance id in the mask; one mask per object, no
+concept search. Sidecar mask.json = {obj_id: {score}} (SAM mask score).
 """
 inputs.image = { type = "image" }
 inputs.prompts = { type = "prompt_set", description = "points (xy px, positive) and/or boxes (xyxy px) with obj_id" }
@@ -58,13 +61,37 @@ SimFoundry `predict_video_segmentation`): detect every instance of each
 phrase on `prompt_frame` and later frames and track them through the
 sequence (propagation forward and backward). Ids are tracked identities,
 consistent across frames; phrases are run one after another and get
-disjoint id ranges. labels.json = {id: {label, score (mean prob), frames}}.
+disjoint id ranges (metadata.ids_per_phrase; phrases with no detection are
+listed in metadata.phrases_without_detection, never filled by another
+model). masks/labels.json = {id: {label, score (mean prob), frames}};
+`tracks` = per-frame visibility and score per id (see track_prompts).
 """
 inputs.frames = { type = "image_seq" }
 outputs.masks = { type = "mask_seq", description = "one mask per frame, ids = tracked instances" }
-params.text = { type = "str", description = "noun phrases separated by '.' or ','; e.g. 'child'" }
+outputs.tracks = { type = "json", description = "{convention, frames [names], prompt_frames, ids [..], instances {id: {label, score, frames, first_frame, last_frame}}, visible [T][N] bool, score [T][N] float|null, per_frame {frame: {id: {score, area_px, bbox_xyxy}}}}" }
+params.text = { type = "str", description = "noun phrases separated by '.' or ','; e.g. 'table. green pepper. basket'" }
 params.confidence_threshold = { type = "float", default = 0.5, description = "output probability threshold for detections/tracks (upstream default 0.5)" }
 params.prompt_frame = { type = "int", default = 0, description = "frame index the text prompt is added on" }
+
+[tasks.track_prompts]
+description = """
+Instance tracking from geometric prompts with the SAM 3 tracker (the
+SAM-2-style tracker inside the SAM 3 checkpoint; no SAM 2 model, no
+fallback). Each obj_id of the prompt set gets positive/negative points
+and/or ONE box (xyxy px; sent as the SAM corner-point pair, labels 2/3)
+on ONE frame (`frame`, default 0; different objects may use different
+frames) and is propagated forward and backward through the sequence. The
+output id = obj_id. Visibility per frame: `tracks.visible[t][i]` is true
+iff SAM 3 returns a non-empty mask for ids[i] on frame t; it is false when
+the object is occluded, out of view or lost (SAM 3 does not distinguish
+these; an id can come back after an occlusion). Objects that SAM 3
+creates on its own (no prompt) are ignored (metadata.ignored_upstream_ids).
+"""
+inputs.frames = { type = "image_seq" }
+inputs.prompts = { type = "prompt_set", description = "points [{xy px, positive, obj_id, frame, label?}] and/or boxes [{xyxy px, obj_id, frame, label?}]" }
+outputs.masks = { type = "mask_seq", description = "one mask per frame, ids = obj_id" }
+outputs.tracks = { type = "json", description = "as track_text; prompt_frames = {obj_id: frame}" }
+params.confidence_threshold = { type = "float", default = 0.0, description = "output probability threshold passed to SAM 3 propagation (prompted objects get score 1.0 on their frame)" }
 
 [[tests]]
 name = "text"
@@ -121,6 +148,56 @@ output = "masks"
 metric = "mask_iou"
 expected = "tests/expected/bedroom_child"
 min = 0.85
+[[tests.checks]]
+output = "tracks"
+path = "visible.5.1"
+eq = true
+
+[[tests]]
+name = "track_prompts"
+task = "track_prompts"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom", prompts = "tests/fixture/bedroom_track_prompts.json" }
+[[tests.checks]]
+output = "masks"
+field = "ids"
+eq = [1, 2]
+[[tests.checks]]
+output = "masks"
+field = "nonempty_frames"
+eq = 6
+[[tests.checks]]
+output = "masks"
+metric = "mask_iou"
+expected = "tests/expected/bedroom_child"
+min = 0.8
+[[tests.checks]]
+output = "tracks"
+path = "instances.2.label"
+eq = "child_right"
+
+# left child hidden behind a grey rectangle on frames 2-3
+[[tests]]
+name = "track_prompts_occlusion"
+task = "track_prompts"
+timeout_sec = 900
+inputs = { frames = "tests/fixture/bedroom_occluded", prompts = "tests/fixture/bedroom_track_prompts.json" }
+[[tests.checks]]
+output = "tracks"
+path = "visible.0.0"
+eq = true
+[[tests.checks]]
+output = "tracks"
+path = "visible.2.0"
+eq = false
+[[tests.checks]]
+output = "tracks"
+path = "visible.3.0"
+eq = false
+[[tests.checks]]
+output = "tracks"
+path = "visible.3.1"
+eq = true
 
 [[known_issues]]
 summary = "Weights come from a mirror: official HF facebook/sam3 is gated (H20 account not authorised)"

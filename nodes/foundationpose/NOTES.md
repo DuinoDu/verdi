@@ -74,3 +74,18 @@ The expected estimate pose was checked visually (mesh silhouette overlay).
   (doctor runs before the venv exists).
 - hf-mirror sometimes answers 429 (rate limit) on the weight snapshot;
   re-running setup is enough.
+
+## 2026-10 real2sim round (evidence / valid per frame)
+
+- Distorted cameras are now refused (previously a warning: upstream renders
+  with a pinhole K and would silently ignore distortion).
+- Every pose carries diagnostics: the mesh is rendered at the pose
+  (nvdiffrast, Utils.nvdiffrast_render with the ORIGINAL mesh frame) and
+  compared with the observed depth: depth_inlier_ratio (|obs - rend| <
+  depth_tol_m among rendered pixels with depth), occluded / behind ratios,
+  median residual, rendered area, centre in image, mask IoU (input mask /
+  optional per-frame `masks`). `valid` = all of these pass (heuristic, not a
+  calibrated confidence).
+- mustard: mask IoU 0.90, inlier 0.82 on tracked frame 2; mesh scaled x1.5
+  (wrong model) -> inlier 0.19, IoU 0.55, valid = false (negative test).
+- Model-free mode (reference views + neural field) is not packaged.

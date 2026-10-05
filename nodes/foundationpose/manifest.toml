@@ -5,7 +5,14 @@ NVIDIA FoundationPose: model-based 6D pose estimation and tracking of a
 known object (CAD/scanned mesh) from RGB-D. Needs a metric depth map, the
 camera intrinsics, a mask of the object on the first frame and a mesh in
 metres. Output poses are T_cam_obj (object mesh frame -> OpenCV camera
-frame, metres), i.e. relative to the mesh's own origin/axes.
+frame, metres), i.e. relative to the mesh's own origin/axes. Each pose
+carries evidence diagnostics (rendered-mesh depth vs observed depth,
+optional mask IoU) and a heuristic `valid` flag; FoundationPose itself
+has no calibrated confidence. Only the MODEL-BASED mode is packaged: the
+upstream model-free mode needs ~16 reference RGB-D views of the object
+with masks AND known camera poses (BundleSDF-style neural object field
+training per object); it is not provided here - get a metric mesh first
+(scan / CAD, or sam3d_objects with metric depth) and use this node.
 """
 
 [upstream]
@@ -62,33 +69,42 @@ metres; untextured meshes are rendered grey and work with lower accuracy.
 inputs.image = { type = "image", description = "RGB frame" }
 inputs.depth = { type = "depth", description = "metric depth aligned with image (metres, 0 = invalid)" }
 inputs.mask = { type = "mask", description = "object mask on the frame (any non-zero pixel = object, or select one id with param mask_id)" }
-inputs.camera = { type = "camera", description = "pinhole intrinsics of the image (distortion ignored)" }
+inputs.camera = { type = "camera", description = "pinhole intrinsics of the image, dist = 0 (distorted cameras are refused: undistort first)" }
 inputs.mesh = { type = "mesh", description = "object mesh in metres (glb preferred, textured)" }
-outputs.poses = { type = "pose_set", description = "one pose: T_cam_obj of the mesh frame, score = best scorer logit" }
+outputs.poses = { type = "pose_set", description = "one pose: T_cam_obj of the mesh frame, score = best scorer logit (uncalibrated), valid, diagnostics {finite, z_m, center_px, center_in_image, rendered_area_px, observed_depth_coverage, depth_inlier_ratio, occluded_ratio, behind_ratio, median_abs_residual_m, mask_iou (vs the input mask), valid, reason}" }
 params.refine_iter = { type = "int", default = 5, description = "refiner iterations per hypothesis (upstream default 5)" }
 params.mask_id = { type = "int", default = 0, description = "instance id to use from the mask; 0 = all non-zero pixels" }
 params.label = { type = "str", default = "object", description = "label written into the pose" }
 params.seed = { type = "int", default = 0, description = "random seed (upstream run_demo uses 0)" }
+params.depth_tol_m = { type = "float", default = 0.01, description = "diagnostics: |observed - rendered depth| below this counts as an inlier" }
+params.min_depth_inlier_ratio = { type = "float", default = 0.3, description = "valid needs at least this inlier ratio among rendered pixels with observed depth" }
+params.min_mask_iou = { type = "float", default = 0.5, description = "valid needs rendered-silhouette IoU >= this with the mask (when a mask exists for the frame)" }
 
 [tasks.track]
 description = """
 Register on the first frame (needs mask of frame 0) and then track the
 object through the remaining frames (FoundationPose `track_one`, refiner
-only, previous pose as initialisation). Frames must be consecutive video
+only, previous pose as initialisation). Every frame gets diagnostics and
+`valid` (see poses.convention); track_one never re-registers, so a lost
+track keeps a (wrong) pose that `valid` flags but does not repair. Frames must be consecutive video
 frames with small inter-frame motion; image_seq and depth_seq are matched
 by sorted order and must have the same length.
 """
 inputs.frames = { type = "image_seq", description = "RGB frames" }
 inputs.depths = { type = "depth_seq", description = "metric depth per frame (same count/order as frames)" }
 inputs.mask = { type = "mask", description = "object mask on the FIRST frame" }
-inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames" }
+inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames, dist = 0" }
+inputs.masks = { type = "mask_seq", optional = true, description = "per-frame object masks (e.g. sam3 track_prompts, same count/order); used ONLY for the mask_iou diagnostic / valid, never to re-initialise" }
 inputs.mesh = { type = "mesh", description = "object mesh in metres (glb preferred, textured)" }
-outputs.poses = { type = "pose_seq", description = "per frame index: one pose T_cam_obj of the mesh frame" }
+outputs.poses = { type = "pose_seq", description = "{convention, frames: [{frame, name, valid, poses: [{T_cam_obj, label, score (frame 0), valid, diagnostics}]}]}" }
 params.refine_iter = { type = "int", default = 5, description = "refiner iterations for the first-frame registration" }
 params.track_iter = { type = "int", default = 2, description = "refiner iterations per tracked frame (upstream default 2)" }
 params.mask_id = { type = "int", default = 0, description = "instance id to use from the mask; 0 = all non-zero pixels" }
 params.label = { type = "str", default = "object", description = "label written into the poses" }
 params.seed = { type = "int", default = 0, description = "random seed" }
+params.depth_tol_m = { type = "float", default = 0.01, description = "diagnostics: |observed - rendered depth| below this counts as an inlier" }
+params.min_depth_inlier_ratio = { type = "float", default = 0.3, description = "valid needs at least this inlier ratio among rendered pixels with observed depth" }
+params.min_mask_iou = { type = "float", default = 0.5, description = "valid needs rendered-silhouette IoU >= this with the mask (when a mask exists for the frame)" }
 
 [[tests]]
 name = "estimate"
@@ -104,6 +120,14 @@ output = "poses"
 metric = "pose_translation_err"
 expected = "tests/expected/mustard_pose_000000.json"
 max = 0.01
+[[tests.checks]]
+output = "poses"
+path = "poses.0.diagnostics.mask_iou"
+min = 0.7
+[[tests.checks]]
+output = "poses"
+path = "poses.0.valid"
+eq = true
 
 [[tests]]
 name = "track"
@@ -114,3 +138,30 @@ inputs = { frames = "tests/fixture/mustard/rgb", depths = "tests/fixture/mustard
 output = "poses"
 field = "count"
 eq = 3
+[[tests.checks]]
+output = "poses"
+path = "frames.2.valid"
+eq = true
+[[tests.checks]]
+output = "poses"
+path = "frames.2.poses.0.diagnostics.depth_inlier_ratio"
+min = 0.6
+
+[[known_issues]]
+summary = "Model-free FoundationPose (reference views instead of a mesh) is not packaged"
+fix = "model-free needs ~16 masked RGB-D reference views with known poses + per-object neural field training; use a metric mesh (scan/CAD, or sam3d_objects with metric depth/camera) with this node"
+
+[[known_issues]]
+summary = "`valid` is a heuristic from depth/mask agreement, not a calibrated confidence; occlusion lowers it, symmetric objects can be valid with a wrong rotation"
+fix = "read diagnostics (depth_inlier_ratio, occluded_ratio, mask_iou) and verify poses downstream with independent observations"
+
+# wrong-size model (mesh x1.5): a pose is returned but must be flagged
+[[tests]]
+name = "wrong_scale_mesh_flagged"
+task = "estimate"
+timeout_sec = 900
+inputs = { image = "tests/fixture/mustard/rgb/000000.jpg", depth = "tests/fixture/mustard/depth/000000.npy", mask = "tests/fixture/mustard/mask_000000.png", camera = "tests/fixture/mustard/camera.json", mesh = "tests/fixture/mustard/mesh_x1.5.glb" }
+[[tests.checks]]
+output = "poses"
+path = "poses.0.valid"
+eq = false

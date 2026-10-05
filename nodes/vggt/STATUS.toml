@@ -1,12 +1,12 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:46:51+0800"
+tested_at = "2026-10-05T20:43:02+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "f121ef470dd74dc894d27c4d28bc6c22a5180f27"
 upstream_commit = ""
 env_lock = "sha256:514e5c64fa6ee72025c327427708f12f317d543c8c0cc731a882aa0b17a4cf58"
 untested_tasks = [
 ]
 cases = [
-  "PASS bedroom (52.4s): PASS trajectory.count=6 {'eq': 6}; PASS depth.count=6 {'eq': 6}; PASS pointcloud.points=456876 {'min': 100000}; PASS pointcloud.points=456876 {'max': 600000}; PASS camera.fx=945.0126 {'min': 910.0, 'max': 970.0}; PASS depth.median=0.9165 {'min': 0.86, 'max': 0.97}; PASS depth.valid_ratio=1.0 {'min': 0.99}",
+  "PASS bedroom (64.39s): PASS trajectory.count=6 {'eq': 6}; PASS depth.count=6 {'eq': 6}; PASS pointcloud.points=456876 {'min': 100000}; PASS pointcloud.points=456876 {'max': 600000}; PASS camera.fx=945.0126 {'min': 910.0, 'max': 970.0}; PASS depth.median=0.9165 {'min': 0.86, 'max': 0.97}; PASS depth.valid_ratio=1.0 {'min': 0.99}",
 ]

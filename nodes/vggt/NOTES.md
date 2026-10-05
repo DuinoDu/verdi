@@ -34,3 +34,5 @@
   unchanged: fx 945.0 (H20 939.9), depth median 0.9165 (H20 0.9148), same
   point count. HF download of VGGT-1B needs `HF_HUB_DISABLE_XET=1`
   (set by core when an HF mirror is configured).
+
+## 2026-10: trajectory json gains scale_status = relative, pose_source, world.

@@ -4,8 +4,9 @@ description = """
 FoundationStereo (NVIDIA, CVPR 2025): zero-shot stereo matching. From a
 RECTIFIED stereo pair (left + right image, same size, horizontal epipolar
 lines) it predicts the left-image disparity in pixels; the node converts
-it to METRIC depth (metres) with depth = fx * baseline / disparity using
-the left camera intrinsics and the stereo baseline. SimFoundry uses it as
+it to METRIC z-depth (metres) with z = fx * baseline / (disparity + doffs)
+using the rectified left intrinsics and the baseline. Fisheye/distorted
+rigs: rectify with the `stereo_rectify` node first. SimFoundry uses it as
 the `fs` depth backend for ZED stereo captures. ViT-L checkpoint 23-51-11.
 """
 
@@ -31,41 +32,88 @@ timeout_sec = 1800
 
 [tasks.estimate_depth]
 description = """
-Metric depth of the LEFT image from a rectified stereo pair. `camera` is
-the rectified left intrinsics at the image resolution (zero distortion);
-`baseline` is the distance between the two camera centres in metres.
-Upstream output is disparity in pixels (left x minus matching right x);
-depth = fx * baseline / disparity. Pixels are set to 0 (invalid) where the
-match falls outside the right image (remove_invisible, as SimFoundry),
-where disparity <= 0, or where depth > max_depth. With scale < 1 the
-network runs on downscaled images (SimFoundry uses scale 0.5) and the
-disparity is resized back to the input resolution (values rescaled).
+Metric z-depth of the LEFT image from a RECTIFIED pinhole stereo pair.
+For fisheye / distorted cameras run `stereo_rectify` first and pass its
+rectified left/right frames, `camera` (rectified left K, dist = 0) and
+baseline = rectification.baseline_rect_m (optionally its `valid` mask);
+the node refuses cameras with distortion. Upstream output is disparity in
+pixels d = x_left - x_right at the input resolution; z = fx * baseline /
+(d + doffs) (doffs = cx_right - cx_left, 0 after stereo_rectify). Depth is
+z along the optical axis of the rectified left camera, NOT ray distance;
+to express it in the original (unrectified) left camera use
+rectification.T_left_rect. With scale < 1 the network runs on downscaled
+images and the disparity is resampled to the input size and multiplied by
+W / w; K is used at the input resolution (both recorded in `info`).
+Pixels are invalid (depth 0, valid 0) where disparity <= 0, depth >
+max_depth, the match falls outside the right image (remove_invisible), the
+optional `valid` mask is 0, or (lr_check) the left-right consistency error
+exceeds lr_threshold_px. FoundationStereo has NO calibrated confidence;
+none is fabricated: use `valid` and the optional `lr_error_px`.
 """
 inputs.left = { type = "image", description = "rectified left image (RGB)" }
 inputs.right = { type = "image", description = "rectified right image, same size" }
-inputs.camera = { type = "camera", description = "rectified LEFT intrinsics at the image resolution, dist = 0" }
-outputs.depth = { type = "depth", description = "metric depth of the left image in metres, 0 = invalid" }
-outputs.disparity_px = { type = "file", description = ".npy float32 HxW raw disparity in PIXELS at the input resolution (left x - right x; larger = closer), before any masking" }
-params.baseline = { type = "float", description = "stereo baseline in metres (required, e.g. 0.063 for the upstream demo, ~0.12 for a ZED 2)" }
+inputs.camera = { type = "camera", description = "rectified LEFT pinhole K at the image resolution, dist = 0" }
+inputs.valid = { type = "mask", optional = true, description = "usable left pixels (e.g. stereo_rectify `valid`, 0 = rectification border)" }
+outputs.depth = { type = "depth", description = "metric z-depth of the rectified left image (metres), 0 = invalid" }
+outputs.disparity_px = { type = "file", description = ".npy float32 HxW raw disparity in PIXELS at the input resolution (x_left - x_right; larger = closer), before any masking" }
+outputs.valid = { type = "mask", description = "1 = depth valid, 0 = invalid (reasons and ratios in info.invalid_reasons)" }
+outputs.lr_error_px = { type = "file", optional = true, description = "only with lr_check: .npy float32 |d_L(x) - d_R(x - d_L(x))| px (inf where the match leaves the image)" }
+outputs.info = { type = "json", description = "{depth_type, formula, fx, baseline_m, doffs_px, camera_K, input_size, inference_size, scale, K_at_inference_size, disparity_resample, valid_iters, hiera, max_depth_m, remove_invisible, lr_check, lr_threshold_px, confidence (statement), valid_ratio, invalid_reasons {...}, disparity_px_range, depth_m_percentiles_5_50_95, infer_sec}" }
+params.baseline = { type = "float", description = "rectified baseline in metres (required; stereo_rectify: rectification.baseline_rect_m, e.g. 0.0605)" }
+params.doffs = { type = "float", default = 0.0, description = "cx_right - cx_left of the rectified cameras in px (0 for stereo_rectify / CALIB_ZERO_DISPARITY; Middlebury-style datasets give it)" }
 params.scale = { type = "float", default = 1.0, description = "inference downscale factor in (0, 1] (SimFoundry 0.5); output stays at input resolution" }
 params.valid_iters = { type = "int", default = 32, description = "GRU refinement iterations (upstream/SimFoundry 32)" }
-params.hiera = { type = "bool", default = false, description = "hierarchical coarse-to-fine inference, only for > 1K images" }
+params.hiera = { type = "bool", default = false, description = "official hierarchical coarse-to-fine inference (run_hierachical, small_ratio 0.5), for > 1K images; 1280x720 runs directly" }
 params.remove_invisible = { type = "bool", default = true, description = "invalidate pixels whose match is outside the right image" }
-params.max_depth = { type = "float", default = 100.0, description = "depth above this (metres) is set to 0 (SimFoundry clips at 100 m)" }
+params.max_depth = { type = "float", default = 100.0, description = "depth above this (metres) is invalid (SimFoundry clips at 100 m)" }
+params.lr_check = { type = "bool", default = false, description = "also infer the right-view disparity (mirrored pair, 2x time) and invalidate left-right inconsistent pixels" }
+params.lr_threshold_px = { type = "float", default = 1.0, description = "lr_check: max |d_L - d_R| in px" }
+
+[tasks.estimate_depth_seq]
+description = """
+estimate_depth for every frame pair of a rectified sequence (model loaded
+once; e.g. stereo_rectify `left` / `right` outputs). Frames are matched by
+sorted order and must all have the camera resolution; output frame i
+(%06d) = i-th input pair (names in info.frames). Same conversion, masks
+and info as estimate_depth, plus per-frame statistics.
+"""
+inputs.left = { type = "image_seq", description = "rectified left frames" }
+inputs.right = { type = "image_seq", description = "rectified right frames, same count/order" }
+inputs.camera = { type = "camera", description = "rectified LEFT pinhole K at the frame resolution, dist = 0" }
+inputs.valid = { type = "mask", optional = true, description = "usable left pixels, applied to every frame" }
+outputs.depth = { type = "depth_seq", description = "per-frame metric z-depth %06d.npy (rectified left camera), 0 = invalid" }
+outputs.disparity_px = { type = "dir", description = "per-frame raw disparity %06d.npy (px, input resolution)" }
+outputs.valid = { type = "mask_seq", description = "per-frame validity masks %06d.png (1 = valid)" }
+outputs.lr_error_px = { type = "dir", optional = true, description = "only with lr_check: per-frame %06d.npy left-right error (px)" }
+outputs.info = { type = "json", description = "as estimate_depth (without per-pair stats) + frames [{index, left, right, valid_ratio, invalid_reasons, median_depth_m}], sec_per_frame" }
+params.baseline = { type = "float", description = "rectified baseline in metres (required)" }
+params.doffs = { type = "float", default = 0.0, description = "cx_right - cx_left in px" }
+params.scale = { type = "float", default = 1.0, description = "inference downscale factor in (0, 1]" }
+params.valid_iters = { type = "int", default = 32, description = "GRU refinement iterations" }
+params.hiera = { type = "bool", default = false, description = "hierarchical inference for > 1K images" }
+params.remove_invisible = { type = "bool", default = true, description = "invalidate pixels whose match is outside the right image" }
+params.max_depth = { type = "float", default = 100.0, description = "depth above this (metres) is invalid" }
+params.lr_check = { type = "bool", default = false, description = "left-right consistency check (2x time)" }
+params.lr_threshold_px = { type = "float", default = 1.0, description = "lr_check: max |d_L - d_R| in px" }
 
 [[known_issues]]
 summary = "FoundationStereo code and weights: NVIDIA Source Code License, NON-COMMERCIAL (SimFoundry THIRD_PARTY_LICENSES row 80); official weights are an unversioned Google Drive folder"
 fix = "research use only; weights pinned via an HF mirror whose sha256 matches 5 independent mirrors"
 
 [[known_issues]]
-summary = "Inputs must be rectified; unrectified or swapped pairs give garbage disparity"
-fix = "rectify with the stereo calibration first; left must be the reference camera"
+summary = "Inputs must be rectified pinhole images; unrectified, fisheye or swapped pairs give garbage disparity"
+fix = "run stereo_rectify with the rig calibration first (it fails on a calibration that does not fit the images); left must be the reference camera"
 
+[[known_issues]]
+summary = "No calibrated confidence: the network outputs disparity only"
+fix = "use `valid`, lr_check / lr_error_px and, downstream, multi-frame consistency; do not treat valid=1 as an accuracy guarantee"
+
+# Upstream demo pair (assets/ of the pinned checkout; NVIDIA licence, not committed)
 [[tests]]
 name = "demo_pair"
 task = "estimate_depth"
 timeout_sec = 900
-inputs = { left = "tests/fixture/left.png", right = "tests/fixture/right.png", camera = "tests/fixture/camera.json" }
+inputs = { left = "{repo}/assets/left.png", right = "{repo}/assets/right.png", camera = "tests/fixture/camera.json" }
 params = { baseline = 0.063 }
 [[tests.checks]]
 output = "depth"
@@ -92,14 +140,68 @@ max = 0.01
 name = "demo_pair_half_scale"
 task = "estimate_depth"
 timeout_sec = 900
-inputs = { left = "tests/fixture/left.png", right = "tests/fixture/right.png", camera = "tests/fixture/camera.json" }
+inputs = { left = "{repo}/assets/left.png", right = "{repo}/assets/right.png", camera = "tests/fixture/camera.json" }
 params = { baseline = 0.063, scale = 0.5 }
 [[tests.checks]]
 output = "depth"
 field = "width"
 eq = 960
 [[tests.checks]]
+output = "info"
+path = "inference_size.0"
+eq = 480
+[[tests.checks]]
 output = "depth"
 metric = "depth_abs_rel"
 expected = "tests/expected/demo_depth.npy"
 max = 0.02
+
+# Synthetic fisheye rig (stereo_rectify fixture, analytic ground truth):
+# ideal rectified pinhole pair, baseline 60.5 mm -> depth vs the TRUE z-depth
+[[tests]]
+name = "synthetic_metric_lr"
+task = "estimate_depth"
+timeout_sec = 900
+inputs = { left = "tests/fixture/synthetic/left/000000.png", right = "tests/fixture/synthetic/right/000000.png", camera = "tests/fixture/synthetic/camera.json" }
+params = { baseline = 0.0605, lr_check = true }
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/synthetic/gt_depth/000000.npy"
+max = 0.05
+[[tests.checks]]
+output = "info"
+path = "valid_ratio"
+min = 0.8
+[[tests.checks]]
+output = "lr_error_px"
+field = "bytes"
+min = 1
+
+[[tests]]
+name = "synthetic_seq"
+task = "estimate_depth_seq"
+timeout_sec = 900
+inputs = { left = "tests/fixture/synthetic/left", right = "tests/fixture/synthetic/right", camera = "tests/fixture/synthetic/camera.json" }
+params = { baseline = 0.0605 }
+[[tests.checks]]
+output = "depth"
+field = "count"
+eq = 2
+[[tests.checks]]
+output = "depth"
+metric = "depth_abs_rel"
+expected = "tests/fixture/synthetic/gt_depth"
+max = 0.05
+[[tests.checks]]
+output = "valid"
+field = "count"
+eq = 2
+
+[[tests]]
+name = "distorted_camera_refused"
+task = "estimate_depth"
+timeout_sec = 300
+inputs = { left = "tests/fixture/synthetic/left/000000.png", right = "tests/fixture/synthetic/right/000000.png", camera = "tests/fixture/synthetic/camera_distorted.json" }
+params = { baseline = 0.0605 }
+expect_error = "distortion"

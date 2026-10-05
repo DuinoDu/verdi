@@ -1,14 +1,16 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:46:34+0800"
+tested_at = "2026-10-05T20:03:10+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "f121ef470dd74dc894d27c4d28bc6c22a5180f27"
 upstream_commit = ""
 env_lock = "sha256:5023d91522a4c9ebd230eb183b099c0210e45371e6debe1e294afcc24628771b"
 untested_tasks = [
 ]
 cases = [
-  "PASS text (26.6s): PASS boxes.labels=['tire', 'truck'] {'eq': ['tire', 'truck']}; PASS boxes.bbox_iou=1.0 {'min': 0.85}; PASS mask.mask_iou=1.0 {'min': 0.9}",
-  "PASS prompts (13.23s): PASS mask.instances=2 {'eq': 2}; PASS mask.mask_iou=1.0 {'min': 0.9}",
-  "PASS track (15.83s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.instances=2 {'eq': 2}; PASS masks.mask_iou=1.0 {'min': 0.85}",
+  "PASS text (28.62s): PASS boxes.labels=['tire', 'truck'] {'eq': ['tire', 'truck']}; PASS boxes.bbox_iou=1.0 {'min': 0.85}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+  "PASS prompts (29.41s): PASS mask.instances=2 {'eq': 2}; PASS mask.mask_iou=1.0 {'min': 0.9}",
+  "PASS track (30.6s): PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.instances=2 {'eq': 2}; PASS masks.mask_iou=1.0 {'min': 0.85}; PASS tracks:visible.5.1=True {'eq': True}",
+  "PASS track_prompts (30.0s): PASS masks.ids=[1, 2] {'eq': [1, 2]}; PASS masks.nonempty_frames=6 {'eq': 6}; PASS masks.mask_iou=0.978 {'min': 0.8}; PASS tracks:instances.2.label='child_right' {'eq': 'child_right'}",
+  "PASS track_prompts_occlusion (30.09s): PASS tracks:visible.0.0=True {'eq': True}; PASS tracks:visible.2.0=False {'eq': False}; PASS tracks:visible.3.0=False {'eq': False}; PASS tracks:visible.3.1=True {'eq': True}",
 ]

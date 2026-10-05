@@ -51,6 +51,13 @@ nodes/<name>/
    outputs (prefer a `metric` check against `tests/expected/`, which
    you must inspect visually before committing). Run
    `verdi test <name>` on the GPU host and commit `STATUS.toml` + `uv.lock`.
+   Negative cases are encouraged: `expect_error = "substring"` makes a case
+   pass only if the run fails with that text in message/hint (e.g. a
+   distorted camera or a wrong calibration must be refused). Inputs may
+   point into the pinned upstream checkout with `{repo}/path` (files that
+   cannot be committed for licence reasons).
+   Prefer checks against INDEPENDENT ground truth (sensor depth, mocap
+   poses, analytic synthetic scenes) over self-recorded reference outputs.
 
 9. **Algorithm nodes** (no model, e.g. marker calibration, plane fitting)
    are allowed when deterministic and typed with the unified types; omit

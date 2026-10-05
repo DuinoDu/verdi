@@ -16,6 +16,10 @@ One ``[[tests]]`` entry per case (cover every task)::
     output = "result"
     path = "objects.0.azimuth_deg"  # dotted path, list indices allowed
     min = 200
+    [[tests]]                     # negative case: the run must FAIL
+    task = "segment_image"        # with this text in error message/hint
+    inputs = { image = "{repo}/assets/x.png" }   # {repo} = upstream checkout
+    expect_error = "distortion"
     [[tests.checks]]              # comparison with a reference output
     output = "mask"
     metric = "mask_iou"           # see verdi.types.registry.COMPARATORS
@@ -82,15 +86,29 @@ def _check(chk: Dict[str, Any], result: Dict[str, Any],
 
 def run_case(m: Manifest, case: Dict[str, Any],
              device: str) -> Dict[str, Any]:
-    inputs = {k: str(m.node_dir / v)
-              for k, v in case.get("inputs", {}).items()}
+    from verdi.core import paths
+
+    def _where(v: str) -> str:  # "{repo}/..." = file of the upstream checkout
+        if v.startswith("{repo}/"):
+            return str(paths.repos_dir(m.name) / v[len("{repo}/"):])
+        return str(m.node_dir / v)
+
+    inputs = {k: _where(v) for k, v in case.get("inputs", {}).items()}
     result = runner.run(m, case["task"], inputs,
                         dict(case.get("params", {})), device=device,
                         timeout_sec=case.get("timeout_sec"))
     prov = result.get("provenance", {})
     details: List[str] = []
     passed = result.get("status") == "ok"
-    if not passed:
+    if "expect_error" in case:  # negative case: the node must refuse
+        err = result.get("error") or {}
+        text = f"{err.get('message')} {err.get('hint', '')}"
+        want = str(case["expect_error"])
+        passed = result.get("status") == "error" and want.lower() in text.lower()
+        details.append(("PASS " if passed else "FAIL ")
+                       + f"expected error containing {want!r}: status="
+                       + f"{result.get('status')} {text[:200]!r}")
+    elif not passed:
         err = result.get("error") or {}
         details.append(f"run failed: {err.get('kind')}: "
                        f"{err.get('message')}")

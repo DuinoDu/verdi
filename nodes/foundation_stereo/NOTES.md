@@ -49,3 +49,17 @@
   0.006. References tests/expected/demo_{depth,disparity_px}.npy are the
   full-scale the RTX 5090 host outputs (float32); disparity_px is compared with the
   depth_abs_rel comparator (relative error of positive values).
+
+## 2026-10 real2sim round (metric checks, validity, sequences)
+
+- New outputs `valid` (mask) and `info` (fx, baseline, doffs, input /
+  inference size, K at inference size, disparity resample factor, invalid
+  reasons), optional `lr_error_px` with `lr_check` (right-view disparity
+  from the mirrored pair: d_R(x) = d'(W-1-x)), param `doffs`, optional
+  `valid` input (rectification border). New task `estimate_depth_seq`.
+- Demo fixture images are read from the upstream checkout (`{repo}/assets`),
+  not committed (NVIDIA licence).
+- Metric verification against ANALYTIC truth: synthetic fisheye rig of
+  stereo_rectify (baseline 60.5 mm) rendered by the ideal rectified pinhole
+  cameras: depth abs-rel 0.0027 (single, lr_check) / 0.0018 (seq, 2
+  frames), valid 97 %. Distorted cameras are refused (negative test).

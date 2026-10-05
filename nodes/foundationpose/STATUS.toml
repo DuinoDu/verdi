@@ -1,13 +1,14 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:39:02+0800"
+tested_at = "2026-10-05T20:12:45+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "f121ef470dd74dc894d27c4d28bc6c22a5180f27"
 upstream_commit = "e3d597b8c6b851d053094ebd6fa240191c5238f8"
 env_lock = "sha256:a44317f3da9051b81f0347b055e79c96e3e4a6cc7cdaaecfc4fbe25f83b75fee"
 untested_tasks = [
 ]
 cases = [
-  "PASS estimate (25.37s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}",
-  "PASS track (11.93s): PASS poses.count=3 {'eq': 3}",
+  "PASS estimate (33.01s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}; PASS poses:poses.0.diagnostics.mask_iou=0.9034 {'min': 0.7}; PASS poses:poses.0.valid=True {'eq': True}",
+  "PASS track (26.61s): PASS poses.count=3 {'eq': 3}; PASS poses:frames.2.valid=True {'eq': True}; PASS poses:frames.2.poses.0.diagnostics.depth_inlier_ratio=0.8196 {'min': 0.6}",
+  "PASS wrong_scale_mesh_flagged (30.79s): PASS poses:poses.0.valid=False {'eq': False}",
 ]

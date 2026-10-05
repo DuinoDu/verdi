@@ -99,3 +99,5 @@
   length is only the factor-graph edges (~5 MB each, ~1-4 per keyframe).
   Frames are streamed from disk. Thousands of frames fit in 32 GB. For
   >512 keyframes, raise `max_keyframes` or `subsample`.
+
+## 2026-10: trajectory / keyframes json gain scale_status = relative, pose_source, world.

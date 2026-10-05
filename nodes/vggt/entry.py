@@ -143,7 +143,10 @@ def reconstruct(ctx: Context) -> None:
     traj = ctx.output_path("trajectory", "trajectory.json")
     io.write_json(traj, {"T_world_cam": [T.tolist() for T in T_wc],
                          "frames": [f.name for f in frames],
-                         "scale": "up to scale (not metres)"})
+                         "scale": "up to scale (not metres)",
+                         "scale_status": "relative",
+                         "pose_source": "predicted by VGGT from the images",
+                         "world": "camera frame of frame 0"})
     cam = ctx.output_path("camera", "camera.json")
     io.write_camera(cam, Ks.mean(0), w, h)
     intr_path = ctx.output_path("intrinsics", "intrinsics.json")

@@ -1,0 +1,107 @@
+name = "stereo_rectify"
+version = "0.1.0"
+description = """
+Calibrated stereo rectification (OpenCV): fisheye (cv2.fisheye /
+Kannala-Brandt k1..k4) or pinhole (k1,k2,p1,p2,k3..) stereo frames + the
+rig calibration -> rectified, undistorted PINHOLE left/right frames with
+horizontal epipolar lines, the rectified left K (dist = 0), baseline and
+every transform needed to map results back (R1/R2/P1/P2/Q, T_left_rect).
+This is the step that must run BEFORE foundation_stereo on fisheye or
+distorted cameras: never feed unrectified fisheye images to a pinhole
+stereo matcher. Side-by-side (SBS) frames or videos are split into the two
+eyes. Deterministic algorithm node: CPU only, no weights. Includes a SIFT
+epipolar check (vertical residual of matches on frame 0) that fails the
+run when the calibration does not fit the images.
+"""
+
+[system]
+disk_gb = 2
+
+[run]
+timeout_sec = 3600
+
+[tasks.rectify]
+description = """
+Rectify a stereo sequence. Pass EITHER `stereo` (SBS frames or an SBS
+video: each frame is [left | right], width = 2 x calib width; set
+sbs_left_first=false if the right eye is on the left) OR `left` + `right`
+(same frame count, matched by sorted order). Calibration json (`calib`):
+{"model": "fisheye"|"pinhole", "width", "height" (ONE eye, the size K
+refers to), "left": {"K": 3x3, "D": [...]}, "right": {"K", "D"}, "R": 3x3,
+"T": [3] (X_right = R @ X_left + T, cv2.stereoCalibrate convention, i.e.
+T ~ [-baseline, 0, 0]) or "T_right_left": 4x4, "units": "m" (default) |
+"mm"}. Rectification uses CALIB_ZERO_DISPARITY (cx equal in both eyes,
+doffs = 0). The rectified left frame is ROTATED w.r.t. the original left
+camera by R1: depth/points computed on the rectified images are in the
+rectified-left frame; T_left_rect (4x4, rectified -> original left camera,
+OpenCV axes) maps them back. balance (fisheye) / alpha (pinhole) trade
+field of view against black borders; `valid` marks rectified-left pixels
+that map inside the source image.
+"""
+inputs.stereo = { type = "image_seq", optional = true, description = "SBS frames (or SBS video file), each [left | right]" }
+inputs.left = { type = "image_seq", optional = true, description = "left-eye frames (with `right`)" }
+inputs.right = { type = "image_seq", optional = true, description = "right-eye frames, same count/order as left" }
+inputs.calib = { type = "json", description = "stereo calibration (see task description); width/height = one eye" }
+outputs.left = { type = "image_seq", description = "rectified left frames %06d.png (index = input order, see rectification.frames)" }
+outputs.right = { type = "image_seq", description = "rectified right frames %06d.png" }
+outputs.camera = { type = "camera", description = "rectified LEFT pinhole K at the output size, dist = 0 (feed to foundation_stereo)" }
+outputs.valid = { type = "mask", description = "1 = rectified-left pixel maps inside the source left image, 0 = black border" }
+outputs.rectification = { type = "json", description = "{convention, model, input_size, output_size, K_left_input, D_left_input, K_right_input, D_right_input, R, T, baseline_m (|T|), baseline_rect_m (-P2[0,3]/P2[0,0]), K_rect, doffs_px (cx_r - cx_l, 0), R1, R2, P1, P2, Q, T_left_rect, T_right_rect (4x4 rectified -> original camera), params, valid_ratio_left/right, epipolar_check_frame0 {matches, inliers, median_dy_px, median_abs_dy_px, p90_abs_dy_px, negative_dx_ratio}, frames [{index, source}]}" }
+params.balance = { type = "float", default = 0.0, description = "fisheye only: 0 = crop to valid pixels (no black border, narrower FOV), 1 = keep the whole FOV (borders)" }
+params.fov_scale = { type = "float", default = 1.0, description = "fisheye only: divisor of the new focal length (> 1 widens the FOV)" }
+params.alpha = { type = "float", default = 0.0, description = "pinhole only: cv2.stereoRectify alpha (0 = valid pixels only, 1 = all source pixels)" }
+params.out_width = { type = "int", default = 0, description = "rectified width (0 = calib width)" }
+params.out_height = { type = "int", default = 0, description = "rectified height (0 = calib height)" }
+params.sbs_left_first = { type = "bool", default = true, description = "SBS input: left eye is the LEFT half" }
+params.interpolation = { type = "str", default = "linear", choices = ["linear", "cubic", "lanczos"], description = "cv2.remap interpolation" }
+params.epipolar_check = { type = "bool", default = true, description = "SIFT-match frame 0 and report the vertical residual of the rectified pair" }
+params.max_epipolar_dy_px = { type = "float", default = 1.0, description = "fail if the median |dy| of the epipolar check exceeds this (0 = report only)" }
+
+[[tests]]
+name = "fisheye_sbs"
+task = "rectify"
+timeout_sec = 600
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib.json" }
+[[tests.checks]]
+output = "left"
+field = "count"
+eq = 2
+[[tests.checks]]
+output = "rectification"
+path = "baseline_m"
+min = 0.0604
+max = 0.0606
+[[tests.checks]]
+output = "rectification"
+path = "epipolar_check_frame0.median_abs_dy_px"
+max = 0.3
+[[tests.checks]]
+output = "camera"
+field = "fx"
+min = 50
+max = 400
+[[tests.checks]]
+output = "left"
+metric = "image_psnr"
+expected = "tests/expected/rect_left"
+min = 26
+[[tests.checks]]
+output = "right"
+metric = "image_psnr"
+expected = "tests/expected/rect_right"
+min = 26
+
+[[tests]]
+name = "wrong_calib_fails"
+task = "rectify"
+timeout_sec = 600
+inputs = { stereo = "tests/fixture/sbs", calib = "tests/fixture/calib_swapped_rotation.json" }
+expect_error = "median |dy|"
+
+[[known_issues]]
+summary = "Fisheye -> pinhole rectification cannot keep a >= 180 deg field of view; with balance=0 the periphery is cropped"
+fix = "raise balance / fov_scale for more FOV (more black border, lower pixel density in the centre); `valid` marks usable pixels"
+
+[[known_issues]]
+summary = "Quality depends entirely on the calibration; the node does not refine it"
+fix = "check rectification.epipolar_check_frame0 (median |dy| should be < 0.5 px on real data); recalibrate if it fails"
