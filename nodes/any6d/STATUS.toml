@@ -1,13 +1,13 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:39:20+0800"
+tested_at = "2026-10-05T21:49:49+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "bda8ba279d59ca1e192836108871e70f3c51587a"
 upstream_commit = "80eb4866a1c96ecb18be18836aba4f4bd6e80e9e"
 env_lock = "sha256:26e157ed3abd09ab9bb787520ba856cb8e62388fbd25cea5cd86557187888579"
 untested_tasks = [
 ]
 cases = [
-  "PASS estimate (42.55s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0 {'max': 0.01}; PASS poses.pose_translation_err=0.0134 {'max': 0.03}; PASS poses:poses.0.size.0=0.198 {'min': 0.17, 'max': 0.22}; PASS mesh.max_extent=0.198 {'min': 0.17, 'max': 0.22}",
-  "PASS candidates (12.13s): PASS poses.count=5 {'eq': 5}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}; PASS renders.count=5 {'eq': 5}",
+  "PASS estimate (42.0s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0 {'max': 0.01}; PASS poses.pose_translation_err=0.0134 {'max': 0.03}; PASS poses:poses.0.size.0=0.198 {'min': 0.17, 'max': 0.22}; PASS mesh.max_extent=0.198 {'min': 0.17, 'max': 0.22}",
+  "PASS candidates (11.43s): PASS poses.count=5 {'eq': 5}; PASS poses.pose_translation_err=0.0002 {'max': 0.01}; PASS renders.count=5 {'eq': 5}",
 ]

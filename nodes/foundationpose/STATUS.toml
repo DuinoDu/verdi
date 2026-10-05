@@ -1,6 +1,6 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-05T21:33:58+0800"
+tested_at = "2026-10-05T21:49:46+0800"
 gpu = ""
 verdi_commit = ""
 upstream_commit = ""
@@ -8,8 +8,9 @@ env_lock = ""
 untested_tasks = [
 ]
 cases = [
-  "PASS estimate (33.79s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}; PASS poses:poses.0.diagnostics.mask_iou=0.9034 {'min': 0.7}; PASS poses:poses.0.valid=True {'eq': True}",
-  "PASS track (21.18s): PASS poses.count=3 {'eq': 3}; PASS poses:frames.2.valid=True {'eq': True}; PASS poses:frames.2.poses.0.diagnostics.depth_inlier_ratio=0.8196 {'min': 0.6}",
-  "PASS wrong_scale_mesh_flagged (16.24s): PASS poses:poses.0.valid=False {'eq': False}",
+  "PASS estimate (25.0s): PASS poses.count=1 {'eq': 1}; PASS poses.pose_translation_err=0.0001 {'max': 0.01}; PASS poses:poses.0.diagnostics.mask_iou=0.9034 {'min': 0.7}; PASS poses:poses.0.valid=True {'eq': True}",
+  "PASS track (13.2s): PASS poses.count=3 {'eq': 3}; PASS poses:frames.2.valid=True {'eq': True}; PASS poses:frames.2.poses.0.diagnostics.depth_inlier_ratio=0.8196 {'min': 0.6}",
+  "PASS wrong_scale_mesh_flagged (11.65s): PASS poses:poses.0.valid=False {'eq': False}",
   "PASS relative_depth_refused (Nones): PASS expected error containing 'needs metric data': status=error \"input depth: /home/users/min01.du-labs/ws/pdebug/nodes/foundationpose/tests/fixture/relative_depth/depth.npy is declared scale_status='relative' (source test fixture (e.g. vggt depth)); this input nee\"",
+  "PASS relative_mesh_refused (Nones): PASS expected error containing 'needs metric data': status=error \"input mesh: /home/users/min01.du-labs/ws/pdebug/nodes/foundationpose/tests/fixture/relative_mesh/mesh.glb is declared scale_status='relative' (source test fixture (as sam3d_objects meshes/obj_<k>.glb)\"",
 ]

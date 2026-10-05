@@ -183,6 +183,46 @@ metres. Per frame: `T_cam_obj` (mesh -> OpenCV camera) + `valid` +
 diagnostics (`depth_inlier_ratio`, `occluded_ratio`, `mask_iou`). The
 model-free FoundationPose mode is not packaged.
 
+### 6. SAM 3D Objects -> metric object mesh -> FoundationPose
+
+Contract of `sam3d_objects reconstruct` (per object k = mask id):
+
+| output | frame / units | how to use |
+|---|---|---|
+| `meshes/obj_k.glb` | normalised object frame, glTF +Y up, ~[-0.5, 0.5]^3, scale sidecar `relative` | only with `S_cam_glb`: p_cam = S_cam_glb @ [v, 1] (= R (scale v) + t up to upstream per-axis scale); refused by metric consumers |
+| `meshes_metric/obj_k.glb` | same axes, linear part baked: v' = R^T L v (L = S_cam_glb[:3,:3]); metres with depth + camera (sidecar `metric`), else MoGe units (`relative`) | p_cam = R v' + t with `T_cam_obj` = [R \| t]; do NOT apply `scale` again |
+| `poses.json` | `T_cam_obj` (rigid, OpenCV), `S_cam_glb`, `bake_glb_to_metric`, `scale` (cbrt det L), `size` / `size_metric_mesh` (m), `scale_status`, `mask_id`, `mesh`, `mesh_metric` | the baked mesh + T_cam_obj is the object-frame mesh for simulation (it is not re-centred: the origin is the upstream object centre) |
+
+Preferred path for shape initialisation = the metric mode (depth + camera
+of the same image, e.g. foundation_stereo depth + rectified K). Hidden /
+contact surfaces are generated, not measured: verify with the render_mask
+/ overlay outputs and FoundationPose diagnostics. Verified on the YCB
+mustard RGB-D fixture (063, ~2.5 min incl. model loads):
+
+```bash
+bash pipelines/real2sim/example_object.sh /tmp/verdi_obj cuda:0
+# sam3: [(1, 'mustard bottle', 0.797)]
+# {'scale_status': 'metric', 'scale': 0.1958, 'size_metric_mesh': [0.0997, 0.1957, 0.0576], ...}
+#   (real YCB mustard ~0.096 x 0.191 x 0.058 m)
+# foundationpose valid=True depth_inlier=0.98 mask_iou=0.95
+# |t_fp - t_sam3d| = 12.9 mm, rotation diff 176.3 deg   (near front/back symmetry)
+# guard ok: input mesh: .../meshes/obj_1.glb is declared scale_status='relative' ...
+```
+
+The exact commands inside (verified against `verdi run --help`:
+`verdi run NODE --task T -i name=path -p name=value --out DIR --device D [-q]`):
+
+```bash
+verdi run sam3 --task segment_text -i image=IMG -p text="green pepper" --out S --device cuda:0 -q
+verdi run sam3d_objects --task reconstruct -i image=IMG -i mask=S/mask.png -i depth=D.npy \
+  -i camera=K.json -p mask_id=1 --out O --device cuda:0 -q
+verdi run foundationpose --task estimate -i image=IMG -i depth=D.npy -i mask=S/mask.png \
+  -i camera=K.json -i mesh=O/meshes_metric/obj_1.glb -p mask_id=1 --out P --device cuda:0 -q
+```
+
+Object proposals / relations: reuse `qwen2_5_vl` / `moondream` (verdi
+describe them); AACR, relation graphs and scene compilation stay in real2sim.
+
 ## Sample data we need from real2sim (train split only)
 
 Please put on apex, e.g. under `~/verdi_inputs/real2sim_train/<clip_id>/`:

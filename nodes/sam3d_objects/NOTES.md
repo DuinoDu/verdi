@@ -148,3 +148,15 @@ Meta SAM 3D Objects (arXiv:2511.16624). NOT the `sam3` segmentation node.
 - hf-mirror API calls are rate-limited (HTTP 429) from the RTX 5090 host; `resolve/`
   downloads still work. Weights were placed manually where setup expects
   them (sha256 / `.verdi_complete` marker identical to what setup writes).
+
+## 2026-10 mesh / scale contract (real2sim)
+- New output meshes_metric/: v' = R^T L v (L = linear part of S_cam_glb,
+  R = orthonormal part from the SVD), so p_cam = R v' + t = S_cam_glb [v, 1]
+  exactly (checked in the node, error > 1e-5 relative -> NodeError); poses
+  gain S_cam_glb, bake_glb_to_metric, size_metric_mesh, scale_status.
+- Scale sidecars: meshes/obj_k.glb = relative (normalised), meshes_metric =
+  metric only with depth + camera. foundationpose refuses relative meshes.
+- Chain check (pipelines/real2sim/example_object.sh, mustard RGB-D): metric
+  mesh 0.0997 x 0.1957 x 0.0576 m (YCB ~0.096 x 0.191 x 0.058); FoundationPose
+  on it valid, depth inlier 0.98, mask IoU 0.95, 12.9 mm from the SAM 3D
+  translation, ~176 deg rotation difference (near front/back symmetry).

@@ -70,7 +70,7 @@ inputs.image = { type = "image", description = "RGB frame" }
 inputs.depth = { type = "depth", description = "metric depth aligned with image (metres, 0 = invalid)" }
 inputs.mask = { type = "mask", description = "object mask on the frame (any non-zero pixel = object, or select one id with param mask_id)" }
 inputs.camera = { type = "camera", description = "pinhole intrinsics of the image, dist = 0 (distorted cameras are refused: undistort first)" }
-inputs.mesh = { type = "mesh", description = "object mesh in metres (glb preferred, textured)" }
+inputs.mesh = { type = "mesh", description = "object mesh in METRES (glb preferred, textured); meshes declared non-metric (scale sidecar, e.g. sam3d_objects meshes/) are refused - use sam3d_objects meshes_metric/ from a depth+camera run" }
 outputs.poses = { type = "pose_set", description = "one pose: T_cam_obj of the mesh frame, score = best scorer logit (uncalibrated), valid, diagnostics {finite, z_m, center_px, center_in_image, rendered_area_px, observed_depth_coverage, depth_inlier_ratio, occluded_ratio, behind_ratio, median_abs_residual_m, mask_iou (vs the input mask), valid, reason}" }
 params.refine_iter = { type = "int", default = 5, description = "refiner iterations per hypothesis (upstream default 5)" }
 params.mask_id = { type = "int", default = 0, description = "instance id to use from the mask; 0 = all non-zero pixels" }
@@ -95,7 +95,7 @@ inputs.depths = { type = "depth_seq", description = "metric depth per frame (sam
 inputs.mask = { type = "mask", description = "object mask on the FIRST frame" }
 inputs.camera = { type = "camera", description = "pinhole intrinsics shared by all frames, dist = 0" }
 inputs.masks = { type = "mask_seq", optional = true, description = "per-frame object masks (e.g. sam3 track_prompts, same count/order); used ONLY for the mask_iou diagnostic / valid, never to re-initialise" }
-inputs.mesh = { type = "mesh", description = "object mesh in metres (glb preferred, textured)" }
+inputs.mesh = { type = "mesh", description = "object mesh in METRES (glb preferred, textured); meshes declared non-metric (scale sidecar, e.g. sam3d_objects meshes/) are refused - use sam3d_objects meshes_metric/ from a depth+camera run" }
 outputs.poses = { type = "pose_seq", description = "{convention, frames: [{frame, name, valid, poses: [{T_cam_obj, label, score (frame 0), valid, diagnostics}]}]}" }
 params.refine_iter = { type = "int", default = 5, description = "refiner iterations for the first-frame registration" }
 params.track_iter = { type = "int", default = 2, description = "refiner iterations per tracked frame (upstream default 2)" }
@@ -172,4 +172,12 @@ name = "relative_depth_refused"
 task = "estimate"
 timeout_sec = 300
 inputs = { image = "tests/fixture/mustard/rgb/000000.jpg", depth = "tests/fixture/relative_depth/depth.npy", mask = "tests/fixture/mustard/mask_000000.png", camera = "tests/fixture/mustard/camera.json", mesh = "tests/fixture/mustard/mesh.glb" }
+expect_error = "needs metric data"
+
+# normalised (non-metric) mesh, e.g. sam3d_objects meshes/obj_<k>.glb, must be refused
+[[tests]]
+name = "relative_mesh_refused"
+task = "estimate"
+timeout_sec = 300
+inputs = { image = "tests/fixture/mustard/rgb/000000.jpg", depth = "tests/fixture/mustard/depth/000000.npy", mask = "tests/fixture/mustard/mask_000000.png", camera = "tests/fixture/mustard/camera.json", mesh = "tests/fixture/relative_mesh/mesh.glb" }
 expect_error = "needs metric data"

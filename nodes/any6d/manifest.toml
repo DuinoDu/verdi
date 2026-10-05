@@ -66,7 +66,7 @@ inputs.image = { type = "image", description = "RGB frame" }
 inputs.depth = { type = "depth", description = "metric depth aligned with image (metres, 0 = invalid)" }
 inputs.mask = { type = "mask", description = "object mask (any non-zero pixel = object, or select one id with param mask_id)" }
 inputs.camera = { type = "camera", description = "pinhole intrinsics of the image (distortion ignored)" }
-inputs.mesh = { type = "mesh", description = "object mesh of arbitrary scale/origin (glb/obj; textured or vertex colours preferred)" }
+inputs.mesh = { type = "mesh", scale = "any", description = "object mesh of arbitrary scale/origin (glb/obj; textured or vertex colours preferred)" }
 outputs.poses = { type = "pose_set", description = "one pose: T_cam_obj of the OUTPUT mesh frame + size/scale/input_to_mesh" }
 outputs.mesh = { type = "mesh", description = "input mesh rescaled to metres and centred (glb); the pose refers to this mesh" }
 params.iteration = { type = "int", default = 5, description = "refiner iterations per hypothesis (upstream default 5)" }

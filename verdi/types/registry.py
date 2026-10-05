@@ -400,6 +400,7 @@ def _v_mesh(path: Path):
         out.update(_glb_stats(path))
     if ext == ".ply":
         out["vertices"] = _ply_vertices(path)
+    out.update(_scale_summary(path))
     return out
 
 

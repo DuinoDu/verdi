@@ -85,11 +85,21 @@ independently (shared point map, so all objects share one scale).
 Outputs, per object k (= mask id):
 - meshes/obj_<k>.glb: textured mesh in the object frame = upstream's glb
   frame (glTF +Y up), normalised to about [-0.5, 0.5]^3.
+- meshes_metric/obj_<k>.glb: the same mesh with the linear part baked in
+  (v' = R^T L v, L = linear part of S_cam_glb): USE THIS ONE for
+  FoundationPose / simulation. p_cam = R v' + t with T_cam_obj = [R | t]
+  exactly - do not apply `scale` again. Its axes are the glb axes (glTF +Y
+  up, -Z / +X as upstream) scaled; metres only with depth + camera
+  (scale sidecar metric), else relative.
 - poses (pose_set): T_cam_obj (4x4 rigid, OpenCV camera frame: x right,
-  y down, z forward) and `scale`: a point v of obj_<k>.glb is at
-  p_cam = R @ (scale * v) + t. `size` = scale * extent of the mesh along
-  the object axes; `units` = "relative" (MoGe point map, not metric) or
-  "metres" (depth + camera given).
+  y down, z forward) = pose of meshes_metric/obj_<k>.glb; S_cam_glb = the
+  exact 4x4 similarity of the NORMALISED mesh (p_cam = S_cam_glb [v, 1] =
+  R (scale v) + t up to upstream anisotropy); `scale` = cbrt(det L);
+  bake_glb_to_metric = [R^T L | 0]; `size` = scale * extent of the
+  normalised mesh, size_metric_mesh = extent of the baked mesh; `units` /
+  scale_status = "relative" (MoGe point map, not metric) or "metres" /
+  metric (depth + camera given). meshes/obj_<k>.glb carry a `relative`
+  scale sidecar so metric consumers (foundationpose) refuse them.
 - scene: all objects posed and scaled into the OpenCV camera frame (glb).
 - camera: intrinsics used (MoGe-estimated, or the given camera).
 - render_mask / overlay: the scene projected with `camera` (instance ids
@@ -100,8 +110,9 @@ inputs.image = { type = "image", description = "RGB image" }
 inputs.mask = { type = "mask", description = "instance-id mask (0 = background), same size as image" }
 inputs.depth = { type = "depth", optional = true, description = "metric depth (metres, 0 = invalid); with `camera` it replaces MoGe -> metric poses/sizes" }
 inputs.camera = { type = "camera", optional = true, description = "pinhole intrinsics of `image`; required with `depth`" }
-outputs.meshes = { type = "dir", description = "obj_<id>.glb per object, object frame (glTF +Y up), ~[-0.5,0.5]^3" }
-outputs.poses = { type = "pose_set", description = "per object T_cam_obj (OpenCV), scale, size, units, mask_id, mesh" }
+outputs.meshes = { type = "dir", description = "obj_<id>.glb per object, NORMALISED object frame (glTF +Y up), ~[-0.5,0.5]^3; scale sidecar relative" }
+outputs.meshes_metric = { type = "dir", description = "obj_<id>.glb with scale baked (metres with depth+camera, else relative units); pose = T_cam_obj, no extra scale" }
+outputs.poses = { type = "pose_set", description = "per object T_cam_obj (rigid, OpenCV, pose of meshes_metric/obj_<id>.glb), S_cam_glb (similarity of meshes/obj_<id>.glb), bake_glb_to_metric, scale, size, size_metric_mesh, units, scale_status, mask_id, mesh, mesh_metric" }
 outputs.scene = { type = "mesh", description = "all objects posed into the OpenCV camera frame (glb), point-map units" }
 outputs.camera = { type = "camera", description = "intrinsics used (pixels)" }
 outputs.render_mask = { type = "mask", description = "projection of the posed meshes (instance ids = mask ids)" }
@@ -127,6 +138,10 @@ eq = 1
 [[tests.checks]]
 output = "poses"
 path = "poses.0.units"
+eq = "relative"
+[[tests.checks]]
+output = "poses"
+path = "poses.0.scale_status"
 eq = "relative"
 [[tests.checks]]
 output = "scene"
@@ -167,6 +182,19 @@ output = "poses"
 path = "poses.0.size.1"
 min = 0.17
 max = 0.21
+[[tests.checks]]
+output = "poses"
+path = "poses.0.scale_status"
+eq = "metric"
+[[tests.checks]]
+output = "poses"
+path = "poses.0.size_metric_mesh.1"
+min = 0.17
+max = 0.21
+[[tests.checks]]
+output = "meshes_metric"
+field = "entries"
+eq = 2
 [[tests.checks]]
 output = "poses"
 field = "z0"

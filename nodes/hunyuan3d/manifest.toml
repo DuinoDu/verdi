@@ -91,7 +91,7 @@ image. The mesh is remeshed/decimated to <= 40k faces and UV-unwrapped
 (xatlas) first, so the output topology differs from the input; vertex
 coordinates keep the input frame/scale. ~2-3 min on H20 / RTX 5090; fits one 32 GB RTX 5090 (peak ~21.6 GB measured).
 """
-inputs.mesh = { type = "mesh", description = "untextured mesh (glb/obj/ply), ideally from `shape` (normalised, +Y up)" }
+inputs.mesh = { type = "mesh", scale = "any", description = "untextured mesh (glb/obj/ply), ideally from `shape` (normalised, +Y up)" }
 inputs.image = { type = "image", description = "reference image of the same object (RGBA cut-out, or RGB: background removed automatically)" }
 outputs.mesh = { type = "mesh", description = "textured glb with glTF PBR material (baseColor + metallicRoughness)" }
 params.remove_background = { type = "str", default = "auto", choices = ["auto", "always", "never"], description = "auto: run rembg on the reference only when it has no transparent pixels" }

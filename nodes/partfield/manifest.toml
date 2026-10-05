@@ -60,7 +60,7 @@ surface area; every face gets a part. Outputs:
   feature per face, row i = face i; usable for re-clustering with another
   K or for part correspondence.
 """
-inputs.mesh = { type = "mesh", description = "triangle mesh (glb/obj/ply)" }
+inputs.mesh = { type = "mesh", scale = "any", description = "triangle mesh (glb/obj/ply)" }
 outputs.parts = { type = "json", description = "per-face part labels + part table (schema above)" }
 outputs.mesh = { type = "mesh", description = "glb coloured by part id" }
 outputs.features = { type = "file", description = ".npy float32 [num_faces, 448] per-face PartField features" }

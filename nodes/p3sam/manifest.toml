@@ -62,7 +62,7 @@ post_process=false). Outputs:
 SimFoundry then smooths part boundaries and hierarchically merges parts
 to <= 15 (plain geometry, not done here).
 """
-inputs.mesh = { type = "mesh", description = "triangle mesh (glb/obj/ply); scenes are merged into one mesh" }
+inputs.mesh = { type = "mesh", scale = "any", description = "triangle mesh (glb/obj/ply); scenes are merged into one mesh" }
 outputs.parts = { type = "json", description = "per-face part labels + part table (schema above)" }
 outputs.mesh = { type = "mesh", description = "glb coloured by part id" }
 params.point_num = { type = "int", default = 100000, description = "surface points sampled for the Sonata features" }

@@ -1,13 +1,13 @@
 # Written by `verdi test`. Do not edit by hand.
 status = "pass"
-tested_at = "2026-10-04T08:45:58+0800"
+tested_at = "2026-10-05T21:52:21+0800"
 gpu = "NVIDIA GeForce RTX 5090"
-verdi_commit = "03d762f77aeae6e5a6faf3a2dbd5750afebf95c2"
+verdi_commit = "bda8ba279d59ca1e192836108871e70f3c51587a"
 upstream_commit = "f91db411c50efee93d8db7aeb323885650f6f722"
 env_lock = "sha256:bd7d8700b7bf30afed46a30268acfde0da0932369ac0df965964e3834ed5ebd5"
 untested_tasks = [
 ]
 cases = [
-  "PASS moge (277.12s): PASS poses.count=1 {'eq': 1}; PASS poses:poses.0.units='relative' {'eq': 'relative'}; PASS scene.textured=True {'eq': True}; PASS scene.faces=7408 {'min': 2000}; PASS render_mask.mask_iou=0.6701 {'min': 0.6}; PASS render_mask.mask_iou=0.9097 {'min': 0.85}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
-  "PASS metric_depth (89.99s): PASS poses:poses.0.units='metres' {'eq': 'metres'}; PASS poses:poses.0.size.1=0.1923 {'min': 0.17, 'max': 0.21}; PASS poses.z0=0.7453 {'min': 0.7, 'max': 0.78}; PASS scene.textured=True {'eq': True}; PASS render_mask.mask_iou=0.741 {'min': 0.65}; PASS poses.pose_translation_err=0.0 {'max': 0.01}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
+  "PASS moge (142.3s): PASS poses.count=1 {'eq': 1}; PASS poses:poses.0.units='relative' {'eq': 'relative'}; PASS poses:poses.0.scale_status='relative' {'eq': 'relative'}; PASS scene.textured=True {'eq': True}; PASS scene.faces=7434 {'min': 2000}; PASS render_mask.mask_iou=0.669 {'min': 0.6}; PASS render_mask.mask_iou=0.9089 {'min': 0.85}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
+  "PASS metric_depth (62.94s): PASS poses:poses.0.units='metres' {'eq': 'metres'}; PASS poses:poses.0.size.1=0.1923 {'min': 0.17, 'max': 0.21}; PASS poses:poses.0.scale_status='metric' {'eq': 'metric'}; PASS poses:poses.0.size_metric_mesh.1=0.1923 {'min': 0.17, 'max': 0.21}; PASS meshes_metric.entries=2 {'eq': 2}; PASS poses.z0=0.7453 {'min': 0.7, 'max': 0.78}; PASS scene.textured=True {'eq': True}; PASS render_mask.mask_iou=0.7429 {'min': 0.65}; PASS poses.pose_translation_err=0.0 {'max': 0.01}; PASS poses.pose_rotation_err_deg=0.0 {'max': 10}",
 ]

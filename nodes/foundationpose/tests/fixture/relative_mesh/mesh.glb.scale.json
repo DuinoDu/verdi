@@ -1,0 +1,6 @@
+{
+ "scale_status": "relative",
+ "units": "normalised ~[-0.5,0.5]^3",
+ "source": "test fixture (as sam3d_objects meshes/obj_<k>.glb)",
+ "note": "must be refused"
+}

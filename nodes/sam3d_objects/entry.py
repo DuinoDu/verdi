@@ -204,6 +204,8 @@ def reconstruct(ctx: Context) -> None:
     s1 = int(ctx.param("stage1_steps", 0)) or None
     s2 = int(ctx.param("stage2_steps", 0)) or None
     mesh_dir = ctx.output_path("meshes")
+    metric_dir = ctx.output_path("meshes_metric")
+    status = "metric" if metric else "relative"
     poses, meshes_cam = [], {}
     for k in obj_ids:
         ctx.log(f"[sam3d_objects] object {k} ({(ids == k).sum()} px)")
@@ -230,12 +232,39 @@ def reconstruct(ctx: Context) -> None:
         glb.export(str(mesh_dir / name))
         S, T, scale, scale_xyz = _pose(out)
         ext = np.asarray(glb.vertices).max(0) - np.asarray(glb.vertices).min(0)
+        io.write_scale(mesh_dir / name, "relative",
+                       "normalised object frame (~[-0.5, 0.5]^3, glTF +Y up); "
+                       "p_cam = S_cam_glb @ v", "sam3d_objects",
+                       "do not use as a metric mesh: use meshes_metric/")
+        # bake the linear part into the vertices: v' = R^T L v, so that
+        # p_cam = R v' + t = S [v, 1] EXACTLY (also for anisotropic upstream
+        # scale); T_cam_obj is the rigid pose of the baked mesh
+        B = np.eye(4)
+        B[:3, :3] = T[:3, :3].T @ S[:3, :3]
+        mb = glb.copy()
+        mb.apply_transform(B)
+        chk = (T[:3, :3] @ np.asarray(mb.vertices).T).T + T[:3, 3]
+        ref = (S[:3, :3] @ np.asarray(glb.vertices).T).T + S[:3, 3]
+        err = float(np.abs(chk - ref).max())
+        if err > 1e-5 * max(1.0, float(np.abs(ref).max())):
+            raise NodeError(f"internal: baked mesh does not reproduce the pose ({err:.2e})")
+        mb.export(str(metric_dir / name))
+        io.write_scale(metric_dir / name, status,
+                       "metres" if metric else "relative (MoGe point-map units)",
+                       "sam3d_objects", "object frame = glb axes scaled by "
+                       "R^T L; p_cam = R v + t with T_cam_obj")
+        ext_b = np.asarray(mb.vertices).max(0) - np.asarray(mb.vertices).min(0)
         poses.append({
             "T_cam_obj": T, "label": f"obj_{k}", "mask_id": int(k),
             "scale": scale, "scale_xyz_upstream": scale_xyz,
             "size": (scale * ext).round(5).tolist(),
+            "size_metric_mesh": ext_b.round(5).tolist(),
             "units": "metres" if metric else "relative",
+            "scale_status": status,
             "mesh": f"meshes/{name}",
+            "mesh_metric": f"meshes_metric/{name}",
+            "S_cam_glb": S.tolist(),
+            "bake_glb_to_metric": B.tolist(),
             "upstream": {key: out[key].reshape(-1).tolist()
                          for key in ("rotation", "translation", "scale")},
         })
@@ -254,6 +283,7 @@ def reconstruct(ctx: Context) -> None:
         torch.cuda.empty_cache()
 
     ctx.set_output("meshes", mesh_dir)
+    ctx.set_output("meshes_metric", metric_dir)
     p = ctx.output_path("poses", "poses.json")
     io.write_pose_set(p, poses)
     ctx.set_output("poses", p)
