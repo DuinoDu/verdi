@@ -39,4 +39,7 @@ Task evaluation for SceneAgent: **unknown (not done)**.
 mustard -> mustard bottle (top1-top2 margin 0.095), keyboard_f1 -> keyboard (0.016),
 monitor_f1 -> monitor (0.064), book_f2 -> book (0.006), keyboard_f2 (partial, top edge of
 the frame) -> **monitor** (wrong), tiny 5x5 px ROI -> monitor (meaningless). The small margins
-and the wrong partial-view label are why no quality claim is made. GPU call: not yet run.
+and the wrong partial-view label are why no quality claim is made. GPU call: see below.
+
+## GPU evidence (063 cuda:3, 2026-10-06)
+GPU fixture 6/6. CPU/GPU consistency passes (roi min cosine 0.999998, argmax identical). The torch default cuDNN TF32 is still on for the patch convolution; it was not changed in this round. Numeric regression only. See `pipelines/real2sim/evidence/sc02_gpu_20261006.md`.

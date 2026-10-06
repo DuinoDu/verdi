@@ -21,4 +21,7 @@
 5/5 cases pass with `--device cpu` (layout, l2/float16, 3 refusals). pytest: patch coverage
 equals 8x8 supersampling within 0.02. Region cosine (sanity): keyboard frame 1 vs keyboard
 frame 12 (partial) 0.688 = highest cross-region value; keyboard vs book 0.164, mustard vs
-others <= 0.21. Task evaluation: unknown (not done). GPU call: not yet run.
+others <= 0.21. Task evaluation: unknown (not done). GPU call: see below.
+
+## GPU evidence (063 cuda:3, 2026-10-06)
+GPU fixture 5/5. A first CPU/GPU consistency check failed (patch-token min cosine 0.9937) because of cuDNN TF32. TF32 is now disabled; after that every array min cosine is >= 0.99999997 vs CPU. Numeric regression only. See `pipelines/real2sim/evidence/sc02_gpu_20261006.md`.

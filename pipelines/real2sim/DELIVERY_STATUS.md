@@ -62,6 +62,8 @@ Hosts:
 | groundingdino.detect | f121ef4 tree | fixture pass | n/a |
 | qwen2_5_vl.structured (caller prompt / schema) | f121ef4 tree | fixture pass | n/a; schema-valid output only; field system / prompts / quality = consumer |
 | partfield.segment / p3sam.segment (model outputs: features + labels) | f121ef4 tree | fixture pass (063) | n/a; licence: optional only |
+| dinov2_features.extract (CLS / registers / patch + pixel map, region pooling) | 48cabe2; TF32 fix in the SC-02 GPU commit | CPU fixture 5/5 (063, 018). **GPU fixture 5/5 on 063 cuda:3 (RTX 5090)**. CPU/GPU numeric consistency: first pass **FAIL** (patch min cosine 0.9937, cuDNN TF32), rerun with TF32 disabled **PASS** (all arrays min cosine >= 0.99999997). Evidence: `pipelines/real2sim/evidence/sc02_gpu_20261006.md` | n/a (features). Numeric regression only; task quality not evaluated |
+| clip_features.encode_text / encode_regions (official B/32, L2, cosine only) | 48cabe2 | CPU fixture 6/6 (063, 018). **GPU fixture 6/6 on 063 cuda:3**. CPU/GPU consistency **PASS** (roi min cosine 0.999998, argmax identical) | n/a. Numeric regression only; quality not evaluated; licence MIT, model card registered separately |
 
 Generic contracts and run capability (completed):
 
@@ -76,8 +78,6 @@ Generic contracts and run capability (completed):
 
 | node.task | Entry | Done so far | Pending |
 |---|---|---|---|
-| dinov2_features.extract (CLS / registers / patch + pixel map, region pooling) | 48cabe2 | **CPU only**: fixture 5/5 `--device cpu` on 063 and 018 (STATUS.toml gpu = ""); pytest coverage | GPU call (W1, ~15 min, needs a declared slot); apex not set up |
-| clip_features.encode_text / encode_regions (official B/32, L2, cosine only) | 48cabe2 | **CPU only**: fixture 6/6 on 063 and 018; licence MIT and model card registered separately | GPU call (W1); apex not set up; task quality not evaluated (consumer) |
 | sam3d_objects.reconstruct after 3055644 (evidence field only) | 3055644 | **covered without GPU re-run**: the diff adds one dict (`evidence`) to poses.json AFTER inference, built only from `metric` and `int(k)`, which the same `poses.append` literal already uses (static check: both assigned in `reconstruct`). No model / pre- / post-processing / mesh / pose change since the real GPU calls at 01e587c (pepper, basket) and the GPU fixture 2/2 (063 2026-10-05 21:52). Generic runner changes of 3055644 (input hashes) are device-independent and exercised by CPU runs | residual risk: none for inference; poses.json gains an additive key (pose_set validator checks T_cam_obj only). Re-run only at the next scheduled infer regression, not as a separate GPU job |
 | 018 / 017 as extra infer hosts | scope commit | 018: toolchain + repo from the bucket bundle, pytest 29/29, `verdi doctor` OK; stereo_rectify / sfm / dinov2_features / clip_features fixtures pass on CPU | GPU fixture regression on 018 (only in a declared slot); 017 not bootstrapped (all 8 GPUs partly used by others) |
 
@@ -120,7 +120,7 @@ real2sim commit ids below are **real2sim repository** commits, registered separa
 | P0 SAM3 / FS / DA3 / FP / cross-machine calls | A (done) |
 | P1 MapAnything / VGGT / MASt3R scale / CoTracker / SAM3D notes | A (done) |
 | fisheye supplied rectification (stereo_rectify, legacy) | 已移交 real2sim (C); FS rectified-input contract stays in A |
-| SC-02 DINOv2 / CLIP features | B (CPU done, GPU call pending) |
+| SC-02 DINOv2 / CLIP features | A (GPU fixture + CPU/GPU consistency on 063, 2026-10-06; dinov2 first-pass FAIL kept, fixed by disabling TF32) |
 | SC-03 input content hash; infer output contracts (scale / coords / generation statement) | A (done) |
 | SC-03 splatfacto training extensions, optimized-camera export, render_depth | 已移交 real2sim (C) |
 | SC-01 SfM / SfM -> 3DGS orchestration | 已移交 real2sim (C; legacy node kept) |

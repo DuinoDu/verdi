@@ -54,6 +54,11 @@ def _load(ctx: Context):
     state = torch.load(str(ckpt), map_location="cpu", weights_only=True)
     model.load_state_dict(state, strict=True)  # raises on any key / shape mismatch
     dev = "cuda" if ctx.device == "cuda" else "cpu"
+    # strict float32 on CUDA: torch enables TF32 for cuDNN convolutions by default,
+    # which made the 14x14 patch embedding deviate from the CPU result (SC-02 GPU
+    # regression 2026-10-06: patch-token cosine down to 0.9937 vs CPU)
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cuda.matmul.allow_tf32 = False
     model = model.to(dev).eval().float()
     ctx.log(f"[dinov2] loaded {HUB_MODEL} on {dev} in {time.time() - t0:.1f}s")
     return model, dev
@@ -274,7 +279,8 @@ def extract(ctx: Context) -> None:
                  "mixed into patch / region features",
         "normalize": {"input": {"mean": MEAN, "std": STD, "scale": "uint8 / 255"},
                       "l2_normalize": l2},
-        "dtype": "float32 compute", "patch_dtype": patch_dtype, "device": dev,
+        "dtype": "float32 compute (TF32 disabled for cuDNN and matmul)", "patch_dtype": patch_dtype,
+        "device": dev,
         "shapes": {"cls": list(cls.shape), "registers": list(reg.shape),
                    "patch": list(patch.shape), "patch_centers": list(centers.shape),
                    "region_features": [len(regions), DIM]},
